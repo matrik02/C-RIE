@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surat Lantikan Penyelidik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <script>
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-teal-700 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-wide">✉️ Surat Lantikan Penyelidik</h1>
+                <p class="text-teal-200 mt-1 text-sm">Pusat Muat Turun Surat Lantikan Rasmi (Hanya Projek Disahkan)</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <a href="e-daftar.html" class="bg-white text-teal-800 px-5 py-2.5 rounded-full font-bold shadow hover:bg-teal-50 transition flex items-center gap-2 text-sm">
+                    &larr; Kembali ke e-Daftar
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+        
+        <div class="mb-8">
+            <h2 class="text-lg font-bold text-gray-700 mb-3 border-b-2 border-teal-500 inline-block pb-1">Statistik Projek Disahkan Mengikut Jabatan</h2>
+            <div id="paparStatistik" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mt-3">
+                <div class="text-center p-4 bg-white rounded-xl shadow-sm border border-gray-200 animate-pulse text-sm">Memuatkan data...</div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+            
+            <div class="bg-teal-50 p-5 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                <h2 class="text-lg font-bold text-teal-800 flex items-center gap-2">✅ Senarai Projek Yang Telah Disahkan</h2>
+                
+                <div class="flex items-center gap-3">
+                    <label class="text-sm font-bold text-gray-600">Tapisan Jabatan:</label>
+                    <select id="filterJabatan" onchange="terapkanTapisan()" class="px-3 py-1.5 border border-teal-300 rounded-lg text-sm focus:ring-teal-500 outline-none">
+                        <option value="">Semua Jabatan</option>
+                        <option value="JTMK">JTMK</option><option value="JKE">JKE</option><option value="JKA">JKA</option>
+                        <option value="JKM">JKM</option><option value="JP">JP</option><option value="JPA">JPA</option>
+                        <option value="JMSK">JMSK</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-teal-600 text-white uppercase tracking-wide text-xs">
+                            <th class="p-3 border-b text-center w-12">BIL</th>
+                            <th class="p-3 border-b w-1/4">TAJUK PROJEK</th>
+                            <th class="p-3 border-b">NAMA KETUA PROJEK</th>
+                            <th class="p-3 border-b">JABATAN</th>
+                            <th class="p-3 border-b text-center">STATUS</th>
+                            <th class="p-3 border-b text-center">SURAT LANTIKAN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiJadual" class="text-gray-700 bg-white">
+                        <tr><td colspan="6" class="p-10 text-center font-bold text-teal-500 animate-pulse">⏳ Memuat turun senarai...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // ⚠️ MASUKKAN URL APP SCRIPT ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+        const userJabatan = sessionStorage.getItem("jabatan") || "";
+        const userPeranan = (sessionStorage.getItem("peranan") || "").toUpperCase();
+        let dataDisahkan = [];
+
+        window.onload = () => {
+            const fJabatan = document.getElementById('filterJabatan');
+            // Kunci tapisan jika staf biasa atau Penyelaras Jabatan
+            if (userPeranan !== "PENYELARAS INOVASI" && userPeranan !== "PENYELARAS PENYELIDIKAN" && userPeranan !== "ADMIN") {
+                fJabatan.value = userJabatan;
+                fJabatan.disabled = true;
+                fJabatan.classList.add("bg-gray-200");
+            }
+            muatData();
+        };
+
+        function muatData() {
+            fetch(`${SCRIPT_URL}?action=ambilPendaftaranProjek`)
+            .then(res => res.json())
+            .then(result => {
+                if (result.status === "BERJAYA") {
+                    // Ambil yang DISAHKAN sahaja
+                    dataDisahkan = (result.data || []).filter(p => p.status.toUpperCase() === "DISAHKAN");
+                    janaStatistik(dataDisahkan);
+                    terapkanTapisan();
+                } else {
+                    document.getElementById('isiJadual').innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-600 font-bold">❌ Mesej: ${result.mesej}</td></tr>`;
+                }
+            })
+            .catch(err => {
+                document.getElementById('isiJadual').innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-600 font-bold">⚠️ Ralat menyambung ke pangkalan data.</td></tr>`;
+            });
+        }
+
+        function janaStatistik(data) {
+            const wadahStat = document.getElementById('paparStatistik');
+            const senaraiJab = ["JTMK", "JKE", "JKA", "JKM", "JP", "JPA", "JMSK"];
+            let htmlStat = "";
+
+            senaraiJab.forEach(jab => {
+                const jumlah = data.filter(p => p.jabatan === jab).length;
+                htmlStat += `
+                    <div class="bg-white p-3 rounded-xl shadow-sm border border-teal-100 text-center flex flex-col justify-center transform transition hover:scale-105">
+                        <span class="text-xs font-bold text-gray-500 uppercase">${jab}</span>
+                        <span class="text-2xl font-extrabold text-teal-600">${jumlah}</span>
+                    </div>
+                `;
+            });
+            wadahStat.innerHTML = htmlStat;
+        }
+
+        function terapkanTapisan() {
+            const valJab = document.getElementById('filterJabatan').value;
+            const tbody = document.getElementById('isiJadual');
+            tbody.innerHTML = "";
+
+            let dataTapis = dataDisahkan.filter(row => valJab === "" || row.jabatan === valJab);
+
+            if (dataTapis.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-gray-500 font-medium">Tiada projek disahkan dijumpai.</td></tr>`;
+                return;
+            }
+
+            dataTapis.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-teal-50 transition";
+                tr.innerHTML = `
+                    <td class="p-3 text-center font-bold text-gray-600">${index + 1}</td>
+                    <td class="p-3 font-bold text-teal-800 uppercase text-xs">${row.tajuk}</td>
+                    <td class="p-3 font-semibold text-gray-700">${row.ketua}</td>
+                    <td class="p-3 font-bold text-gray-600 text-xs">${row.jabatan}</td>
+                    <td class="p-3 text-center"><span class="bg-green-100 text-green-800 border border-green-300 px-2 py-1 rounded text-[11px] font-bold">✅ DISAHKAN</span></td>
+                    <td class="p-3 text-center">
+                        <button onclick="janaPDF('${row.ketua.replace(/'/g, "\\'")}', '${row.tajuk.replace(/'/g, "\\'")}', '${row.jabatan}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg shadow-md font-bold text-xs flex items-center justify-center gap-1 mx-auto transition">
+                            📄 Download PDF
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // FUNGSI JANA PDF AUTomatik
+        function janaPDF(namaKetua, tajukProjek, jabatan) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Tarikh Hari Ini
+            const tarikhSemasa = new Date().toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' });
+
+            // Reka bentuk dokumen PDF
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(16);
+            doc.text("SURAT LANTIKAN PENYELIDIK PROJEK", 105, 25, { align: "center" });
+            
+            doc.setLineWidth(0.5);
+            doc.line(20, 30, 190, 30); // Garis pemisah
+
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Tarikh: ${tarikhSemasa}`, 150, 40);
+            
+            doc.text("Kepada:", 20, 50);
+            doc.setFont("helvetica", "bold");
+            doc.text(namaKetua, 20, 58);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Jabatan: ${jabatan}`, 20, 66);
+            
+            doc.text("Tuan/Puan,", 20, 85);
+            doc.setFont("helvetica", "bold");
+            doc.text("LANTIKAN SEBAGAI KETUA PENYELIDIK BAGI PROJEK INOVASI", 20, 95);
+            
+            doc.setFont("helvetica", "normal");
+            const perenggan1 = `Dengan segala hormatnya perkara di atas adalah dirujuk. Pihak Pengurusan dengan sukacitanya melantik tuan/puan sebagai Ketua Penyelidik bagi projek yang bertajuk:`;
+            const splitPerenggan1 = doc.splitTextToSize(perenggan1, 170);
+            doc.text(splitPerenggan1, 20, 105);
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            const splitTajuk = doc.splitTextToSize(`"${tajukProjek}"`, 150);
+            doc.text(splitTajuk, 30, 125);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(12);
+            const perenggan2 = `2. Pihak kami berharap tuan/puan dapat menjalankan tugas ini dengan penuh dedikasi demi melonjakkan kecemerlangan R&D jabatan dan institusi.`;
+            const splitPerenggan2 = doc.splitTextToSize(perenggan2, 170);
+            doc.text(splitPerenggan2, 20, 150);
+
+            doc.text("Sekian, terima kasih.", 20, 180);
+            doc.text("Yang menjalankan amanah,", 20, 200);
+            
+            doc.setFont("helvetica", "bold");
+            doc.text("Penyelaras Penyelidikan & Inovasi", 20, 230);
+            doc.setFont("helvetica", "normal");
+            doc.text("Sistem Pengurusan e-Daftar R&D", 20, 238);
+
+            // Simpan fail menggunakan nama Ketua Projek
+            doc.save(`${namaKetua}.pdf`);
+        }
+    </script>
+</body>
+</html>

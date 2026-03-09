@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambah Inovasi - Sistem Pintar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        // HALANG AKSES JIKA BELUM LOGIN
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Akses ditolak! Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-gray-100 p-6 font-sans">
+
+    <div class="max-w-6xl mx-auto">
+        <div class="mb-4">
+            <a href="dashboard.html" class="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold transition">
+                &larr; Kembali ke Paparan Utama
+            </a>
+        </div>
+
+        <div class="bg-white p-8 rounded-lg shadow-md">
+            <h1 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">➕ Tambah Rekod Inovasi</h1>
+
+            <div id="statusMesej" class="hidden mb-4 p-4 rounded text-center font-semibold border"></div>
+
+            <div id="tabMenu" class="flex border-b border-gray-200 mb-6">
+                <button id="tabManual" class="w-1/2 py-3 font-semibold text-center border-b-2 border-blue-600 text-blue-600 focus:outline-none transition">
+                    ✍️ Isi Borang Manual
+                </button>
+                <button id="tabPreview" class="w-1/2 py-3 font-semibold text-center text-gray-500 hover:text-blue-600 focus:outline-none transition">
+                    🔍 Pratonton Data
+                </button>
+            </div>
+
+            <div id="bahagianManual" class="block">
+                <div id="bahagianBorang">
+                    <form id="borangInovasi" class="space-y-6">
+                        <div class="bg-gray-50 p-4 rounded border">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Jabatan Anda</label>
+                            <input type="text" id="jabatan" name="jabatan" readonly class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none bg-gray-200 text-gray-700 font-bold cursor-not-allowed">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Innovator Utama <span class="text-red-500">*</span></label>
+                                <input type="text" name="innovator" required class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Ahli Kumpulan (Pisahkan dengan koma)</label>
+                                <input type="text" name="ahli_kumpulan" placeholder="Contoh: Ali, Abu, Siti" class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Produk Inovasi <span class="text-red-500">*</span></label>
+                            <input type="text" name="produk_inovasi" required class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Tajuk Pertandingan <span class="text-red-500">*</span></label>
+                            <input type="text" name="tajuk_pertandingan" required class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Tarikh Pertandingan <span class="text-red-500">*</span></label>
+                                <input type="date" name="tarikh_pertandingan" required class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Tempat Pertandingan <span class="text-red-500">*</span></label>
+                                <input type="text" name="tempat_pertandingan" required placeholder="Contoh: PICC, Putrajaya" class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Pingat / Pencapaian <span class="text-red-500">*</span></label>
+                                <select name="pingat" required class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                    <option value="" disabled selected>Sila Pilih Pingat...</option>
+                                    <option value="EMAS">EMAS (Gold)</option>
+                                    <option value="PERAK">PERAK (Silver)</option>
+                                    <option value="GANGSA">GANGSA (Bronze)</option>
+                                    <option value="SIJIL PENYERTAAN">SIJIL PENYERTAAN Sahaja</option>
+                                    <option value="LAIN-LAIN">Lain-lain</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Tahun <span class="text-red-500">*</span></label>
+                                <input type="number" name="tahun" required placeholder="Contoh: 2024" class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t">
+                            <button type="button" id="btnSemakData" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition">
+                                Semak Data
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="bahagianPratonton" class="hidden">
+                <div class="bg-blue-50 border border-blue-200 p-6 rounded-lg">
+                    <h3 class="text-lg font-bold text-blue-800 mb-4 border-b border-blue-200 pb-2">Pratonton Data Anda</h3>
+                    <ul class="space-y-2 text-sm text-gray-800 mb-6" id="senaraiPratonton"></ul>
+                    <div class="flex gap-4">
+                        <button type="button" id="btnEditSemula" class="w-1/3 bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded transition">
+                            Edit Semula
+                        </button>
+                        <button type="button" id="btnSahkanSimpan" class="w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition">
+                            Sahkan & Simpan Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bahagianBerjaya" class="hidden text-center py-10">
+                <div class="text-6xl mb-4">🎉</div>
+                <h2 class="text-2xl font-bold text-green-600 mb-2">Data Berjaya Disimpan!</h2>
+                <p class="text-gray-600 mb-8">Rekod inovasi telah dimasukkan ke dalam pangkalan data Sheet1.</p>
+                <div class="flex justify-center gap-4">
+                    <a href="dashboard.html" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded transition">Lihat Dashboard</a>
+                    <button id="btnTambahLagi" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded transition">Tambah Lagi</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // KEKALKAN NILAI JABATAN DARI SESSION STORAGE
+        const userJabatan = sessionStorage.getItem("jabatan") || "TIDAK DIKETAHUI";
+        document.getElementById('jabatan').value = userJabatan;
+
+        // KAWALAN TAB
+        const tabManual = document.getElementById('tabManual');
+        const tabPreview = document.getElementById('tabPreview');
+        const bahagianManual = document.getElementById('bahagianManual');
+        const bahagianPratonton = document.getElementById('bahagianPratonton');
+
+        function setTabManual() {
+            tabManual.classList.replace('text-gray-500', 'text-blue-600');
+            tabManual.classList.add('border-b-2', 'border-blue-600');
+            tabPreview.classList.replace('text-blue-600', 'text-gray-500');
+            tabPreview.classList.remove('border-b-2', 'border-blue-600');
+            bahagianManual.classList.remove('hidden');
+            bahagianPratonton.classList.add('hidden');
+        }
+
+        function setTabPreview() {
+            tabPreview.classList.replace('text-gray-500', 'text-blue-600');
+            tabPreview.classList.add('border-b-2', 'border-blue-600');
+            tabManual.classList.replace('text-blue-600', 'text-gray-500');
+            tabManual.classList.remove('border-b-2', 'border-blue-600');
+            bahagianPratonton.classList.remove('hidden');
+            bahagianManual.classList.add('hidden');
+        }
+
+        tabManual.addEventListener('click', setTabManual);
+
+        const form = document.getElementById('borangInovasi');
+        const btnSemak = document.getElementById('btnSemakData');
+        const senaraiPratonton = document.getElementById('senaraiPratonton');
+        const btnEditSemula = document.getElementById('btnEditSemula');
+        const btnSahkanSimpan = document.getElementById('btnSahkanSimpan');
+        const statusMesej = document.getElementById('statusMesej');
+        const bahagianBerjaya = document.getElementById('bahagianBerjaya');
+
+        // SILA LETAK URL WEB APP ANDA YANG BARU DI SINI 
+        const apiUrl = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec';
+
+        // Pengekstrakan Data Yang 100% Kebal
+        function dapatkanDataBorang() {
+            return {
+                innovator: document.querySelector('input[name="innovator"]').value,
+                ahli_kumpulan: document.querySelector('input[name="ahli_kumpulan"]').value,
+                produk_inovasi: document.querySelector('input[name="produk_inovasi"]').value,
+                tajuk_pertandingan: document.querySelector('input[name="tajuk_pertandingan"]').value,
+                tarikh_pertandingan: document.querySelector('input[name="tarikh_pertandingan"]').value,
+                tempat_pertandingan: document.querySelector('input[name="tempat_pertandingan"]').value,
+                pingat: document.querySelector('select[name="pingat"]').value,
+                tahun: document.querySelector('input[name="tahun"]').value,
+                jabatan: document.getElementById('jabatan').value
+            };
+        }
+
+        function janaPratonton() {
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return false;
+            }
+
+            const data = dapatkanDataBorang();
+            senaraiPratonton.innerHTML = `
+                <li><strong>Jabatan:</strong> ${data.jabatan}</li>
+                <li><strong>Innovator Utama:</strong> ${data.innovator}</li>
+                <li><strong>Ahli Kumpulan:</strong> ${data.ahli_kumpulan || '-'}</li>
+                <li><strong>Produk Inovasi:</strong> ${data.produk_inovasi}</li>
+                <li><strong>Tajuk Pertandingan:</strong> ${data.tajuk_pertandingan}</li>
+                <li><strong>Tarikh Pertandingan:</strong> ${data.tarikh_pertandingan}</li>
+                <li><strong>Tempat Pertandingan:</strong> ${data.tempat_pertandingan}</li>
+                <li><strong>Pingat:</strong> ${data.pingat}</li>
+                <li><strong>Tahun:</strong> ${data.tahun}</li>
+            `;
+            return true;
+        }
+
+        btnSemak.addEventListener('click', () => {
+            if (janaPratonton()) {
+                setTabPreview();
+                statusMesej.classList.add('hidden');
+                window.scrollTo(0, 0);
+            }
+        });
+
+        tabPreview.addEventListener('click', () => {
+            if (janaPratonton()) {
+                setTabPreview();
+            } else {
+                alert("Sila lengkapkan borang terlebih dahulu sebelum melihat pratonton.");
+            }
+        });
+
+        btnEditSemula.addEventListener('click', setTabManual);
+
+        btnSahkanSimpan.addEventListener('click', () => {
+            btnSahkanSimpan.disabled = true;
+            btnSahkanSimpan.innerHTML = 'Memproses Data... ⏳';
+
+            const d = dapatkanDataBorang();
+            
+            // Susun nama supaya SAMA SEBIJIK macam Google Sheet
+            const dataHantar = {
+                action: 'tambahData',
+                "JABATAN": d.jabatan,
+                "INNOVATOR": d.innovator,
+                "AHLI": d.ahli_kumpulan,
+                "PRODUK": d.produk_inovasi,
+                "NAMA": d.tajuk_pertandingan,
+                "TARIKH": d.tarikh_pertandingan + ' (' + d.tempat_pertandingan + ')',
+                "PINGAT": d.pingat,
+                "TAHUN": d.tahun
+            };
+
+            hantarKeGoogleSheet(dataHantar, btnSahkanSimpan, 'Sahkan & Simpan Data');
+        });
+
+        function hantarKeGoogleSheet(dataPayload, buttonObj, btnTextAsal) {
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(dataPayload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "BERJAYA") {
+                    paparKejayaan();
+                } else {
+                    paparRalat(new Error(data.mesej || "Penyimpanan gagal di Google Sheet."), buttonObj, btnTextAsal);
+                }
+            })
+            .catch(error => {
+                paparRalat(new Error("Gagal berhubung dengan pelayan. Sila cuba lagi."), buttonObj, btnTextAsal);
+            });
+        }
+
+        function paparKejayaan() {
+            bahagianManual.classList.add('hidden');
+            bahagianPratonton.classList.add('hidden');
+            document.getElementById('tabMenu').classList.add('hidden');
+            bahagianBerjaya.classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        function paparRalat(error, buttonObj, btnTextAsal) {
+            statusMesej.classList.remove('hidden');
+            statusMesej.className = 'bg-red-100 text-red-800 border-red-200 mb-4 p-4 rounded text-center font-semibold border';
+            statusMesej.innerText = "⚠️ Ralat: " + error.message;
+            buttonObj.disabled = false;
+            buttonObj.innerHTML = btnTextAsal;
+            window.scrollTo(0, 0);
+        }
+
+        document.getElementById('btnTambahLagi').addEventListener('click', () => {
+            form.reset();
+            document.getElementById('jabatan').value = userJabatan;
+            document.getElementById('tabMenu').classList.remove('hidden');
+            btnSahkanSimpan.disabled = false;
+            btnSahkanSimpan.innerHTML = 'Sahkan & Simpan Data';
+            bahagianBerjaya.classList.add('hidden');
+            setTabManual();
+        });
+    </script>
+</body>
+</html>

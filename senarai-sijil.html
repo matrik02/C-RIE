@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muat Turun Sijil KPI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Sila log masuk untuk memuat turun sijil.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-gray-100 p-4 md:p-6 font-sans text-gray-800">
+
+    <div class="max-w-7xl mx-auto">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-200 gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-amber-600">📜 Pusat Muat Turun Sijil</h1>
+                <p class="text-sm text-gray-500 mt-1">Senarai sijil KPI yang telah DISAHKAN dan sedia dimuat turun.</p>
+            </div>
+            <div class="flex flex-wrap gap-2 items-center">
+                <select id="filterTahun" onchange="tapisData()" class="px-4 py-2 border rounded-lg bg-gray-50 text-gray-700 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <option value="Semua">Semua Tahun</option>
+                </select>
+                <select id="filterJabatan" onchange="tapisData()" class="px-4 py-2 border rounded-lg bg-gray-50 text-gray-700 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <option value="Semua">Semua Jabatan</option>
+                </select>
+                <a href="dashboard-kpi.html" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2.5 rounded-lg font-semibold transition shadow-md flex items-center gap-2">
+                    &larr; Kembali
+                </a>
+            </div>
+        </div>
+
+        <div id="bahagianPenyelaras" class="hidden mb-8 bg-gradient-to-br from-emerald-50 to-amber-50 rounded-xl shadow-md border-2 border-emerald-400 p-6 relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 opacity-10 text-9xl">🎖️</div>
+            
+            <h2 class="text-xl md:text-2xl font-bold text-emerald-800 mb-4 border-b-2 border-emerald-200 pb-2 inline-flex items-center gap-2">
+                🎖️ Sijil Penghargaan Penyelaras Jabatan
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 mb-6 text-sm">
+                <div class="bg-white px-4 py-2 rounded-lg border border-gray-100 shadow-sm"><span class="font-bold text-gray-500 block text-xs">NO. IC:</span> <span id="paparICPenyelaras" class="font-bold text-gray-800 text-base"></span></div>
+                <div class="bg-white px-4 py-2 rounded-lg border border-gray-100 shadow-sm"><span class="font-bold text-gray-500 block text-xs">NAMA:</span> <span id="paparNamaPenyelaras" class="font-bold text-gray-800 uppercase text-base"></span></div>
+                <div class="bg-white px-4 py-2 rounded-lg border border-gray-100 shadow-sm"><span class="font-bold text-gray-500 block text-xs">JABATAN:</span> <span id="paparJabatanPenyelaras" class="font-bold text-emerald-700 uppercase text-base"></span></div>
+                <div class="bg-white px-4 py-2 rounded-lg border border-gray-100 shadow-sm"><span class="font-bold text-gray-500 block text-xs">PERANAN:</span> <span id="paparPerananPenyelaras" class="font-bold text-gray-800 uppercase text-base"></span></div>
+            </div>
+
+            <div class="flex flex-col md:flex-row items-center justify-between bg-white bg-opacity-60 p-4 rounded-lg border border-emerald-100">
+                <p class="text-sm text-emerald-800 font-medium mb-3 md:mb-0">
+                    * Sila pilih <b>TAHUN</b> di filter atas untuk memuat turun sijil penghargaan anda. Sijil hanya dijana jika terdapat sekurang-kurangnya 1 KPI <span class="bg-green-200 text-green-800 px-2 py-0.5 rounded text-xs font-bold">DISAHKAN</span> bagi tahun tersebut.
+                </p>
+                <a href="#" id="btnDownloadPenyelaras" onclick="alert('Sila pilih TAHUN dari menu tapisan di atas dahulu.'); return false;" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-bold shadow-md transition inline-flex items-center gap-2 flex-shrink-0">
+                    📥 Download Sijil Penyelaras
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+            <div class="p-4 border-b flex justify-between items-center bg-amber-50">
+                <h2 class="text-lg font-bold text-gray-800">Senarai Sijil Projek (Telah Disahkan)</h2>
+            </div>
+            <div class="md:hidden text-xs text-amber-600 font-semibold p-2 bg-amber-50 flex items-center justify-center gap-1 border-b">
+                <span>👉</span> Geser jadual ke kiri/kanan untuk lihat penuh
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[1100px]">
+                    <thead>
+                        <tr class="bg-amber-500 text-white text-sm uppercase tracking-wide">
+                            <th class="p-4 border-b">TAHUN</th>
+                            <th class="p-4 border-b w-1/4">NAMA PRODUK / PROJEK</th>
+                            <th class="p-4 border-b">KETUA PROJEK</th>
+                            <th class="p-4 border-b">JABATAN</th>
+                            <th class="p-4 border-b">JENIS</th>
+                            <th class="p-4 border-b">NO DAFTAR</th>
+                            <th class="p-4 border-b text-center w-40">TINDAKAN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiJadual" class="text-gray-700 text-sm bg-white">
+                        <tr><td colspan="7" class="p-10 text-center font-semibold text-gray-500 animate-pulse">⏳ Menyemak pangkalan data... Sila tunggu...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ⚠️ MASUKKAN URL WEB APP ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec';
+        let rekodDisahkan = [];
+
+        // AMBIL DATA DARI SESSION
+        const userNama = sessionStorage.getItem("namaPengguna") || "";
+        const userJabatan = sessionStorage.getItem("jabatan") || "";
+        const userPeranan = sessionStorage.getItem("peranan") || "";
+        const userIC = sessionStorage.getItem("no_ic") || "-";
+
+        if (userPeranan.toUpperCase() === "PENYELARAS JABATAN") {
+            document.getElementById("bahagianPenyelaras").classList.remove("hidden");
+            document.getElementById("paparICPenyelaras").innerText = userIC;
+            document.getElementById("paparNamaPenyelaras").innerText = userNama;
+            document.getElementById("paparJabatanPenyelaras").innerText = userJabatan;
+            document.getElementById("paparPerananPenyelaras").innerText = userPeranan;
+        }
+
+        async function muatDataSijil() {
+            const tbody = document.getElementById('isiJadual');
+            try {
+                const fetchUrl = SCRIPT_URL.includes('?') ? `${SCRIPT_URL}&action=ambilKPI` : `${SCRIPT_URL}?action=ambilKPI`;
+                const response = await fetch(fetchUrl);
+                const result = await response.json();
+
+                if (result.status === "BERJAYA" || result.status === "berjaya") {
+                    // 1. Tapis HANYA yang berstatus DISAHKAN
+                    let senaraiSemuaDisahkan = (result.data || []).filter(r => String(r[12] || "DISAHKAN").trim().toUpperCase() === "DISAHKAN");
+                    
+                    // 2. Jika peranan STAF atau PENYELARAS JABATAN, TAPIS JABATAN MEREKA SAHAJA
+                    if (userPeranan.toUpperCase() === "STAF" || userPeranan.toUpperCase() === "PENYELARAS JABATAN") {
+                        rekodDisahkan = senaraiSemuaDisahkan.filter(r => String(r[6]).trim().toUpperCase() === userJabatan.toUpperCase());
+                    } else {
+                        rekodDisahkan = senaraiSemuaDisahkan;
+                    }
+
+                    binaFilter(rekodDisahkan);
+                    tapisData();
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-600 font-bold">❌ Mesej: ${result.mesej}</td></tr>`;
+                }
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-red-600 leading-relaxed">⚠️ Ralat Rangkaian / Web App</td></tr>`;
+            }
+        }
+
+        function binaFilter(data) {
+            const dropTahun = document.getElementById('filterTahun');
+            const dropJabatan = document.getElementById('filterJabatan');
+            
+            const tahunUnik = [...new Set(data.map(r => r[10]).filter(t => t !== "" && t != null))].sort((a,b)=>b-a);
+            dropTahun.innerHTML = '<option value="Semua">Semua Tahun</option>';
+            tahunUnik.forEach(t => dropTahun.innerHTML += `<option value="${t}">${t}</option>`);
+            
+            // KUNCI DROPDOWN JABATAN UNTUK STAF / PENYELARAS JABATAN
+            if (userPeranan.toUpperCase() === "STAF" || userPeranan.toUpperCase() === "PENYELARAS JABATAN") {
+                dropJabatan.innerHTML = `<option value="${userJabatan}">${userJabatan}</option>`;
+                dropJabatan.disabled = true; // Halang pengguna ubah jabatan
+                dropJabatan.classList.add('bg-gray-200', 'cursor-not-allowed', 'text-gray-500');
+            } else {
+                const jabatanUnik = [...new Set(data.map(r => String(r[6]).trim()).filter(j => j !== "" && j !== "-"))].sort();
+                dropJabatan.innerHTML = '<option value="Semua">Semua Jabatan</option>';
+                jabatanUnik.forEach(j => dropJabatan.innerHTML += `<option value="${j}">${j}</option>`);
+            }
+        }
+
+        function tapisData() {
+            const tbody = document.getElementById('isiJadual');
+            const pilTahun = document.getElementById('filterTahun').value;
+            const pilJabatan = document.getElementById('filterJabatan').value;
+            
+            // KAWALAN BUTANG SIJIL KHAS PENYELARAS JABATAN
+            if (userPeranan.toUpperCase() === "PENYELARAS JABATAN") {
+                const btnPenyelaras = document.getElementById("btnDownloadPenyelaras");
+                if (pilTahun !== "Semua") {
+                    const adaSijilKPI = rekodDisahkan.some(r => String(r[10]) === pilTahun);
+                    if (adaSijilKPI) {
+                        const filePath = `KPI/${encodeURIComponent(pilTahun)}/${encodeURIComponent(userJabatan)}/${encodeURIComponent(userNama)}.pdf`;
+                        btnPenyelaras.href = filePath;
+                        btnPenyelaras.setAttribute("download", "");
+                        btnPenyelaras.onclick = null; 
+                        btnPenyelaras.className = "bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-bold shadow-md transition inline-flex items-center gap-2 flex-shrink-0 hover:-translate-y-0.5";
+                        btnPenyelaras.innerHTML = "📥 Download Sijil Penyelaras";
+                    } else {
+                        btnPenyelaras.href = "#";
+                        btnPenyelaras.removeAttribute("download");
+                        btnPenyelaras.className = "bg-gray-400 text-white px-6 py-3 rounded-lg font-bold shadow-md inline-flex items-center gap-2 flex-shrink-0 cursor-not-allowed";
+                        btnPenyelaras.innerHTML = "🔒 Tiada KPI Disahkan";
+                        btnPenyelaras.onclick = () => { alert("Maaf, tiada rekod KPI yang DISAHKAN bagi jabatan anda untuk tahun " + pilTahun + "."); return false; };
+                    }
+                } else {
+                    btnPenyelaras.href = "#";
+                    btnPenyelaras.removeAttribute("download");
+                    btnPenyelaras.className = "bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-bold shadow-md transition inline-flex items-center gap-2 flex-shrink-0 hover:-translate-y-0.5";
+                    btnPenyelaras.innerHTML = "📥 Download Sijil Penyelaras";
+                    btnPenyelaras.onclick = () => { alert("Sila pilih TAHUN dari menu tapisan di atas dahulu."); return false; };
+                }
+            }
+
+            // KAWALAN JADUAL
+            let dataDitapis = rekodDisahkan;
+            if (pilTahun !== "Semua") dataDitapis = dataDitapis.filter(r => String(r[10]) === pilTahun);
+            
+            // Filter Jabatan diguna pakai jika bukan disabled
+            if (pilJabatan !== "Semua" && !document.getElementById('filterJabatan').disabled) {
+                dataDitapis = dataDitapis.filter(r => String(r[6]).trim() === pilJabatan);
+            }
+
+            tbody.innerHTML = "";
+            if(dataDitapis.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-gray-500 font-medium">Tiada sijil dijumpai untuk carian ini.</td></tr>`;
+                return;
+            }
+
+            dataDitapis.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-amber-50 transition";
+                
+                const sProduk = String(row[1] || "").trim();
+                const sKetua = String(row[2] || "-").trim();
+                const sJabatan = String(row[6] || "-").trim();
+                const sJenis = String(row[8] || "-").trim();
+                const sDaftar = String(row[9] || "-").trim();
+                const sTahun = String(row[10] || "-").trim();
+
+                const filePath = `KPI/${encodeURIComponent(sTahun)}/${encodeURIComponent(sJabatan)}/${encodeURIComponent(sProduk)}.pdf`;
+
+                tr.innerHTML = `
+                    <td class="p-4 font-bold text-gray-600 text-lg">${sTahun}</td>
+                    <td class="p-4 font-bold text-amber-700">${sProduk}</td>
+                    <td class="p-4 font-medium text-gray-800">${sKetua}</td>
+                    <td class="p-4 font-bold text-gray-600">${sJabatan}</td>
+                    <td class="p-4 text-gray-600">${sJenis}</td>
+                    <td class="p-4 font-mono text-gray-500">${sDaftar}</td>
+                    <td class="p-4 text-center">
+                        <a href="${filePath}" target="_blank" download class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg font-bold shadow-md transition inline-block hover:-translate-y-0.5">
+                            📥 Download
+                        </a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.onload = muatDataSijil;
+    </script>
+</body>
+</html>

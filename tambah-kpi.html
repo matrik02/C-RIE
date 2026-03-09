@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambah KPI Produk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        // HALANG AKSES JIKA BELUM LOGIN
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Akses ditolak! Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-slate-50 p-6 font-sans text-gray-800">
+
+    <div class="max-w-4xl mx-auto">
+        
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">➕ Tambah Rekod KPI</h1>
+            <a href="dashboard-kpi.html" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition shadow-sm">
+                &larr; Kembali ke Senarai KPI
+            </a>
+        </div>
+
+        <div id="statusMesej" class="hidden mb-4 p-4 rounded text-center text-sm font-semibold border"></div>
+
+        <div id="bahagianBorang" class="bg-white p-8 rounded-xl shadow-md border border-gray-100">
+            <form id="borangKPI" class="space-y-6">
+                
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Nama Produk / Sistem <span class="text-red-500">*</span></label>
+                    <input type="text" id="nama_produk" required placeholder="Contoh: Sistem e-Pelajar" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Ketua Projek <span class="text-red-500">*</span></label>
+                        <input type="text" id="ketua" required placeholder="Nama Ketua Projek" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Ahli Kumpulan</label>
+                        <input type="text" id="ahli" placeholder="Nama ahli (pisahkan dengan koma)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                    <div>
+                        <label class="block text-sm font-bold text-blue-800 mb-1">No. Telefon Ketua <span class="text-red-500">*</span></label>
+                        <input type="tel" id="no_telefon" required placeholder="Contoh: 012-3456789" class="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-blue-800 mb-1">Emel Ketua <span class="text-red-500">*</span></label>
+                        <input type="email" id="email" required placeholder="Contoh: ketua@domain.com" class="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Jabatan <span class="text-red-500">*</span></label>
+                        <select id="jabatan" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">⏳ Memuatkan...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Aplikasi Di Peringkat <span class="text-red-500">*</span></label>
+                        <select id="aplikasi" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">-- Pilih Peringkat --</option>
+                            <option value="JABATAN">JABATAN</option>
+                            <option value="POLITEKNIK">POLITEKNIK</option>
+                            <option value="KEBANGSAAN">KEBANGSAAN</option>
+                            <option value="ANTARABANGSA">ANTARABANGSA</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Jenis Harta Intelek <span class="text-red-500">*</span></label>
+                        <select id="jenis" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">-- Pilih Jenis --</option>
+                            <option value="HAK CIPTA (COPYRIGHT)">HAK CIPTA (COPYRIGHT)</option>
+                            <option value="PATEN (PATENT)">PATEN (PATENT)</option>
+                            <option value="CAP DAGANGAN (TRADEMARK)">CAP DAGANGAN (TRADEMARK)</option>
+                            <option value="REKA BENTUK INDUSTRI">REKA BENTUK INDUSTRI</option>
+                            <option value="TIADA">TIADA</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">No Pendaftaran (Jika Ada)</label>
+                        <input type="text" id="no_pendaftaran" placeholder="Contoh: REG12345" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Tahun <span class="text-red-500">*</span></label>
+                        <input type="number" id="tahun" required placeholder="Contoh: 2024" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Pautan URL (Bukti Dokumen/Sistem) <span class="text-red-500">*</span></label>
+                    <input type="url" id="url" required placeholder="Contoh: https://drive.google.com/..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <p class="text-xs text-gray-500 mt-1">Sila pastikan URL bermula dengan http:// atau https://</p>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t mt-6">
+                    <button type="button" onclick="document.getElementById('borangKPI').reset()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2.5 px-6 rounded-lg transition duration-200">Set Semula</button>
+                    <button type="button" onclick="pratonton()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg transition duration-200 shadow-md">Seterusnya &rarr;</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="bahagianPratonton" class="hidden bg-white p-8 rounded-xl shadow-md border border-gray-100">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">🔍 Semak Maklumat KPI</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-6">
+                <div><span class="font-bold text-gray-500">Nama Produk:</span> <p id="pre_produk" class="font-semibold text-lg uppercase text-blue-700"></p></div>
+                <div><span class="font-bold text-gray-500">Jabatan:</span> <p id="pre_jabatan" class="font-semibold text-gray-800"></p></div>
+                <div><span class="font-bold text-gray-500">Ketua Projek:</span> <p id="pre_ketua" class="font-semibold text-gray-800"></p></div>
+                <div><span class="font-bold text-gray-500">Ahli Kumpulan:</span> <p id="pre_ahli" class="text-gray-800"></p></div>
+                
+                <div><span class="font-bold text-gray-500">No Telefon:</span> <p id="pre_telefon" class="text-gray-800"></p></div>
+                <div><span class="font-bold text-gray-500">Emel:</span> <p id="pre_email" class="text-gray-800"></p></div>
+
+                <div><span class="font-bold text-gray-500">Aplikasi Peringkat:</span> <p id="pre_aplikasi" class="text-gray-800"></p></div>
+                <div><span class="font-bold text-gray-500">Jenis Harta Intelek:</span> <p id="pre_jenis" class="text-gray-800"></p></div>
+                <div><span class="font-bold text-gray-500">No Pendaftaran:</span> <p id="pre_pendaftaran" class="text-gray-800"></p></div>
+                <div><span class="font-bold text-gray-500">Tahun:</span> <p id="pre_tahun" class="font-semibold text-gray-800"></p></div>
+                <div class="md:col-span-2"><span class="font-bold text-gray-500">Pautan URL:</span> <p id="pre_url" class="text-blue-600 break-all"></p></div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t">
+                <button type="button" onclick="kembaliEdit()" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2.5 px-6 rounded-lg transition duration-200">Edit Semula</button>
+                <button type="button" id="btnHantar" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-lg transition duration-200 shadow-md flex items-center gap-2">
+                    ✅ Hantar Pendaftaran
+                </button>
+            </div>
+        </div>
+
+        <div id="bahagianBerjaya" class="hidden bg-white p-10 rounded-xl shadow-md border border-green-200 text-center">
+            <div class="text-6xl mb-4">🎉</div>
+            <h2 class="text-2xl font-bold text-green-700 mb-2">Pendaftaran Berjaya!</h2>
+            <p class="text-gray-600 mb-6" id="mesejKejayaan">Rekod KPI produk anda telah dihantar dan sedang <span class="font-bold text-orange-600">MENUNGGU PENGESAHAN</span> Penyelaras Inovasi.</p>
+            <a href="dashboard-kpi.html" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold transition shadow-md inline-block">Kembali ke Dashboard</a>
+        </div>
+
+    </div>
+
+    <script>
+        // ⚠️ PASTIKAN BRO MASUKKAN URL APP SCRIPT TERKINI DI SINI DENGAN TEPAT
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+        const userJabatan = sessionStorage.getItem("jabatan") || "";
+        const userPeranan = sessionStorage.getItem("peranan") || "";
+        const elJabatan = document.getElementById('jabatan');
+
+        // BINA KAWALAN UNTUK JABATAN BERDASARKAN PERANAN
+        if (userPeranan.toUpperCase().includes("INOVASI") || userPeranan.toUpperCase() === "ADMIN") {
+            
+            // Format URL yang lebih kebal. Jika SCRIPT_URL dah ada '?', tambah guna '&'
+            const fetchUrl = SCRIPT_URL.includes('?') ? `${SCRIPT_URL}&action=ambilTetapan` : `${SCRIPT_URL}?action=ambilTetapan`;
+            
+            fetch(fetchUrl)
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "BERJAYA" && data.jabatan && data.jabatan.length > 0) {
+                    elJabatan.innerHTML = '<option value="">-- Pilih Jabatan --</option>';
+                    data.jabatan.forEach(j => { 
+                        // Elakkan tambah pilihan kosong
+                        if (j.trim() !== "") {
+                            elJabatan.innerHTML += `<option value="${j}">${j}</option>`; 
+                        }
+                    });
+                    // Set pilihan asal kepada jabatan penyelaras sendiri
+                    if (data.jabatan.includes(userJabatan)) {
+                        elJabatan.value = userJabatan;
+                    }
+                } else {
+                    console.warn("Gagal tarik jabatan dari server: ", data.mesej);
+                    elJabatan.innerHTML = `<option value="${userJabatan}">${userJabatan}</option>`;
+                }
+            })
+            .catch(err => {
+                console.error("Ralat Network untuk drop-down Jabatan:", err);
+                elJabatan.innerHTML = `<option value="${userJabatan}">${userJabatan}</option>`;
+            });
+
+        } else {
+            // STAF BIASA & PENYELARAS JABATAN: Kunci pada jabatan sendiri sahaja
+            elJabatan.innerHTML = `<option value="${userJabatan}">${userJabatan}</option>`;
+            elJabatan.classList.add('bg-gray-100', 'font-bold', 'text-gray-600');
+            elJabatan.style.pointerEvents = "none"; // Halang klik/ubah
+        }
+
+        const bahagianBorang = document.getElementById('bahagianBorang');
+        const bahagianPratonton = document.getElementById('bahagianPratonton');
+        const bahagianBerjaya = document.getElementById('bahagianBerjaya');
+        const statusMesej = document.getElementById('statusMesej');
+
+        function pratonton() {
+            const form = document.getElementById('borangKPI');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            document.getElementById('pre_produk').innerText = document.getElementById('nama_produk').value.toUpperCase();
+            document.getElementById('pre_ketua').innerText = document.getElementById('ketua').value.toUpperCase();
+            document.getElementById('pre_ahli').innerText = document.getElementById('ahli').value.toUpperCase() || 'TIADA';
+            document.getElementById('pre_telefon').innerText = document.getElementById('no_telefon').value;
+            document.getElementById('pre_email').innerText = document.getElementById('email').value;
+            document.getElementById('pre_jabatan').innerText = document.getElementById('jabatan').value;
+            document.getElementById('pre_aplikasi').innerText = document.getElementById('aplikasi').value;
+            document.getElementById('pre_jenis').innerText = document.getElementById('jenis').value;
+            document.getElementById('pre_pendaftaran').innerText = document.getElementById('no_pendaftaran').value || 'TIADA';
+            document.getElementById('pre_tahun').innerText = document.getElementById('tahun').value;
+            document.getElementById('pre_url').innerText = document.getElementById('url').value;
+
+            bahagianBorang.classList.add('hidden');
+            bahagianPratonton.classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        function kembaliEdit() {
+            bahagianPratonton.classList.add('hidden');
+            bahagianBorang.classList.remove('hidden');
+        }
+
+        document.getElementById('btnHantar').addEventListener('click', function() {
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = 'Menyimpan rekod... ⏳';
+
+            // Jika admin/penyelaras inovasi masukkan data, status terus DISAHKAN
+            const statusRekod = (userPeranan.toUpperCase().includes("INOVASI") || userPeranan.toUpperCase() === "ADMIN") ? "DISAHKAN" : "MENUNGGU PENGESAHAN";
+
+            const payloadData = {
+                action: "tambahKPI",
+                NAMA_PRODUK: document.getElementById('nama_produk').value.toUpperCase(),
+                KETUA: document.getElementById('ketua').value.toUpperCase(),
+                NO_TELEFON: document.getElementById('no_telefon').value,
+                EMAIL: document.getElementById('email').value,
+                AHLI: document.getElementById('ahli').value.toUpperCase(),
+                JABATAN: document.getElementById('jabatan').value,
+                APLIKASI: document.getElementById('aplikasi').value,
+                JENIS: document.getElementById('jenis').value,
+                NO_PENDAFTARAN: document.getElementById('no_pendaftaran').value,
+                TAHUN: document.getElementById('tahun').value,
+                URL: document.getElementById('url').value,
+                STATUS: statusRekod
+            };
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payloadData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'BERJAYA') {
+                    // Update mesej jika ia terus disahkan
+                    if(statusRekod === "DISAHKAN") {
+                        document.getElementById("mesejKejayaan").innerHTML = "Rekod KPI berjaya dihantar dan telah dimasukkan ke dalam pangkalan data secara rasmi <span class='font-bold text-green-600'>(DISAHKAN)</span>.";
+                    }
+                    bahagianPratonton.classList.add('hidden');
+                    bahagianBerjaya.classList.remove('hidden');
+                    window.scrollTo(0, 0);
+                } else {
+                    paparRalat(data.mesej, btn);
+                }
+            })
+            .catch(error => {
+                paparRalat("Gagal menghubungi pangkalan data. Sila periksa internet / URL anda.", btn);
+            });
+        });
+
+        function paparRalat(mesej, butang) {
+            statusMesej.className = 'mb-4 p-4 rounded text-center text-sm font-semibold bg-red-100 text-red-800 border border-red-200';
+            statusMesej.innerText = "⚠️ Ralat: " + mesej;
+            statusMesej.classList.remove('hidden');
+            
+            bahagianPratonton.classList.add('hidden');
+            bahagianBorang.classList.remove('hidden');
+            
+            butang.disabled = false;
+            butang.innerHTML = '✅ Hantar Pendaftaran';
+            window.scrollTo(0, 0);
+        }
+    </script>
+</body>
+</html>

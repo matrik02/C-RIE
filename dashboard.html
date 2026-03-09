@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Inovasi (Akses Berpusat)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // HALANG AKSES JIKA BELUM LOGIN
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Akses ditolak! Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-gray-100 p-6 font-sans">
+
+    <div class="max-w-7xl mx-auto">
+        
+		<div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-200 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">📊 Dashboard Data Inovasi</h1>
+                <p class="text-sm text-gray-500 mt-1">Selamat datang, <span id="namaPengguna" class="font-bold text-blue-600">...</span> 
+                (<span id="perananPengguna" class="uppercase"></span> - <span id="jabatanPengguna" class="uppercase font-bold"></span>)</p>
+            </div>
+            <div class="flex flex-wrap gap-2 items-center">
+                
+                <div id="divFilterJabatan" class="hidden items-center bg-gray-50 border rounded-lg px-3">
+                    <label class="text-xs font-bold text-gray-500 mr-2 uppercase">Jabatan:</label>
+                    <select id="filterJabatan" onchange="tapisData()" class="bg-transparent py-2 focus:outline-none font-semibold text-blue-700">
+                        <option value="Semua">Semua</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center bg-gray-50 border rounded-lg px-3">
+                    <label class="text-xs font-bold text-gray-500 mr-2 uppercase">Tahun:</label>
+                    <select id="filterTahun" onchange="tapisData()" class="bg-transparent py-2 focus:outline-none font-semibold text-blue-700">
+                        <option value="Semua">Semua</option>
+                    </select>
+                </div>
+                
+                <a href="utama.html" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2.5 rounded-lg font-semibold transition shadow-md flex items-center gap-1">
+                    🏠 Utama
+                </a>
+
+                <a href="pengesahan.html" id="btnPengesahan" class="hidden bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-lg font-semibold transition shadow-md items-center gap-1">
+                    🔐 Pengesahan
+                </a>
+
+                <a href="dashboard-kpi.html" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-semibold transition shadow-md flex items-center gap-1">
+                    📈 KPI
+                </a>
+
+                <button onclick="eksportCSV()" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded-lg font-semibold transition shadow-md flex items-center gap-1">
+                    📥 CSV
+                </button>
+                <a href="tambah-inovasi.html" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg font-semibold transition shadow-md">➕ Tambah</a>
+                <button onclick="logKeluar()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-lg font-semibold transition shadow-md">Log Keluar</button>
+            </div>
+        </div>
+
+        <div id="bahagianAtas" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                    <p class="text-gray-500 text-sm font-medium uppercase">Jumlah Projek</p>
+                    <h3 id="statJumlah" class="text-3xl font-bold text-gray-800">0</h3>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-yellow-500">
+                    <p class="text-gray-500 text-sm font-medium uppercase">Pingat Emas</p>
+                    <h3 id="statEmas" class="text-3xl font-bold text-gray-800">0</h3>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-gray-400">
+                    <p class="text-gray-500 text-sm font-medium uppercase">Pingat Perak</p>
+                    <h3 id="statPerak" class="text-3xl font-bold text-gray-800">0</h3>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-400">
+                    <p class="text-gray-500 text-sm font-medium uppercase">Pingat Gangsa</p>
+                    <h3 id="statGangsa" class="text-3xl font-bold text-gray-800">0</h3>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 h-80">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Projek mengikut Jabatan</h2>
+                    <canvas id="jabatanChart"></canvas>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 h-80">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Pecahan Pingat</h2>
+                    <canvas id="pingatChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+            <div class="p-6 border-b flex justify-between items-center bg-gray-50">
+                <h2 class="text-xl font-bold text-gray-800">📋 Senarai Rekod Inovasi <span id="tajukJadual" class="text-blue-600"></span></h2>
+                <button onclick="ambilData()" class="text-blue-600 hover:underline text-sm font-semibold">🔄 Refresh Data</button>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[1000px]">
+                    <thead>
+                        <tr class="bg-blue-600 text-white text-xs uppercase">
+                            <th class="p-4 border-b">BIL</th>
+                            <th class="p-4 border-b">INNOVATOR</th>
+                            <th class="p-4 border-b">AHLI KUMPULAN</th>
+                            <th class="p-4 border-b">JABATAN</th>
+                            <th class="p-4 border-b">PRODUK INOVASI</th>
+                            <th class="p-4 border-b">PERTANDINGAN</th>
+                            <th class="p-4 border-b">TARIKH & TEMPAT</th>
+                            <th class="p-4 border-b">PINGAT</th>
+                            <th class="p-4 border-b">TAHUN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiJadual" class="text-gray-700 text-sm bg-white">
+                        <tr><td colspan="9" class="p-10 text-center font-semibold text-gray-500 animate-pulse">⏳ Sedang memuatkan data dari Spreadsheet...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="paginationControls" class="p-4 border-t bg-gray-50 flex justify-between items-center text-sm text-gray-700"></div>
+
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ JANGAN LUPA: TAMPAL URL WEB APP ANDA DI BAWAH INI
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+        
+        let semuaData = []; 
+        let dataSemasa = []; 
+        let pingatChartInstance = null;
+        let jabatanChartInstance = null;
+
+        let currentPage = 1;
+        const rowsPerPage = 10;
+
+        // BACA MAKLUMAT LOGIN DARI SESSION STORAGE
+        const userNama = sessionStorage.getItem("namaPengguna") || "Pengguna";
+        const userPeranan = sessionStorage.getItem("peranan") || "STAF";
+        const userJabatan = sessionStorage.getItem("jabatan") || "";
+
+        // PAPAR MAKLUMAT PADA HEADER
+        document.getElementById('namaPengguna').innerText = userNama;
+        document.getElementById('perananPengguna').innerText = userPeranan;
+        document.getElementById('jabatanPengguna').innerText = userJabatan;
+        
+        // PAPAR/SEMBUNYIKAN BUTANG PENGESAHAN KHAS UNTUK PENYELARAS INOVASI SAHAJA
+        if (userPeranan.toUpperCase().includes("INOVASI") || userPeranan.toUpperCase() === "ADMIN") {
+            const btnPengesahan = document.getElementById('btnPengesahan');
+            btnPengesahan.classList.remove('hidden');
+            btnPengesahan.classList.add('flex');
+        }
+
+        // PAPAR TAJUK JADUAL & FILTER BERDASARKAN PERANAN
+        if(userPeranan.toUpperCase() === "STAF" && userJabatan) {
+            document.getElementById('tajukJadual').innerText = `(${userJabatan})`;
+        } else {
+            document.getElementById('tajukJadual').innerText = `(Semua Jabatan)`;
+            document.getElementById('divFilterJabatan').classList.remove('hidden');
+            document.getElementById('divFilterJabatan').classList.add('flex');
+        }
+
+        async function ambilData() {
+            const tbody = document.getElementById('isiJadual');
+            const paginationControls = document.getElementById('paginationControls');
+            
+            if(scriptURL.includes("MASUKKAN_URL")) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-red-600 font-bold">❌ Sila masukkan URL Web App yang sebenar.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = `<tr><td colspan="9" class="p-10 text-center font-semibold text-blue-500">⏳ Sedang menarik data pangkalan data...</td></tr>`;
+            paginationControls.innerHTML = '';
+
+            try {
+                const fetchUrl = scriptURL.includes('?') ? `${scriptURL}&action=ambilData` : `${scriptURL}?action=ambilData`;
+                const response = await fetch(fetchUrl);
+                
+                if (!response.ok) throw new Error("Akses ditolak (CORS) atau URL salah.");
+                
+                const rawText = await response.text(); 
+                let result;
+                
+                try {
+                    result = JSON.parse(rawText);
+                } catch(e) {
+                    throw new Error("Sistem tak dapat baca format data (Bukan JSON).");
+                }
+
+                let dataDariSheet = [];
+
+                if (Array.isArray(result) && result.length > 0 && typeof result[0] === 'object' && !Array.isArray(result[0])) {
+                    dataDariSheet = result.map((r, i) => [
+                        r.BIL || (i+1), r.INNOVATOR || "-", r.AHLI || "-", r.JABATAN || "-", 
+                        r.PRODUK || "-", r.NAMAPERTANDINGAN || "-", r.TARIKHTEMPATPERTANDINGAN || "-", 
+                        r.PINGAT || "-", r.TAHUN || "-"
+                    ]);
+                } else if (Array.isArray(result) && Array.isArray(result[0])) {
+                    dataDariSheet = result;
+                } else if (result.status === "BERJAYA" || result.status === "berjaya") {
+                    dataDariSheet = result.data || [];
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-red-600 font-bold">❌ Mesej Sistem: ${result.mesej || "Ralat tidak dapat dipastikan."}</td></tr>`;
+                    return;
+                }
+
+                if (dataDariSheet.length > 0) {
+                    if (userPeranan.toUpperCase() === "STAF" && userJabatan !== "") {
+                        dataDariSheet = dataDariSheet.filter(row => {
+                            const rekodJabatan = String(row[3] || "").trim().toUpperCase();
+                            const jabatanPilihan = String(userJabatan).trim().toUpperCase();
+                            return rekodJabatan === jabatanPilihan;
+                        });
+                    }
+
+                    if (dataDariSheet.length > 0) {
+                        semuaData = dataDariSheet;
+                        paparSemua(semuaData);
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-orange-600 font-bold">⚠️ Tiada rekod inovasi dijumpai untuk paparan anda.</td></tr>`;
+                        document.getElementById('bahagianAtas').classList.add('hidden');
+                    }
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-orange-600 font-bold">⚠️ Data Keseluruhan Kosong. Tiada rekod di Sheet INOVASI.</td></tr>`;
+                    document.getElementById('bahagianAtas').classList.add('hidden');
+                }
+
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-red-600 leading-relaxed">
+                    <p class="font-bold text-lg">⚠️ Ralat Rangkaian / Web App</p>
+                    <p class="text-xs mt-2 italic text-gray-500">Detail ralat: ${error.message}</p>
+                </td></tr>`;
+            }
+        }
+
+        function paparSemua(dataMasuk) {
+            document.getElementById('bahagianAtas').classList.remove('hidden');
+            binaFilter(dataMasuk);
+            tapisData();
+        }
+
+        function binaFilter(data) {
+            const dropTahun = document.getElementById('filterTahun');
+            const tahunUnik = [...new Set(data.map(r => r[8]).filter(t => t !== "" && t !== null && t !== undefined))].sort((a, b) => b - a);
+            const pilTahunAsal = dropTahun.value;
+            dropTahun.innerHTML = '<option value="Semua">Semua</option>';
+            tahunUnik.forEach(thn => { dropTahun.innerHTML += `<option value="${thn}">${thn}</option>`; });
+            if (tahunUnik.includes(Number(pilTahunAsal)) || pilTahunAsal === "Semua") dropTahun.value = pilTahunAsal;
+
+            if (userPeranan.toUpperCase() !== "STAF") {
+                const dropJabatan = document.getElementById('filterJabatan');
+                const jabatanUnik = [...new Set(data.map(r => String(r[3]).trim()).filter(j => j !== "" && j !== "-"))].sort();
+                const pilJabatanAsal = dropJabatan.value;
+                dropJabatan.innerHTML = '<option value="Semua">Semua</option>';
+                jabatanUnik.forEach(jab => { dropJabatan.innerHTML += `<option value="${jab}">${jab}</option>`; });
+                if (jabatanUnik.includes(pilJabatanAsal) || pilJabatanAsal === "Semua") dropJabatan.value = pilJabatanAsal;
+            }
+        }
+
+        function tapisData() {
+            const tahunDipilih = document.getElementById('filterTahun').value;
+            const jabatanDipilih = document.getElementById('filterJabatan') ? document.getElementById('filterJabatan').value : "Semua";
+            
+            let dataDitapis = semuaData;
+
+            if (tahunDipilih !== "Semua") {
+                dataDitapis = dataDitapis.filter(r => String(r[8]) === String(tahunDipilih));
+            }
+
+            if (jabatanDipilih !== "Semua" && userPeranan.toUpperCase() !== "STAF") {
+                dataDitapis = dataDitapis.filter(r => String(r[3]).trim().toUpperCase() === jabatanDipilih.toUpperCase());
+            }
+
+            dataSemasa = dataDitapis; 
+            currentPage = 1; 
+
+            kemaskiniJadual(dataDitapis);
+            kemaskiniStatistik(dataDitapis);
+            kemaskiniCarta(dataDitapis);
+        }
+
+        function kemaskiniJadual(data) {
+            const tbody = document.getElementById('isiJadual');
+            const paginationControls = document.getElementById('paginationControls');
+            tbody.innerHTML = "";
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-10 text-center text-gray-500 font-medium">Kosong. Tiada rekod inovasi dijumpai.</td></tr>`;
+                paginationControls.innerHTML = '';
+                return;
+            }
+
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const dataPaginasi = data.slice(startIndex, endIndex);
+
+            dataPaginasi.forEach((row, index) => {
+                const rowNum = row[0] || (startIndex + index + 1);
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-blue-50 transition text-sm";
+                tr.innerHTML = `
+                    <td class="p-4 font-bold text-gray-600">${rowNum}</td>
+                    <td class="p-4 font-semibold text-gray-800">${row[1] || '-'}</td>
+                    <td class="p-4 text-gray-600">${row[2] || '-'}</td>
+                    <td class="p-4 font-bold text-blue-700">${row[3] || '-'}</td>
+                    <td class="p-4 font-semibold">${row[4] || '-'}</td>
+                    <td class="p-4 text-gray-700">${row[5] || '-'}</td>
+                    <td class="p-4 text-xs text-gray-600">${row[6] || '-'}</td>
+                    <td class="p-4"><span class="px-3 py-1 rounded-full text-[11px] font-bold uppercase ${getPingatWarna(row[7])}">${row[7] || 'TIADA'}</span></td>
+                    <td class="p-4 font-mono font-bold">${row[8] || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            paparPagination(data.length);
+        }
+
+        function paparPagination(totalRows) {
+            const paginationControls = document.getElementById('paginationControls');
+            if (!paginationControls) return;
+
+            const totalPages = Math.ceil(totalRows / rowsPerPage);
+            const rekodMula = ((currentPage - 1) * rowsPerPage) + 1;
+            const rekodTamat = Math.min(currentPage * rowsPerPage, totalRows);
+            
+            let html = `
+                <span class="font-semibold text-gray-500">Papar <span class="text-blue-600">${rekodMula}</span> hingga <span class="text-blue-600">${rekodTamat}</span> dari <span class="text-gray-800">${totalRows}</span> rekod</span>
+                <div class="flex gap-2">
+                    <button onclick="tukarHalaman(-1)" class="px-4 py-1.5 bg-white border border-gray-300 hover:bg-gray-100 rounded shadow-sm font-bold text-gray-600 transition ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${currentPage === 1 ? 'disabled' : ''}>⬅️ Sblm</button>
+                    <span class="px-4 py-1.5 font-bold bg-blue-50 border border-blue-200 rounded text-blue-700 shadow-inner">${currentPage} / ${totalPages}</span>
+                    <button onclick="tukarHalaman(1)" class="px-4 py-1.5 bg-white border border-gray-300 hover:bg-gray-100 rounded shadow-sm font-bold text-gray-600 transition ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${currentPage === totalPages ? 'disabled' : ''}>Set ➡️</button>
+                </div>
+            `;
+            paginationControls.innerHTML = html;
+        }
+
+        function tukarHalaman(arah) {
+            const totalPages = Math.ceil(dataSemasa.length / rowsPerPage);
+            if ((arah === -1 && currentPage > 1) || (arah === 1 && currentPage < totalPages)) {
+                currentPage += arah;
+                kemaskiniJadual(dataSemasa); 
+            }
+        }
+
+        function getPingatWarna(pingat) {
+            if (!pingat) return "bg-gray-100 text-gray-800 border";
+            const p = String(pingat).toUpperCase();
+            if (p.includes("EMAS")) return "bg-yellow-100 text-yellow-800 border border-yellow-300";
+            if (p.includes("PERAK")) return "bg-gray-200 text-gray-800 border border-gray-400";
+            if (p.includes("GANGSA")) return "bg-orange-100 text-orange-800 border border-orange-300";
+            return "bg-blue-100 text-blue-800 border border-blue-200";
+        }
+
+        function kemaskiniStatistik(data) {
+            document.getElementById('statJumlah').innerText = data.length;
+            document.getElementById('statEmas').innerText = data.filter(r => String(r[7]).toUpperCase().includes("EMAS")).length;
+            document.getElementById('statPerak').innerText = data.filter(r => String(r[7]).toUpperCase().includes("PERAK")).length;
+            document.getElementById('statGangsa').innerText = data.filter(r => String(r[7]).toUpperCase().includes("GANGSA")).length;
+        }
+
+        function kemaskiniCarta(data) {
+            const rekodJabatan = {};
+            data.forEach(r => { let j = r[3] || "N/A"; rekodJabatan[j] = (rekodJabatan[j] || 0) + 1; });
+
+            const warnaBar = [
+                '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', 
+                '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16'
+            ];
+
+            if (jabatanChartInstance) jabatanChartInstance.destroy();
+            jabatanChartInstance = new Chart(document.getElementById('jabatanChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(rekodJabatan),
+                    datasets: [{ 
+                        label: 'Bilangan Projek', 
+                        data: Object.values(rekodJabatan), 
+                        backgroundColor: warnaBar,
+                        borderRadius: 4 
+                    }]
+                },
+                options: { 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } } 
+                }
+            });
+
+            const pCounts = { Emas: 0, Perak: 0, Gangsa: 0, Lain: 0 };
+            data.forEach(r => {
+                let p = String(r[7]).toUpperCase();
+                if(p.includes("EMAS")) pCounts.Emas++;
+                else if(p.includes("PERAK")) pCounts.Perak++;
+                else if(p.includes("GANGSA")) pCounts.Gangsa++;
+                else pCounts.Lain++;
+            });
+
+            if (pingatChartInstance) pingatChartInstance.destroy();
+            pingatChartInstance = new Chart(document.getElementById('pingatChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Emas', 'Perak', 'Gangsa', 'Sijil/Lain'],
+                    datasets: [{ data: [pCounts.Emas, pCounts.Perak, pCounts.Gangsa, pCounts.Lain], backgroundColor: ['#fbbf24', '#9ca3af', '#fb923c', '#cbd5e1'] }]
+                },
+                options: { maintainAspectRatio: false, cutout: '65%' }
+            });
+        }
+
+        function eksportCSV() {
+            if (!dataSemasa || dataSemasa.length === 0) {
+                alert("Tiada data untuk dieksport.");
+                return;
+            }
+
+            let csvContent = "BIL,INNOVATOR,AHLI KUMPULAN,JABATAN,PRODUK INOVASI,PERTANDINGAN,TARIKH & TEMPAT,PINGAT,TAHUN\n";
+
+            dataSemasa.forEach(row => {
+                let rowData = row.map(cell => {
+                    let teks = String(cell || "").replace(/"/g, '""'); 
+                    return `"${teks}"`; 
+                });
+                csvContent += rowData.join(",") + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", "Data_Inovasi_Eksport.csv");
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function logKeluar() {
+            sessionStorage.clear();
+            window.location.href = "login.html";
+        }
+
+        window.onload = ambilData;
+    </script>
+</body>
+</html>

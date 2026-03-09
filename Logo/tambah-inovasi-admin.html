@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambah Inovasi - Sistem Pintar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+    <script>
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Akses ditolak! Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-gray-100 p-6 font-sans">
+
+    <div class="max-w-6xl mx-auto">
+        <div class="mb-4">
+            <a href="dashboard.html" class="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold transition">
+                &larr; Kembali ke Paparan Utama
+            </a>
+        </div>
+
+        <div class="bg-white p-8 rounded-lg shadow-md">
+            <h1 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">➕ Tambah Rekod Inovasi</h1>
+
+            <div id="statusMesej" class="hidden mb-4 p-4 rounded text-center font-semibold border"></div>
+
+            <div id="tabMenu" class="flex mb-6 border-b max-w-3xl mx-auto">
+                <button id="btnTabManual" class="w-1/2 py-2 text-center font-semibold text-blue-600 border-b-2 border-blue-600 focus:outline-none">
+                    ✍️ Isi Manual
+                </button>
+                <button id="btnTabUpload" class="w-1/2 py-2 text-center font-semibold text-gray-500 hover:text-blue-600 focus:outline-none">
+                    📂 Muat Naik Fail (Excel/CSV)
+                </button>
+            </div>
+
+            <div id="bahagianManual" class="max-w-3xl mx-auto">
+                <div id="bahagianBorang">
+                    <form id="borangInovasi" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Nama Innovator Utama</label>
+                            <input type="text" name="innovator" required class="mt-1 block w-full border border-gray-300 rounded p-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Ahli Kumpulan (Pisahkan dengan koma)</label>
+                            <textarea name="ahli_kumpulan" rows="2" class="mt-1 block w-full border border-gray-300 rounded p-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Jabatan</label>
+                                <select name="jabatan" required class="mt-1 block w-full border border-gray-300 rounded p-2">
+                                    <option value="">Pilih Jabatan</option>
+                                    <option value="JKE">JKE</option>
+                                    <option value="JKA">JKA</option>
+                                    <option value="JKM">JKM</option>
+                                    <option value="JTMK">JTMK</option>
+                                    <option value="JMSK">JMSK</option>
+                                    <option value="JP">JP</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Tahun</label>
+                                <input type="number" name="tahun" required placeholder="Contoh: 2024" class="mt-1 block w-full border border-gray-300 rounded p-2">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Nama Produk Inovasi</label>
+                            <input type="text" name="produk" required class="mt-1 block w-full border border-gray-300 rounded p-2">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Tajuk Pertandingan</label>
+                            <input type="text" name="tajuk" required class="mt-1 block w-full border border-gray-300 rounded p-2">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Tarikh Pertandingan</label>
+                                <input type="date" id="inputTarikh" required class="mt-1 block w-full border border-gray-300 rounded p-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Tempat Pertandingan</label>
+                                <input type="text" id="inputTempat" required placeholder="Contoh: USIM, Nilai" class="mt-1 block w-full border border-gray-300 rounded p-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Pingat</label>
+                            <select name="pingat" required class="mt-1 block w-full border border-gray-300 rounded p-2">
+                                <option value="">Pilih Pingat</option>
+                                <option value="EMAS">Emas</option>
+                                <option value="PERAK">Perak</option>
+                                <option value="GANGSA">Gangsa</option>
+                                <option value="SIJIL">Sijil Penyertaan</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition mt-4">
+                            Semak Pratonton (Preview) &raquo;
+                        </button>
+                    </form>
+                </div>
+
+                <div id="bahagianPratonton" class="hidden">
+                    <div class="bg-gray-50 p-4 border border-gray-200 rounded-lg text-sm text-gray-800 mb-6">
+                        <p class="mb-2 text-gray-500 uppercase font-semibold text-xs tracking-wider">Sila pastikan maklumat di bawah tepat:</p>
+                        <table class="w-full text-left border-collapse">
+                            <tbody>
+                                <tr class="border-b"><th class="py-2 w-1/3 align-top">Innovator:</th><td class="py-2" id="prevInnovator"></td></tr>
+                                <tr class="border-b"><th class="py-2 align-top">Ahli Kumpulan:</th><td class="py-2" id="prevAhli"></td></tr>
+                                <tr class="border-b"><th class="py-2 align-top">Jabatan & Tahun:</th><td class="py-2" id="prevJabTahun"></td></tr>
+                                <tr class="border-b"><th class="py-2 align-top">Produk Inovasi:</th><td class="py-2" id="prevProduk"></td></tr>
+                                <tr class="border-b"><th class="py-2 align-top">Pertandingan:</th><td class="py-2" id="prevTajuk"></td></tr>
+                                <tr class="border-b"><th class="py-2 align-top">Tarikh & Tempat:</th><td class="py-2" id="prevTarikhTempat"></td></tr>
+                                <tr><th class="py-2 align-top">Pingat:</th><td class="py-2 font-bold text-blue-600" id="prevPingat"></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button id="btnKembaliEdit" class="w-full sm:w-1/3 bg-gray-500 text-white font-bold py-2 px-4 rounded hover:bg-gray-600 transition">
+                            &larr; Edit Semula
+                        </button>
+                        <button id="btnSahkanSimpan" class="w-full sm:w-2/3 bg-green-600 text-white font-bold py-2 px-4 rounded hover:bg-green-700 transition">
+                            Sahkan & Simpan Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bahagianUpload" class="hidden">
+                <div id="ruangMuatNaik" class="max-w-3xl mx-auto">
+                    <div class="bg-blue-50 p-4 rounded border border-blue-200 text-sm text-blue-800 mb-4">
+                        <p class="font-bold mb-1">💡 Arahan Muat Naik:</p>
+                        <p>Pastikan baris pertama fail mengandungi tajuk lajur yang tepat seperti: INNOVATOR, AHLI KUMPULAN, JABATAN, TAHUN, PRODUK INOVASI, TAJUK PERTANDINGAN, TARIKH & TEMPAT PERTANDINGAN, PINGAT.</p>
+                    </div>
+
+                    <input type="file" id="fileExcel" accept=".xlsx, .xls, .csv" class="block w-full border border-gray-300 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 mb-4 file:bg-gray-200 file:border-0 file:py-2 file:px-4 file:mr-4 file:hover:bg-gray-300">
+                    
+                    <button id="btnBacaFail" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition disabled:bg-gray-400">
+                        Baca Fail & Semak Data
+                    </button>
+                </div>
+
+                <div id="ruangPratontonUpload" class="hidden">
+                    <h3 class="font-bold text-gray-800 mb-2">Senarai Data Yang Akan Disimpan:</h3>
+                    
+                    <div class="overflow-x-auto bg-white border border-gray-300 rounded-lg shadow-sm mb-6 max-h-[600px]">
+                        <table class="min-w-full text-sm text-left">
+                            <thead class="bg-gray-800 text-white sticky top-0 z-10">
+                                <tr>
+                                    <th class="p-3 border-b whitespace-nowrap">Status</th>
+                                    <th class="p-3 border-b min-w-[150px]">Innovator</th>
+                                    <th class="p-3 border-b min-w-[200px]">Ahli Kumpulan</th>
+                                    <th class="p-3 border-b whitespace-nowrap">Jabatan</th>
+                                    <th class="p-3 border-b whitespace-nowrap">Tahun</th>
+                                    <th class="p-3 border-b min-w-[250px]">Produk Inovasi</th>
+                                    <th class="p-3 border-b min-w-[200px]">Tajuk Pertandingan</th>
+                                    <th class="p-3 border-b min-w-[200px]">Tarikh & Tempat</th>
+                                    <th class="p-3 border-b whitespace-nowrap">Pingat</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jadualPratontonUpload" class="divide-y divide-gray-200">
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 max-w-3xl mx-auto">
+                        <button id="btnBatalUpload" class="w-full sm:w-1/3 bg-gray-500 text-white font-bold py-2 px-4 rounded hover:bg-gray-600 transition">
+                            &larr; Batal & Pilih Fail Lain
+                        </button>
+                        <button id="btnHantarPukal" class="w-full sm:w-2/3 bg-green-600 text-white font-bold py-2 px-4 rounded hover:bg-green-700 transition disabled:bg-gray-400">
+                            Sahkan & Hantar Semua Rekod
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bahagianBerjaya" class="hidden text-center py-6">
+                <div class="text-6xl mb-4">🎉</div>
+                <h2 class="text-2xl font-bold text-green-700 mb-2">Rekod Berjaya Disimpan!</h2>
+                <p class="text-gray-600 mb-8">Data telah selamat dimasukkan ke dalam pangkalan data.</p>
+                
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button id="btnTambahLagi" class="bg-blue-100 text-blue-700 border border-blue-300 font-bold py-2 px-6 rounded hover:bg-blue-200 transition">
+                        + Tambah Rekod Lagi
+                    </button>
+                    <a href="dashboard.html" class="bg-blue-600 text-white font-bold py-2 px-6 rounded hover:bg-blue-700 transition">
+                        Kembali ke Paparan Utama &raquo;
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // MASUKKAN URL WEB APP ANDA DI SINI
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbz4J64Wx0guSdnH5b6bvywk82FbdWQ9TGaMa6-FF3a9YbVL9n5jWUXUuPD8kjLtP1ab/exec';
+        
+        let dataHantaranTerakhir = null; 
+        let dataPukalSediaHantar = []; 
+        let dataCacheSediaAda = JSON.parse(sessionStorage.getItem("cacheInovasi") || "[]");
+
+        const tabMenu = document.getElementById('tabMenu');
+        const btnTabManual = document.getElementById('btnTabManual');
+        const btnTabUpload = document.getElementById('btnTabUpload');
+        
+        const bahagianManual = document.getElementById('bahagianManual');
+        const bahagianUpload = document.getElementById('bahagianUpload');
+        const bahagianBerjaya = document.getElementById('bahagianBerjaya');
+        const statusMesej = document.getElementById('statusMesej');
+
+        btnTabManual.addEventListener('click', () => {
+            bahagianManual.classList.remove('hidden');
+            bahagianUpload.classList.add('hidden');
+            btnTabManual.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+            btnTabManual.classList.remove('text-gray-500');
+            btnTabUpload.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+            btnTabUpload.classList.add('text-gray-500');
+        });
+
+        btnTabUpload.addEventListener('click', () => {
+            bahagianUpload.classList.remove('hidden');
+            bahagianManual.classList.add('hidden');
+            btnTabUpload.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+            btnTabUpload.classList.remove('text-gray-500');
+            btnTabManual.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+            btnTabManual.classList.add('text-gray-500');
+        });
+
+        // ========================================================
+        // 1. LOGIK ISI MANUAL
+        // ========================================================
+        const form = document.getElementById('borangInovasi');
+        const bahagianBorang = document.getElementById('bahagianBorang');
+        const bahagianPratonton = document.getElementById('bahagianPratonton');
+        const btnKembaliEdit = document.getElementById('btnKembaliEdit');
+        const btnSahkanSimpan = document.getElementById('btnSahkanSimpan');
+
+        form.addEventListener('submit', e => {
+            e.preventDefault(); 
+            const formData = new FormData(form);
+            const tarikhMentah = document.getElementById('inputTarikh').value; 
+            const tempatMentah = document.getElementById('inputTempat').value;
+            
+            let gabunganTarikhTempat = "";
+            if (tarikhMentah) {
+                const bahagianTarikh = tarikhMentah.split('-');
+                const tarikhCantik = `${bahagianTarikh[2]}/${bahagianTarikh[1]}/${bahagianTarikh[0]}`;
+                gabunganTarikhTempat = `${tarikhCantik} @ ${tempatMentah}`;
+                formData.append('tarikh', gabunganTarikhTempat);
+            }
+            
+            dataHantaranTerakhir = formData; 
+
+            document.getElementById('prevInnovator').innerText = formData.get('innovator');
+            document.getElementById('prevAhli').innerText = formData.get('ahli_kumpulan') || '- Tiada -';
+            document.getElementById('prevJabTahun').innerText = `${formData.get('jabatan')} (${formData.get('tahun')})`;
+            document.getElementById('prevProduk').innerText = formData.get('produk');
+            document.getElementById('prevTajuk').innerText = formData.get('tajuk');
+            document.getElementById('prevTarikhTempat').innerText = gabunganTarikhTempat;
+            document.getElementById('prevPingat').innerText = formData.get('pingat');
+
+            bahagianBorang.classList.add('hidden');
+            bahagianPratonton.classList.remove('hidden');
+        });
+
+        btnKembaliEdit.addEventListener('click', () => {
+            bahagianPratonton.classList.add('hidden');
+            bahagianBorang.classList.remove('hidden');
+        });
+
+        btnSahkanSimpan.addEventListener('click', () => {
+            btnSahkanSimpan.disabled = true;
+            btnSahkanSimpan.innerHTML = '⏳ Sedang Menyimpan...';
+            
+            fetch(scriptURL, { 
+                method: 'POST', 
+                body: dataHantaranTerakhir 
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "berjaya") paparSkrinBerjaya();
+                else throw new Error(data.mesej || "Gagal menyimpan data.");
+            })
+            .catch(err => paparRalat(err, btnSahkanSimpan, 'Sahkan & Simpan Data'));
+        });
+
+        // ========================================================
+        // 2. LOGIK MUAT NAIK PUKAL (BULK UPLOAD)
+        // ========================================================
+        const fileExcel = document.getElementById('fileExcel');
+        const btnBacaFail = document.getElementById('btnBacaFail');
+        const ruangMuatNaik = document.getElementById('ruangMuatNaik');
+        const ruangPratontonUpload = document.getElementById('ruangPratontonUpload');
+        const jadualPratontonUpload = document.getElementById('jadualPratontonUpload');
+        const btnBatalUpload = document.getElementById('btnBatalUpload');
+        const btnHantarPukal = document.getElementById('btnHantarPukal');
+
+        btnBacaFail.addEventListener('click', () => {
+            const file = fileExcel.files[0];
+            if (!file) return alert("Sila pilih fail terlebih dahulu.");
+
+            btnBacaFail.innerHTML = '⏳ Sedang Membaca...';
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
+
+                    if(jsonData.length === 0) throw new Error("Fail kosong atau tiada data sah.");
+
+                    dataPukalSediaHantar = [];
+                    jadualPratontonUpload.innerHTML = "";
+
+                    jsonData.forEach((row) => {
+                        let rowBersih = {};
+                        for (let key in row) {
+                            let cleanKey = key.replace(/^\uFEFF/, '').trim().toUpperCase();
+                            rowBersih[cleanKey] = row[key];
+                        }
+
+                        let produkBaru = rowBersih['PRODUK INOVASI'] || rowBersih['PRODUK'] || '';
+                        let innovatorBaru = rowBersih['INNOVATOR'] || '';
+                        let ahliBaru = rowBersih['AHLI KUMPULAN'] || '';
+                        let jabatanBaru = rowBersih['JABATAN'] || '';
+                        let tahunBaru = rowBersih['TAHUN'] || '';
+                        let tajukBaru = rowBersih['TAJUK PERTANDINGAN'] || rowBersih['TAJUK'] || '';
+                        let tarikhBaru = rowBersih['TARIKH & TEMPAT PERTANDINGAN'] || rowBersih['TARIKH & TEMPAT'] || '';
+                        let pingatBaru = rowBersih['PINGAT'] || '';
+                        
+                        if(!produkBaru && !innovatorBaru) return;
+
+                        let statusTeks = '<span class="text-green-600 font-bold px-2 py-1 bg-green-100 rounded">✓ OK</span>';
+                        let isDuplicate = dataCacheSediaAda.some(dbRow => 
+                            dbRow.PRODUK && dbRow.PRODUK.trim().toLowerCase() === String(produkBaru).trim().toLowerCase()
+                        );
+
+                        if (isDuplicate) {
+                            statusTeks = '<span class="text-red-600 font-bold px-2 py-1 bg-red-100 rounded">⚠️ Wujud</span>';
+                        }
+
+                        dataPukalSediaHantar.push({
+                            innovator: innovatorBaru, ahli_kumpulan: ahliBaru, jabatan: jabatanBaru,
+                            tahun: tahunBaru, produk: produkBaru, tajuk: tajukBaru,
+                            tarikh: tarikhBaru, pingat: pingatBaru
+                        });
+
+                        jadualPratontonUpload.innerHTML += `
+                            <tr class="${isDuplicate ? 'bg-red-50' : 'hover:bg-gray-50'}">
+                                <td class="p-3 border-b whitespace-nowrap">${statusTeks}</td>
+                                <td class="p-3 border-b align-top">${innovatorBaru}</td>
+                                <td class="p-3 border-b align-top text-gray-500">${ahliBaru || '-'}</td>
+                                <td class="p-3 border-b align-top font-semibold text-center">${jabatanBaru}</td>
+                                <td class="p-3 border-b align-top text-center">${tahunBaru}</td>
+                                <td class="p-3 border-b align-top text-blue-700 font-medium">${produkBaru}</td>
+                                <td class="p-3 border-b align-top">${tajukBaru || '-'}</td>
+                                <td class="p-3 border-b align-top">${tarikhBaru || '-'}</td>
+                                <td class="p-3 border-b align-top font-bold">${pingatBaru}</td>
+                            </tr>
+                        `;
+                    });
+
+                    if(dataPukalSediaHantar.length === 0) throw new Error("Format lajur tidak tepat.");
+
+                    btnHantarPukal.innerHTML = `Sahkan & Hantar ${dataPukalSediaHantar.length} Rekod`;
+                    ruangMuatNaik.classList.add('hidden');
+                    ruangPratontonUpload.classList.remove('hidden');
+
+                } catch (error) {
+                    alert("Ralat memproses fail: " + error.message);
+                } finally {
+                    btnBacaFail.innerHTML = 'Baca Fail & Semak Data';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // 🟢 KOD YANG DIBUAT KEMASKINI (Hantar Menggunakan FormData)
+        btnHantarPukal.addEventListener('click', () => {
+            btnHantarPukal.disabled = true;
+            btnHantarPukal.innerHTML = '⏳ Menghantar Data ke Database...';
+            btnBatalUpload.disabled = true;
+
+            // Sediakan format FormData yang kukuh dan diterima Google Apps Script
+            var formData = new FormData();
+            formData.append("action", "bulk"); 
+            formData.append("data", JSON.stringify(dataPukalSediaHantar)); 
+
+            fetch(scriptURL, { 
+                method: 'POST', 
+                body: formData 
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "berjaya") {
+                    paparSkrinBerjaya();
+                } else {
+                    throw new Error(data.mesej);
+                }
+            })
+            .catch(err => paparRalat(err, btnHantarPukal, `Sahkan & Hantar ${dataPukalSediaHantar.length} Rekod`));
+        });
+
+        btnBatalUpload.addEventListener('click', () => {
+            fileExcel.value = "";
+            ruangPratontonUpload.classList.add('hidden');
+            ruangMuatNaik.classList.remove('hidden');
+        });
+
+        // ========================================================
+        // 3. FUNGSI UMUM UI
+        // ========================================================
+        function paparSkrinBerjaya() {
+            sessionStorage.removeItem("cacheInovasi"); 
+            statusMesej.classList.add('hidden');
+            tabMenu.classList.add('hidden');
+            bahagianManual.classList.add('hidden');
+            bahagianUpload.classList.add('hidden');
+            bahagianBerjaya.classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        function paparRalat(error, buttonObj, btnTextAsal) {
+            statusMesej.classList.remove('hidden');
+            statusMesej.className = 'bg-red-100 text-red-800 border-red-200 mb-4 p-4 rounded text-center font-semibold border';
+            statusMesej.innerText = "⚠️ Ralat: " + error.message;
+            buttonObj.disabled = false;
+            buttonObj.innerHTML = btnTextAsal;
+            if(buttonObj.id === 'btnHantarPukal') btnBatalUpload.disabled = false;
+            window.scrollTo(0, 0);
+        }
+
+        document.getElementById('btnTambahLagi').addEventListener('click', () => {
+            form.reset();
+            bahagianPratonton.classList.add('hidden');
+            bahagianBorang.classList.remove('hidden');
+            btnSahkanSimpan.disabled = false;
+            btnSahkanSimpan.innerHTML = 'Sahkan & Simpan Data';
+
+            fileExcel.value = "";
+            ruangPratontonUpload.classList.add('hidden');
+            ruangMuatNaik.classList.remove('hidden');
+            btnHantarPukal.disabled = false;
+            btnBatalUpload.disabled = false;
+
+            bahagianBerjaya.classList.add('hidden');
+            tabMenu.classList.remove('hidden');
+            btnTabManual.click(); 
+        });
+    </script>
+</body>
+</html>

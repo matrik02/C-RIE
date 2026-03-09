@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendaftaran Projek R&D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-teal-700 text-white shadow-md">
+        <div class="max-w-5xl mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-wide">📋 Pendaftaran Projek</h1>
+                <p class="text-teal-200 mt-1 text-sm">Borang Pendaftaran Maklumat Projek Penyelidikan & Inovasi</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <a href="e-daftar.html" class="bg-white text-teal-800 px-5 py-2.5 rounded-full font-bold shadow hover:bg-teal-50 transition flex items-center gap-2">
+                    &larr; Kembali ke e-Daftar
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-8 w-full flex-grow">
+        
+        <div id="statusMesej" class="hidden mb-6 p-4 rounded-xl text-center text-sm font-bold shadow-sm"></div>
+
+        <form id="borangProjek" class="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-gray-200 space-y-6">
+            
+            <div class="border-b pb-4 mb-4">
+                <h2 class="text-xl font-bold text-teal-800">Maklumat Projek</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Tajuk Projek <span class="text-red-500">*</span></label>
+                    <input type="text" id="tajuk" required placeholder="Sila masukkan tajuk projek" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Jabatan <span class="text-red-500">*</span></label>
+                    <select id="jabatan" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase bg-gray-50">
+                        <option value="">-- Pilih Jabatan --</option>
+                        <option value="JTMK">JTMK</option><option value="JKE">JKE</option><option value="JKA">JKA</option><option value="JKM">JKM</option><option value="JP">JP</option><option value="JPA">JPA</option><option value="JMSK">JMSK</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Tarikh Mula Projek <span class="text-red-500">*</span></label>
+                    <input type="date" id="tarikh_mula" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Tarikh Akhir Projek <span class="text-red-500">*</span></label>
+                    <input type="date" id="tarikh_akhir" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none">
+                </div>
+            </div>
+
+            <div class="border-b pb-4 mt-8 mb-4">
+                <h2 class="text-xl font-bold text-teal-800">Maklumat Penyelidik</h2>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Nama Ketua Projek <span class="text-red-500">*</span></label>
+                <input type="text" id="ketua_projek" required placeholder="Nama penuh ketua projek" class="w-full px-4 py-2 border border-teal-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase bg-teal-50">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Nama Ahli 1</label><input type="text" id="ahli_1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Nama Ahli 2</label><input type="text" id="ahli_2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Nama Ahli 3</label><input type="text" id="ahli_3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Nama Ahli 4</label><input type="text" id="ahli_4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Nama Ahli 5</label><input type="text" id="ahli_5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase"></div>
+            </div>
+
+            <div class="border-b pb-4 mt-8 mb-4">
+                <h2 class="text-xl font-bold text-teal-800">Muat Naik Dokumen</h2>
+            </div>
+
+            <div class="space-y-4">
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Link Borang Maklumat Penyelidikan <span class="text-red-500">*</span></label><input type="url" id="url_maklumat" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Link Borang Proposal <span class="text-red-500">*</span></label><input type="url" id="url_proposal" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"></div>
+            </div>
+
+            <div class="pt-6 border-t mt-8 flex justify-end gap-3">
+                <button type="button" onclick="document.getElementById('borangProjek').reset()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg transition">Set Semula</button>
+                <button type="submit" id="btnHantar" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition">Hantar Pendaftaran</button>
+            </div>
+
+        </form>
+    </main>
+
+    <script>
+        // ⚠️ MASUKKAN URL APP SCRIPT ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+        
+        const perananSesi = (sessionStorage.getItem("peranan") || "").toUpperCase();
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const userJabatan = sessionStorage.getItem("jabatan");
+            if(userJabatan) {
+                const elJabatan = document.getElementById("jabatan");
+                elJabatan.value = userJabatan;
+                
+                // Jika STAF, kunci kotak jabatan
+                if (perananSesi === "STAF") {
+                    elJabatan.classList.add('bg-gray-200');
+                    elJabatan.style.pointerEvents = "none";
+                }
+            }
+        });
+
+        document.getElementById('borangProjek').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnHantar');
+            const mesej = document.getElementById('statusMesej');
+            
+            btn.disabled = true; btn.innerHTML = 'Menyimpan... ⏳'; mesej.classList.add('hidden');
+
+            // Tetapkan status berdasarkan peranan
+            const statusDihantar = (perananSesi === "PENYELARAS INOVASI" || perananSesi === "PENYELARAS PENYELIDIKAN" || perananSesi === "ADMIN") 
+                                    ? "DISAHKAN" : "MENUNGGU PENGESAHAN";
+
+            const payloadData = {
+                action: "tambahPendaftaranProjek",
+                TAJUK: document.getElementById('tajuk').value.toUpperCase(),
+                JABATAN: document.getElementById('jabatan').value,
+                TARIKH_MULA: document.getElementById('tarikh_mula').value,
+                TARIKH_AKHIR: document.getElementById('tarikh_akhir').value,
+                KETUA: document.getElementById('ketua_projek').value.toUpperCase(),
+                AHLI_1: document.getElementById('ahli_1').value.toUpperCase(),
+                AHLI_2: document.getElementById('ahli_2').value.toUpperCase(),
+                AHLI_3: document.getElementById('ahli_3').value.toUpperCase(),
+                AHLI_4: document.getElementById('ahli_4').value.toUpperCase(),
+                AHLI_5: document.getElementById('ahli_5').value.toUpperCase(),
+                URL_MAKLUMAT: document.getElementById('url_maklumat').value,
+                URL_PROPOSAL: document.getElementById('url_proposal').value,
+                STATUS: statusDihantar // Hantar status
+            };
+
+            fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payloadData) })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'BERJAYA') {
+                    mesej.className = 'mb-6 p-4 rounded-xl text-center text-sm font-bold bg-green-100 text-green-800 border border-green-200';
+                    mesej.innerText = `✅ Berjaya! Status pendaftaran: ${statusDihantar}`;
+                    document.getElementById('borangProjek').reset();
+                } else {
+                    mesej.className = 'mb-6 p-4 rounded-xl text-center text-sm font-bold bg-red-100 text-red-800 border border-red-200';
+                    mesej.innerText = "❌ Ralat: " + data.mesej;
+                }
+                mesej.classList.remove('hidden'); btn.disabled = false; btn.innerHTML = 'Hantar Pendaftaran'; window.scrollTo(0, 0);
+            }).catch(error => {
+                mesej.className = 'mb-6 p-4 rounded-xl text-center text-sm font-bold bg-red-100 text-red-800 border border-red-200';
+                mesej.innerText = "⚠️ Gagal menghubungi pangkalan data.";
+                mesej.classList.remove('hidden'); btn.disabled = false; btn.innerHTML = 'Hantar Pendaftaran'; window.scrollTo(0, 0);
+            });
+        });
+    </script>
+</body>
+</html>

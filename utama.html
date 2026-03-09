@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Penyelidikan & Inovasi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Efek scrollbar nipis untuk nampak lebih premium */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* Smooth scroll untuk anchor links */
+        html { scroll-behavior: smooth; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans flex flex-col md:flex-row min-h-screen overflow-hidden">
+
+    <aside class="w-full md:w-80 bg-blue-900 text-white flex flex-col shadow-2xl z-20 flex-shrink-0 md:h-screen md:sticky top-0">
+        
+        <div class="p-6 text-center md:text-left border-b border-blue-800 bg-blue-950">
+            <h1 class="text-xl md:text-2xl font-extrabold tracking-wide text-white flex items-center justify-center md:justify-start gap-3">
+                <span class="text-2xl">🚀</span> Portal R&I
+            </h1>
+            <p class="text-blue-300 text-xs mt-2 font-medium">Pusat Akses Berpusat Modul</p>
+        </div>
+
+        <div class="p-6 flex-grow flex flex-col items-center md:items-start gap-4">
+            
+            <a href="login.html" id="btnLogMasuk" class="w-full bg-yellow-400 text-blue-900 px-4 py-2.5 rounded-lg font-bold shadow-md hover:bg-yellow-300 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5 text-sm">
+                🔒 Log Masuk Utama
+            </a>
+            
+            <button onclick="logKeluar()" id="btnLogKeluar" class="hidden w-full bg-red-500 text-white px-4 py-2.5 rounded-lg font-bold shadow-md hover:bg-red-600 transition-all items-center justify-center gap-2 transform hover:-translate-y-0.5 text-sm">
+                🚪 Log Keluar
+            </button>
+
+            <div id="infoPengguna" class="hidden w-full mt-2 bg-blue-800 rounded-xl p-4 border border-blue-700 shadow-inner text-center md:text-left relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 text-5xl opacity-10">👤</div>
+                <p class="text-blue-200 text-[10px] font-bold uppercase tracking-wider mb-1">Selamat Datang,</p>
+                <p id="paparNama" class="font-bold text-yellow-300 text-base leading-tight truncate"></p>
+                <div class="mt-2 pt-2 border-t border-blue-700">
+                    <p class="text-[11px] text-blue-100">Peranan: <span id="paparPeranan" class="font-bold uppercase text-white"></span></p>
+                    <p class="text-[11px] text-blue-100 mt-0.5">Jabatan: <span id="paparJabatan" class="font-bold uppercase text-white"></span></p>
+                </div>
+            </div>
+
+            <nav class="w-full mt-4 space-y-2 border-t border-blue-800 pt-5">
+                <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-2 px-2">Menu Pantas</p>
+                
+                <a href="#seksyen-organisasi" class="w-full flex items-center gap-3 bg-blue-800 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg transition-all text-xs font-semibold shadow-sm border border-transparent hover:border-blue-600">
+                    🏢 Carta Organisasi
+                </a>
+                
+                <a href="kemaskini-penyelaras.html" id="btnSidePenyelaras" class="hidden w-full items-center gap-3 bg-blue-800 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg transition-all text-xs font-semibold shadow-sm border border-transparent hover:border-blue-600">
+                    👥 Senarai Penyelaras
+                </a>
+                
+                <a href="pengurusan-data.html" id="btnSidePengurusan" class="hidden w-full items-center gap-3 bg-blue-800 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg transition-all text-xs font-semibold shadow-sm border border-transparent hover:border-blue-600">
+                    ⚙️ Pengurusan Data
+                </a>
+            </nav>
+        </div>
+
+        <footer class="p-4 text-center text-blue-400 text-[10px] border-t border-blue-800 bg-blue-950">
+            &copy; 2024 Sistem R&I
+        </footer>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto bg-slate-50 relative">
+        
+        <div class="p-4 md:p-8 max-w-7xl mx-auto w-full">
+            
+            <section id="seksyen-organisasi" class="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col items-center scroll-mt-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    👥 Carta Organisasi
+                </h2>
+                <div class="border-4 border-slate-100 rounded-xl overflow-hidden bg-gray-50 shadow-inner transition transform hover:scale-[1.02] duration-300 w-full max-w-lg">
+                    <a href="organisasi/carta.jpeg" target="_blank" title="Klik untuk besarkan carta">
+                        <img src="organisasi/carta.jpeg" alt="Carta Organisasi" class="w-full h-auto object-contain cursor-pointer" onerror="this.onerror=null; this.src='https://via.placeholder.com/600x200?text=Sila+Upload+Gambar+Carta+Organisasi';">
+                    </a>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-3 font-semibold uppercase tracking-widest">👆 Klik gambar untuk lihat saiz penuh</p>
+            </section>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <section class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden flex flex-col h-full transform transition hover:shadow-lg">
+                    <div class="bg-emerald-600 text-white p-4 flex items-center gap-3">
+                        <div class="bg-white bg-opacity-20 p-2 rounded-lg text-xl">🔬</div>
+                        <h2 class="text-xl font-bold uppercase tracking-wider">Penyelidikan</h2>
+                    </div>
+                    
+                    <div class="p-5 flex-grow flex flex-col gap-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <a href="#" onclick="aksesModul(event, 'penerbitan.html')" class="group bg-emerald-50 hover:bg-emerald-600 border border-emerald-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-2xl group-hover:scale-110 transition-transform">📚</span>
+                                <span class="font-bold text-emerald-800 group-hover:text-white text-xs">Penerbitan</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'kik.html')" class="group bg-emerald-50 hover:bg-emerald-600 border border-emerald-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-2xl group-hover:scale-110 transition-transform">💡</span>
+                                <span class="font-bold text-emerald-800 group-hover:text-white text-xs">KIK</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'e-daftar.html')" class="group col-span-2 bg-teal-50 hover:bg-teal-600 border border-teal-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-row items-center justify-center gap-2 hover:shadow-md">
+                                <span class="text-2xl group-hover:scale-110 transition-transform">📝</span>
+                                <span class="font-bold text-teal-800 group-hover:text-white text-sm">e-Daftar R&D</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'dashboard.html')" class="group bg-slate-50 hover:bg-emerald-600 border border-slate-200 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-2xl group-hover:scale-110 transition-transform">📊</span>
+                                <span class="font-bold text-slate-700 group-hover:text-white text-xs">Dashboard</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'dashboard-kpi.html')" class="group bg-slate-50 hover:bg-emerald-600 border border-slate-200 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-2xl group-hover:scale-110 transition-transform">📈</span>
+                                <span class="font-bold text-slate-700 group-hover:text-white text-xs">KPI</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-slate-50 border-t border-gray-100">
+                        <a href="pengurusan-data.html" id="btnPengurusanPenyelidikan" class="hidden w-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 text-white font-bold py-2.5 px-4 rounded-lg shadow-sm transition items-center justify-center gap-2 text-sm">
+                            ⚙️ Pengurusan Penyelidikan
+                        </a>
+                    </div>
+                </section>
+
+                <section class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden flex flex-col h-full transform transition hover:shadow-lg">
+                    <div class="bg-purple-600 text-white p-4 flex items-center gap-3">
+                        <div class="bg-white bg-opacity-20 p-2 rounded-lg text-xl">🚀</div>
+                        <h2 class="text-xl font-bold uppercase tracking-wider">Inovasi</h2>
+                    </div>
+                    
+                    <div class="p-5 flex-grow flex flex-col gap-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <a href="#" onclick="aksesModul(event, 'projek_pelajar.html')" class="group bg-purple-50 hover:bg-purple-600 border border-purple-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-2xl group-hover:scale-110 transition-transform">🎓</span>
+                                <span class="font-bold text-purple-800 group-hover:text-white text-xs">Projek Pelajar</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'geran.html')" class="group bg-purple-50 hover:bg-purple-600 border border-purple-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-2xl group-hover:scale-110 transition-transform">💰</span>
+                                <span class="font-bold text-purple-800 group-hover:text-white text-xs">Geran</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'komersilan.html')" class="group bg-purple-50 hover:bg-purple-600 border border-purple-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-2xl group-hover:scale-110 transition-transform">💎</span>
+                                <span class="font-bold text-purple-800 group-hover:text-white text-xs">Komersilan</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'hartaintelek.html')" class="group bg-purple-50 hover:bg-purple-600 border border-purple-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-2xl group-hover:scale-110 transition-transform">©️</span>
+                                <span class="font-bold text-purple-800 group-hover:text-white text-xs">Harta Intelek</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'senarai-pertandingan.html')" class="group col-span-2 bg-pink-50 hover:bg-pink-600 border border-pink-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-row items-center justify-center gap-2 hover:shadow-md">
+                                <span class="text-2xl group-hover:scale-110 transition-transform">🏆</span>
+                                <span class="font-bold text-pink-800 group-hover:text-white text-sm">Senarai Pertandingan</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'dashboard.html')" class="group bg-slate-50 hover:bg-purple-600 border border-slate-200 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-2xl group-hover:scale-110 transition-transform">📊</span>
+                                <span class="font-bold text-slate-700 group-hover:text-white text-xs">Dashboard</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'dashboard-kpi.html')" class="group bg-slate-50 hover:bg-purple-600 border border-slate-200 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-2xl group-hover:scale-110 transition-transform">📈</span>
+                                <span class="font-bold text-slate-700 group-hover:text-white text-xs">KPI</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-slate-50 border-t border-gray-100">
+                        <a href="pengurusan-data.html" id="btnPengurusanInovasi" class="hidden w-full bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-700 hover:to-indigo-600 text-white font-bold py-2.5 px-4 rounded-lg shadow-sm transition items-center justify-center gap-2 text-sm">
+                            ⚙️ Pengurusan Inovasi
+                        </a>
+                    </div>
+                </section>
+                
+            </div>
+            
+            <div class="mt-8 text-center text-slate-400 text-xs pb-6">
+                Sistem Pengurusan Inovasi & Penyelidikan versi 2.0
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // FUNGSI 1: KAWALAN LOG MASUK & PAPARAN PROFIL
+        window.onload = function() {
+            const sudahLogin = sessionStorage.getItem("userLulus") === "YA";
+            const perananPengguna = (sessionStorage.getItem("peranan") || "").toUpperCase();
+
+            // Jika pengguna sudah login
+            if (sudahLogin) {
+                // Sembunyikan butang Log Masuk, Tunjukkan butang Log Keluar
+                document.getElementById('btnLogMasuk').classList.add('hidden');
+                document.getElementById('btnLogKeluar').classList.remove('hidden');
+                document.getElementById('btnLogKeluar').classList.add('flex');
+
+                // Paparkan maklumat peranan & jabatan
+                document.getElementById('paparNama').innerText = sessionStorage.getItem("namaPengguna") || "Pengguna";
+                document.getElementById('paparPeranan').innerText = perananPengguna;
+                document.getElementById('paparJabatan').innerText = sessionStorage.getItem("jabatan") || "";
+                
+                document.getElementById('infoPengguna').classList.remove('hidden');
+                
+                // ==============================================================
+                // FUNGSI 2: AKTIFKAN BUTANG PENGURUSAN (MAIN & SIDEBAR)
+                // ==============================================================
+                if (perananPengguna === "PENYELARAS INOVASI" || perananPengguna === "PENYELARAS PENYELIDIKAN" || perananPengguna === "ADMIN") {
+                    
+                    // Butang di kandungan Utama
+                    const btnPenyelidikan = document.getElementById('btnPengurusanPenyelidikan');
+                    const btnInovasi = document.getElementById('btnPengurusanInovasi');
+                    if (btnPenyelidikan) { btnPenyelidikan.classList.remove('hidden'); btnPenyelidikan.classList.add('flex'); }
+                    if (btnInovasi) { btnInovasi.classList.remove('hidden'); btnInovasi.classList.add('flex'); }
+
+                    // Butang di Sidebar
+                    const btnSidePenyelaras = document.getElementById('btnSidePenyelaras');
+                    const btnSidePengurusan = document.getElementById('btnSidePengurusan');
+                    if (btnSidePenyelaras) { btnSidePenyelaras.classList.remove('hidden'); btnSidePenyelaras.classList.add('flex'); }
+                    if (btnSidePengurusan) { btnSidePengurusan.classList.remove('hidden'); btnSidePengurusan.classList.add('flex'); }
+                }
+            }
+        };
+
+        // Fungsi Pintar: Semak status apabila kotak modul ditekan
+        function aksesModul(event, sasaranURL) {
+            event.preventDefault(); // Halang butang dari terus 'jump'
+            const sudahLogin = sessionStorage.getItem("userLulus") === "YA";
+
+            if (sudahLogin) {
+                window.location.href = sasaranURL;
+            } else {
+                alert("Sila log masuk terlebih dahulu untuk mengakses modul ini.");
+                window.location.href = "login.html";
+            }
+        }
+
+        // Fungsi Log Keluar
+        function logKeluar() {
+            sessionStorage.clear(); // Padam memori login
+            window.location.reload(); // Refresh halaman
+        }
+    </script>
+
+</body>
+</html>
