@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pengurusan Sijil Inovasi</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; }
+    .table-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    #loader { display: none; text-align: center; margin: 20px 0; }
+  </style>
+</head>
+<body>
+
+<script>
+    // 1. DAPATKAN MAKLUMAT LOGIN DARI SESSION
+    const userPeranan = sessionStorage.getItem("peranan") || "";
+    const perananUpper = userPeranan.toUpperCase();
+    const jabatanPengguna = sessionStorage.getItem("jabatan") || "";
+    
+    // Tentukan siapa Admin/Pengurus Sijil
+    const isPengurusSijil = perananUpper.includes("INOVASI") || perananUpper === "KUPIK" || perananUpper === "ADMIN";
+
+    // Semua yang dah login (termasuk STAF) boleh masuk, tapi jika tak login, tendang ke luar
+    if (sessionStorage.getItem("userLulus") !== "YA") {
+        alert("Sila log masuk terlebih dahulu.");
+        window.location.href = "index.html"; // Tukar ke fail login sebenar anda
+    }
+</script>
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Pengurusan <span class="text-success">Sijil Inovasi</span></h3>
+    <div>
+      <a href="utama.html" class="btn btn-secondary me-2">🏠 Utama</a>
+      <a href="dashboard.html" class="btn btn-primary">⬅ Kembali ke Dashboard</a>
+    </div>
+  </div>
+
+  <div class="row mb-3 bg-white p-3 rounded shadow-sm border">
+    <div class="col-md-6">
+      <label class="form-label fw-bold">Tapis Jabatan:</label>
+      <select id="filterJabatan" class="form-select" onchange="tapisData()">
+        <option value="SEMUA">Semua Jabatan</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label fw-bold">Tapis Tahun:</label>
+      <select id="filterTahun" class="form-select" onchange="tapisData()">
+        <option value="SEMUA">Semua Tahun</option>
+      </select>
+    </div>
+  </div>
+  
+  <div id="loader">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p>Sedang memuat turun data...</p>
+  </div>
+
+  <div class="table-container table-responsive">
+    <table class="table table-bordered table-hover mt-3" id="jadualInovasi">
+      <thead class="table-dark">
+        <tr>
+          <th>Bil</th>
+          <th>Innovator</th>
+          <th>Jabatan</th>
+          <th>Produk</th>
+          <th>Pertandingan</th>
+          <th>Tahun</th>
+          <th>Status Sijil</th>
+          <th>Tindakan</th>
+        </tr>
+      </thead>
+      <tbody id="bodyJadual">
+        </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="modalUpload" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Muat Naik Sijil Penghargaan</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formUploadSijil">
+          <input type="hidden" id="uploadBil">
+          <input type="hidden" id="uploadTahun">
+          <input type="hidden" id="uploadJabatan">
+          
+          <div class="mb-3">
+            <label class="form-label fw-bold">Pilih Fail Sijil (PDF/Gambar):</label>
+            <input class="form-control" type="file" id="failSijil" accept=".pdf, image/*" required>
+            <small class="text-muted mt-1 d-block">Sijil akan disimpan dalam folder INOVASI > Tahun > Jabatan</small>
+          </div>
+          <button type="submit" class="btn btn-primary w-100" id="btnUpload">Mula Muat Naik</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec"; 
+  let dataInovasiLulus = []; 
+  const modalUploadEl = new bootstrap.Modal(document.getElementById('modalUpload'));
+
+  window.onload = loadData;
+
+  function loadData() {
+    document.getElementById("loader").style.display = "block";
+    document.getElementById("bodyJadual").innerHTML = "";
+
+    fetch(SCRIPT_URL + "?action=ambilData")
+      .then(res => res.json())
+      .then(response => {
+        document.getElementById("loader").style.display = "none";
+        if (response.status === "BERJAYA") {
+          // Ambil data yang disahkan
+          let senaraiAsal = response.data.filter(rekod => rekod[9] === "DISAHKAN");
+          
+          // 2. TAPISAN DATA BERDASARKAN PERANAN (STAF HANYA LIHAT JABATAN SENDIRI)
+          if (!isPengurusSijil && perananUpper === "STAF") {
+              dataInovasiLulus = senaraiAsal.filter(rekod => rekod[3] === jabatanPengguna);
+          } else {
+              dataInovasiLulus = senaraiAsal; // Admin/Penyelaras lihat semua
+          }
+          
+          binaFilter(dataInovasiLulus);
+          tapisData();
+        } else {
+          alert("Gagal mengambil data.");
+        }
+      })
+      .catch(err => {
+        document.getElementById("loader").style.display = "none";
+        alert("Ralat server: " + err.message);
+      });
+  }
+
+  function binaFilter(data) {
+    let setJabatan = new Set();
+    let setTahun = new Set();
+    
+    data.forEach(r => {
+      if(r[3]) setJabatan.add(r[3]); 
+      if(r[8]) setTahun.add(r[8]);   
+    });
+
+    let selectJabatan = document.getElementById("filterJabatan");
+    let selectTahun = document.getElementById("filterTahun");
+
+    selectJabatan.innerHTML = '<option value="SEMUA">Semua Jabatan</option>';
+    selectTahun.innerHTML = '<option value="SEMUA">Semua Tahun</option>';
+
+    setJabatan.forEach(jab => selectJabatan.innerHTML += `<option value="${jab}">${jab}</option>`);
+    setTahun.forEach(thn => selectTahun.innerHTML += `<option value="${thn}">${thn}</option>`);
+
+    // Jika Staf login, kunci dropdown jabatan kepada jabatan dia sahaja
+    if (!isPengurusSijil && perananUpper === "STAF") {
+        selectJabatan.value = jabatanPengguna;
+        selectJabatan.disabled = true;
+    }
+  }
+
+  function tapisData() {
+    let fJabatan = document.getElementById("filterJabatan").value;
+    let fTahun = document.getElementById("filterTahun").value;
+    
+    let dataDitapis = dataInovasiLulus.filter(r => {
+      let passJabatan = (fJabatan === "SEMUA" || r[3] == fJabatan);
+      let passTahun = (fTahun === "SEMUA" || String(r[8]) == fTahun);
+      return passJabatan && passTahun;
+    });
+
+    binaJadual(dataDitapis);
+  }
+
+  function binaJadual(data) {
+    let tbody = document.getElementById("bodyJadual");
+    tbody.innerHTML = "";
+
+    if (data.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='8' class='text-center'>Tiada rekod inovasi ditemui.</td></tr>";
+      return;
+    }
+
+    data.forEach(rekod => {
+      let tr = document.createElement("tr");
+      
+      let linkSijil = rekod[10] || ""; // Index 10 ialah lajur K (SIJIL)
+      let statusSijil = linkSijil ? `<span class="badge bg-success">Tersedia</span>` : `<span class="badge bg-secondary">Belum Dimuat Naik</span>`;
+      
+      let butangAksi = "";
+
+      // 3. LOGIK PAPARAN BUTANG BERDASARKAN PERANAN
+      if (isPengurusSijil) {
+          // ADMIN / KUPIK / PENYELARAS boleh buat semua
+          if (!linkSijil) {
+            butangAksi = `<button class="btn btn-primary btn-sm" onclick="bukaModalUpload('${rekod[0]}', '${rekod[8]}', '${rekod[3]}')">⬆ Upload Sijil</button>`;
+          } else {
+            butangAksi = `
+              <div class="d-flex gap-1">
+                <a href="${linkSijil}" target="_blank" class="btn btn-success btn-sm">⬇ Download</a>
+                <button class="btn btn-warning btn-sm" onclick="bukaModalUpload('${rekod[0]}', '${rekod[8]}', '${rekod[3]}')">🔄 Tukar Sijil</button>
+              </div>
+            `;
+          }
+      } else {
+          // STAF HANYA boleh download jika sijil ada
+          if (linkSijil) {
+              butangAksi = `<a href="${linkSijil}" target="_blank" class="btn btn-success btn-sm">⬇ Download Sijil</a>`;
+          } else {
+              butangAksi = `<span class="text-muted small">Menunggu Sijil</span>`;
+          }
+      }
+
+      tr.innerHTML = `
+        <td>${rekod[0]}</td>
+        <td>${rekod[1]}</td>
+        <td>${rekod[3]}</td>
+        <td>${rekod[4]}</td>
+        <td>${rekod[5]}</td>
+        <td>${rekod[8]}</td>
+        <td>${statusSijil}</td>
+        <td>${butangAksi}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function bukaModalUpload(bil, tahun, jabatan) {
+    document.getElementById("uploadBil").value = bil;
+    document.getElementById("uploadTahun").value = tahun;
+    document.getElementById("uploadJabatan").value = jabatan;
+    document.getElementById("failSijil").value = ""; 
+    modalUploadEl.show();
+  }
+
+  document.getElementById("formUploadSijil").addEventListener("submit", function(e) {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('failSijil');
+    const file = fileInput.files[0];
+    if (!file) return alert("Sila pilih fail dahulu!");
+
+    const btn = document.getElementById("btnUpload");
+    btn.innerText = "Sila tunggu... (Sedang memuat naik)";
+    btn.disabled = true;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const base64Data = event.target.result.split(',')[1];
+      
+      const payload = {
+        action: "uploadSijilInovasi",
+        bil: document.getElementById('uploadBil').value,
+        tahun: document.getElementById('uploadTahun').value,
+        jabatan: document.getElementById('uploadJabatan').value,
+        namaFail: file.name,
+        mimeType: file.type,
+        data: base64Data
+      };
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: { "Content-Type": "text/plain;charset=utf-8" }
+      })
+      .then(res => res.json())
+      .then(response => {
+        btn.innerText = "Mula Muat Naik";
+        btn.disabled = false;
+        
+        if (response.status === "BERJAYA") {
+          alert("Berjaya: Sijil telah diupload!");
+          modalUploadEl.hide();
+          loadData(); 
+        } else {
+          alert("Ralat: " + response.mesej);
+        }
+      })
+      .catch(err => {
+        btn.innerText = "Mula Muat Naik";
+        btn.disabled = false;
+        alert("Ralat pelayan: Gagal memuat naik fail. Sila cuba fail bersaiz lebih kecil.");
+      });
+    };
+    
+    reader.readAsDataURL(file); 
+  });
+
+</script>
+</body>
+</html>

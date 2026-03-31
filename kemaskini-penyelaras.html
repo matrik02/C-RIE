@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengurusan Penyelaras & Pengguna</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        // KAWALAN AKSES KETAT KHAS UNTUK PENGURUSAN SAHAJA
+        const userLulus = sessionStorage.getItem("userLulus") || "";
+        const userPeranan = (sessionStorage.getItem("peranan") || "").toUpperCase();
+        
+        // PENTING: Tangkap IC & Nama Pengguna untuk perbandingan Failsafe
+        const rawIC = sessionStorage.getItem("ic") || sessionStorage.getItem("noIC") || sessionStorage.getItem("NO_IC") || sessionStorage.getItem("no_ic") || ""; 
+        const userICSemasa = String(rawIC).trim();
+        
+        const rawNama = sessionStorage.getItem("namaPengguna") || sessionStorage.getItem("nama") || "";
+        const userNamaSemasa = String(rawNama).toUpperCase().trim();
+
+        if (userLulus !== "YA") {
+            alert("Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        } else if (
+            userPeranan !== "PENYELARAS INOVASI" && 
+            userPeranan !== "PENYELARAS PENYELIDIKAN" && 
+            userPeranan !== "KUPIK" && 
+            userPeranan !== "ADMIN"
+        ) {
+            alert("🛑 Akses Ditolak! Modul ini hanya untuk pihak pengurusan sahaja.");
+            window.location.href = "utama.html"; 
+        }
+    </script>
+</head>
+<body class="bg-slate-100 p-4 md:p-6 font-sans text-gray-800 min-h-screen">
+
+    <div class="max-w-7xl mx-auto">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-indigo-900 flex items-center gap-2">
+                    <span>👥</span> Pengurusan Pengguna Sistem
+                </h1>
+                <p class="text-sm text-gray-500 mt-1">Urus peranan, jabatan, dan akses pengguna</p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+                <button onclick="muatTurunCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2">
+                    📥 Download CSV
+                </button>
+                <button onclick="bukaModalDaftar()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2">
+                    ➕ Daftar Pengguna Baru
+                </button>
+                <a href="pengurusan-data.html" class="bg-slate-600 hover:bg-slate-700 text-white px-5 py-2 rounded-lg text-sm font-bold shadow transition">
+                    &larr; Kembali
+                </a>
+            </div>
+        </div>
+
+        <div id="statusMesejUtama" class="hidden mb-4 p-4 rounded-lg text-center text-sm font-bold shadow-sm border"></div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm border-collapse">
+                    <thead>
+                        <tr class="bg-indigo-50 text-indigo-900 border-b border-indigo-100">
+                            <th class="p-4 font-bold text-center w-12">BIL</th>
+                            <th class="p-4 font-bold">NO. IC / ID</th>
+                            <th class="p-4 font-bold">NAMA PENUH</th>
+                            <th class="p-4 font-bold text-center">JABATAN</th>
+                            <th class="p-4 font-bold text-center">PERANAN</th>
+                            <th class="p-4 font-bold text-center">BAHAGIAN</th>
+                            <th class="p-4 font-bold text-center">STATUS</th>
+                            <th class="p-4 font-bold text-center w-56">TINDAKAN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiJadualPengguna" class="divide-y divide-gray-100">
+                        <tr><td colspan="8" class="p-8 text-center text-indigo-500 font-bold animate-pulse">⏳ Memuat turun senarai pengguna...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalDaftar" class="fixed inset-0 bg-slate-900 bg-opacity-60 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div class="bg-indigo-600 p-4 flex justify-between items-center">
+                <h3 class="text-white font-bold text-lg">➕ Daftar Pengguna</h3>
+                <button onclick="tutupModal('modalDaftar')" class="text-white hover:text-indigo-200 text-2xl leading-none">&times;</button>
+            </div>
+            <form id="borangDaftar" class="p-6 space-y-4">
+                <div class="bg-blue-50 border border-blue-200 text-blue-800 text-xs p-3 rounded-lg mb-2 font-semibold">
+                    ℹ️ Pengguna yang didaftarkan melalui panel ini akan diaktifkan secara automatik.
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Nama Penuh</label>
+                    <input type="text" id="daftar_nama" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 uppercase outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">No. Kad Pengenalan</label>
+                    <input type="text" id="daftar_ic" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Kata Laluan Default</label>
+                    <input type="text" id="daftar_pass" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Cth: 123456">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Jabatan</label>
+                        <select id="daftar_jabatan" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 bg-slate-50 uppercase outline-none">
+                            <option value="">-- PILIH --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Peranan</label>
+                        <select id="daftar_peranan" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 bg-slate-50 uppercase outline-none">
+                            <option value="">-- PILIH --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-4 flex justify-end gap-2 border-t mt-4">
+                    <button type="button" onclick="tutupModal('modalDaftar')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold text-sm hover:bg-gray-300">Batal</button>
+                    <button type="submit" id="btnSubmitDaftar" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 shadow">Daftar Pengguna</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalEdit" class="fixed inset-0 bg-slate-900 bg-opacity-60 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div class="bg-amber-500 p-4 flex justify-between items-center">
+                <h3 class="text-white font-bold text-lg">✏️ Kemaskini Pengguna</h3>
+                <button onclick="tutupModal('modalEdit')" class="text-white hover:text-amber-200 text-2xl leading-none">&times;</button>
+            </div>
+            <form id="borangEdit" class="p-6 space-y-4">
+                <input type="hidden" id="edit_ic">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Nama Penuh</label>
+                    <input type="text" id="edit_nama" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 uppercase outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Jabatan</label>
+                        <select id="edit_jabatan" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-slate-50 uppercase outline-none">
+                            </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Peranan</label>
+                        <select id="edit_peranan" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-slate-50 uppercase outline-none">
+                            </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Bahagian / Unit</label>
+                    <select id="edit_bahagian" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-slate-50 uppercase outline-none">
+                        <option value="">-- TIADA BAHAGIAN --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Status Akaun</label>
+                    <select id="edit_status" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-slate-50 uppercase outline-none font-bold">
+                        <option value="AKTIF">AKTIF (BOLEH LOGIN)</option>
+                        <option value="MENUNGGU PENGESAHAN">MENUNGGU PENGESAHAN</option>
+                        <option value="DIGANTUNG">DIGANTUNG</option>
+                    </select>
+                </div>
+                <div class="pt-4 flex justify-end gap-2 border-t mt-4">
+                    <button type="button" onclick="tutupModal('modalEdit')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold text-sm hover:bg-gray-300">Batal</button>
+                    <button type="submit" id="btnSubmitEdit" class="px-4 py-2 bg-amber-500 text-white rounded-lg font-bold text-sm hover:bg-amber-600 shadow">Simpan Kemaskini</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+        let globalSistemData = { JABATAN: [], PERANAN: [], BAHAGIAN: [] };
+        let dataPenggunaGlobal = [];
+
+        window.onload = () => {
+            muatDropdownSistem();
+            muatDataPengguna();
+        };
+
+        // FUNGSI 1: TARIK DROPDOWN JABATAN, PERANAN & BAHAGIAN DARI SHEET "SISTEM"
+        function muatDropdownSistem() {
+            fetch(`${SCRIPT_URL}?action=ambilTetapanSenarai`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "BERJAYA") {
+                    globalSistemData.JABATAN = data.JABATAN;
+                    globalSistemData.PERANAN = data.PERANAN;
+                    globalSistemData.BAHAGIAN = data.BAHAGIAN;
+                    
+                    let htmlJab = '<option value="">-- PILIH JABATAN --</option>';
+                    data.JABATAN.forEach(j => htmlJab += `<option value="${j}">${j}</option>`);
+                    
+                    let htmlPer = '<option value="">-- PILIH PERANAN --</option>';
+                    data.PERANAN.forEach(p => htmlPer += `<option value="${p}">${p}</option>`);
+
+                    let htmlBah = '<option value="">-- TIADA BAHAGIAN --</option>';
+                    data.BAHAGIAN.forEach(b => htmlBah += `<option value="${b}">${b}</option>`);
+                    
+                    document.getElementById('daftar_jabatan').innerHTML = htmlJab;
+                    document.getElementById('edit_jabatan').innerHTML = htmlJab;
+                    
+                    document.getElementById('daftar_peranan').innerHTML = htmlPer;
+                    document.getElementById('edit_peranan').innerHTML = htmlPer;
+
+                    document.getElementById('edit_bahagian').innerHTML = htmlBah;
+                }
+            });
+        }
+
+        // FUNGSI 2: PAPAR SENARAI PENGGUNA
+        function muatDataPengguna() {
+            const tbody = document.getElementById('isiJadualPengguna');
+            tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-indigo-500 font-bold animate-pulse">⏳ Memuat turun data...</td></tr>`;
+
+            fetch(`${SCRIPT_URL}?action=ambilSemuaPengguna`)
+            .then(res => res.json())
+            .then(result => {
+                if (result.status === "BERJAYA") {
+                    dataPenggunaGlobal = result.data || [];
+                    renderJadual(dataPenggunaGlobal);
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-red-600 font-bold">❌ Mesej: ${result.mesej}</td></tr>`;
+                }
+            }).catch(err => {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-red-600 font-bold">⚠️ Ralat menyambung ke server.</td></tr>`;
+            });
+        }
+
+        function renderJadual(data) {
+            const tbody = document.getElementById('isiJadualPengguna');
+            tbody.innerHTML = "";
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-gray-500 font-medium">Tiada pengguna dijumpai.</td></tr>`;
+                return;
+            }
+
+            data.reverse().forEach((row, index) => {
+                const stat = String(row.status || "").toUpperCase().trim();
+                let badge = `<span class="bg-orange-100 text-orange-800 px-2 py-1 rounded text-[10px] font-bold border border-orange-200">⏳ ${stat}</span>`;
+                if(stat === "AKTIF" || stat === "SAH") badge = `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-[10px] font-bold border border-green-200">✅ AKTIF</span>`;
+                if(stat === "DIGANTUNG") badge = `<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-[10px] font-bold border border-red-200">⛔ DIGANTUNG</span>`;
+
+                const perananSemasa = String(row.peranan || "").toUpperCase().trim();
+                const strBahagian = row.bahagian || "-";
+                const safeBahagian = strBahagian.replace(/'/g, "\\'");
+                const safeNama = String(row.nama || "").replace(/'/g, "\\'");
+                const barisIC = String(row.ic).trim(); 
+                
+                // 🌟 SEMAKAN: KAWALAN SUPER POWER ADMIN & FAILSAFE DIRI SENDIRI
+                let isSelf = (userICSemasa !== "" && barisIC === userICSemasa);
+                
+                let perananPengurusan = ["ADMIN", "KUPIK", "PENYELARAS INOVASI", "PENYELARAS PENYELIDIKAN"];
+                let isPengurusan = perananPengurusan.includes(perananSemasa);
+
+                // LOGIK BUTANG SAHKAN
+                let btnSahkan = "";
+                if (stat === "MENUNGGU PENGESAHAN" || stat === "MENUNGGU") {
+                    btnSahkan = `<button onclick="sahkanPengguna('${barisIC}', '${safeNama}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded font-bold transition text-xs border border-emerald-700 shadow">✅ Sahkan</button>`;
+                }
+
+                // LOGIK BUTANG DELETE
+                let btnDelete = "";
+                if (isSelf) {
+                    // Semua orang tidak boleh delete diri sendiri
+                    btnDelete = `<button disabled class="bg-gray-200 text-gray-500 px-3 py-1.5 rounded font-bold text-xs border border-gray-300 cursor-not-allowed" title="Anda tidak boleh memadam akaun sendiri">🔒 Kunci Diri</button>`;
+                } else if (userPeranan === "ADMIN") {
+                    // ADMIN 'Super Power': Boleh delete sesiapa sahaja (sebab isSelf dah handle kat atas)
+                    btnDelete = `<button onclick="padamPengguna('${barisIC}', '${safeNama}', '${perananSemasa}')" class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded font-bold transition text-xs border border-red-200">🗑️ Padam</button>`;
+                } else if (isPengurusan) {
+                    // BUKAN ADMIN, dan cuba nak delete akaun PENGURUSAN -> KUNCI
+                    btnDelete = `<button disabled class="bg-gray-200 text-gray-500 px-3 py-1.5 rounded font-bold text-xs border border-gray-300 cursor-not-allowed" title="Anda tiada kuasa memadam akaun Pengurusan">🔒 Kunci</button>`;
+                } else {
+                    // BUKAN ADMIN, tapi nak delete akaun BIASA (cth: PENYELARAS JABATAN) -> BOLEH
+                    btnDelete = `<button onclick="padamPengguna('${barisIC}', '${safeNama}', '${perananSemasa}')" class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded font-bold transition text-xs border border-red-200">🗑️ Padam</button>`;
+                }
+
+                // LOGIK BUTANG RESET
+                let btnReset = "";
+                if (stat === "AKTIF" || stat === "SAH") {
+                    btnReset = `<button onclick="resetPasswordJadual('${barisIC}')" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded font-bold transition text-xs shadow border border-slate-900">🔑 Reset Pass</button>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-4 text-center font-bold text-gray-500 text-xs">${index + 1}</td>
+                    <td class="p-4 font-mono font-bold text-sm text-indigo-700">${row.ic}</td>
+                    <td class="p-4 font-bold text-gray-800 uppercase text-xs">${row.nama}</td>
+                    <td class="p-4 text-center font-bold text-gray-600 text-xs uppercase">${row.jabatan}</td>
+                    <td class="p-4 text-center text-xs font-semibold text-slate-600 uppercase">${row.peranan}</td>
+                    <td class="p-4 text-center text-xs font-semibold text-slate-500 uppercase">${strBahagian}</td>
+                    <td class="p-4 text-center">${badge}</td>
+                    <td class="p-4 text-center">
+                        <div class="flex justify-center gap-1 flex-wrap">
+                            ${btnSahkan}
+                            ${btnReset}
+                            <button onclick="bukaModalEdit('${barisIC}', '${safeNama}', '${row.jabatan}', '${row.peranan}', '${stat}', '${safeBahagian}')" class="bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded font-bold transition text-xs border border-amber-300">✏️ Edit</button>
+                            ${btnDelete}
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // MUAT TURUN CSV
+        function muatTurunCSV() {
+            if (dataPenggunaGlobal.length === 0) return alert("Tiada data untuk dimuat turun.");
+            
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "BIL,NAMA,NO_IC,JABATAN,PERANAN,BAHAGIAN,STATUS\n";
+            
+            dataPenggunaGlobal.forEach((row, index) => {
+                let nama = `"${row.nama || ""}"`;
+                let ic = `="${row.ic || ""}"`; 
+                let jab = `"${row.jabatan || ""}"`;
+                let per = `"${row.peranan || ""}"`;
+                let bah = `"${row.bahagian || ""}"`;
+                let stat = `"${row.status || ""}"`;
+                csvContent += `${index+1},${nama},${ic},${jab},${per},${bah},${stat}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Senarai_Pengguna_Sistem.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // FUNGSI 3: DAFTAR PENGGUNA BARU
+        function bukaModalDaftar() {
+            document.getElementById('borangDaftar').reset();
+            document.getElementById('modalDaftar').classList.remove('hidden');
+        }
+
+        document.getElementById('borangDaftar').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmitDaftar');
+            btn.disabled = true; btn.innerHTML = '⏳ Mendaftar...';
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ 
+                    action: "tambahPengguna", 
+                    NAMA: document.getElementById('daftar_nama').value,
+                    NO_IC: document.getElementById('daftar_ic').value,
+                    KATA_LALUAN: document.getElementById('daftar_pass').value,
+                    JABATAN: document.getElementById('daftar_jabatan').value, 
+                    PERANAN: document.getElementById('daftar_peranan').value,
+                    STATUS: "AKTIF", // Pengurusan daftar, terus aktif
+                    LOGIN_ROLE: userPeranan 
+                })
+            }).then(res => res.json()).then(data => {
+                btn.disabled = false; btn.innerHTML = 'Daftar Pengguna';
+                tutupModal('modalDaftar');
+                if(data.status === "BERJAYA") {
+                    paparStatusUI(`✅ ${data.mesej}`, 'bg-green-100 text-green-800 border-green-200');
+                    muatDataPengguna();
+                } else {
+                    paparStatusUI("❌ Ralat: " + data.mesej, 'bg-red-100 text-red-800 border-red-200');
+                }
+            });
+        });
+
+        // FUNGSI 4: KEMASKINI PENGGUNA
+        function bukaModalEdit(ic, nama, jabatan, peranan, status, bahagian) {
+            document.getElementById('edit_ic').value = ic;
+            document.getElementById('edit_nama').value = nama;
+            
+            let elJab = document.getElementById('edit_jabatan');
+            if(Array.from(elJab.options).map(o=>o.value).includes(jabatan)) elJab.value = jabatan;
+            
+            let elPer = document.getElementById('edit_peranan');
+            if(Array.from(elPer.options).map(o=>o.value).includes(peranan)) elPer.value = peranan;
+
+            let elBah = document.getElementById('edit_bahagian');
+            if(bahagian === "-" || bahagian === "") elBah.value = "";
+            else if(Array.from(elBah.options).map(o=>o.value).includes(bahagian)) elBah.value = bahagian;
+            
+            document.getElementById('edit_status').value = status === "SAH" ? "AKTIF" : status;
+            
+            document.getElementById('modalEdit').classList.remove('hidden');
+        }
+
+        document.getElementById('borangEdit').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmitEdit');
+            btn.disabled = true; btn.innerHTML = '⏳ Simpan...';
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ 
+                    action: "kemaskiniPenggunaAdmin", 
+                    NO_IC: document.getElementById('edit_ic').value,
+                    NAMA: document.getElementById('edit_nama').value,
+                    JABATAN: document.getElementById('edit_jabatan').value,
+                    PERANAN: document.getElementById('edit_peranan').value,
+                    BAHAGIAN: document.getElementById('edit_bahagian').value,
+                    STATUS: document.getElementById('edit_status').value
+                })
+            }).then(res => res.json()).then(data => {
+                btn.disabled = false; btn.innerHTML = 'Simpan Kemaskini';
+                tutupModal('modalEdit');
+                if(data.status === "BERJAYA") {
+                    paparStatusUI("✅ Maklumat dikemaskini!", 'bg-green-100 text-green-800 border-green-200');
+                    muatDataPengguna();
+                } else paparStatusUI("❌ Ralat: " + data.mesej, 'bg-red-100 text-red-800 border-red-200');
+            });
+        });
+
+        // FUNGSI 5: PADAM PENGGUNA
+        function padamPengguna(ic, nama, perananBaris) {
+            // Failsafe 1: Tidak boleh padam diri sendiri
+            if (userICSemasa !== "" && String(ic).trim() === userICSemasa) {
+                alert("❌ Ralat: Anda tidak dibenarkan memadam akaun anda sendiri!");
+                return;
+            }
+            
+            // Failsafe 2: Halang jika bukan Admin cuba padam Pengurusan
+            let perananPengurusan = ["ADMIN", "KUPIK", "PENYELARAS INOVASI", "PENYELARAS PENYELIDIKAN"];
+            let isPengurusanBaris = perananBaris && perananPengurusan.includes(perananBaris.toUpperCase().trim());
+            
+            if (userPeranan !== "ADMIN" && isPengurusanBaris) {
+                alert("❌ Ralat: Anda tiada kuasa untuk memadam akaun Pengurusan!");
+                return;
+            }
+
+            if(!confirm(`⚠️ Adakah anda pasti mahu memadam pengguna ini secara kekal?\n\nNama: ${nama}\nIC: ${ic}`)) return;
+            
+            paparStatusUI("⏳ Sedang memadam rekod...", 'bg-blue-100 text-blue-800 border-blue-200');
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: "padamPenggunaAdmin", NO_IC: ic }) 
+            }).then(res => res.json()).then(data => {
+                if(data.status === "BERJAYA") {
+                    paparStatusUI("✅ Pengguna berjaya dipadam.", 'bg-green-100 text-green-800 border-green-200');
+                    muatDataPengguna();
+                } else paparStatusUI("❌ Ralat: " + data.mesej, 'bg-red-100 text-red-800 border-red-200');
+            });
+        }
+
+        // FUNGSI 6: RESET PASSWORD TERUS DARI JADUAL
+        function resetPasswordJadual(ic) {
+            if(!confirm(`Adakah anda pasti mahu me-reset kata laluan pengguna ini kembali kepada No IC (${ic})?`)) return;
+
+            paparStatusUI("⏳ Sedang me-reset kata laluan...", 'bg-blue-100 text-blue-800 border-blue-200');
+            
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: "resetPassAdmin", NO_IC: ic })
+            }).then(res => res.json()).then(data => {
+                if(data.status === "BERJAYA") {
+                    paparStatusUI("✅ Kata laluan telah berjaya di-reset kepada No. Kad Pengenalan.", 'bg-green-100 text-green-800 border-green-200');
+                } else {
+                    paparStatusUI("❌ Ralat: " + data.mesej, 'bg-red-100 text-red-800 border-red-200');
+                }
+            }).catch(err => {
+                paparStatusUI("⚠️ Gagal menghubungi server.", 'bg-red-100 text-red-800 border-red-200');
+            });
+        }
+
+        // FUNGSI 7: SAHKAN PENGGUNA
+        function sahkanPengguna(ic, nama) {
+            if(!confirm(`Adakah anda pasti mahu MENGESAHKAN dan MENGAKTIFKAN akaun pengguna ini?\n\nNama: ${nama}`)) return;
+            
+            paparStatusUI("⏳ Sedang memproses pengesahan...", 'bg-blue-100 text-blue-800 border-blue-200');
+            
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: "sahkanPengguna", NO_IC: ic }) 
+            }).then(res => res.json()).then(data => {
+                if(data.status === "BERJAYA") {
+                    paparStatusUI("✅ Akaun pengguna berjaya disahkan dan diaktifkan.", 'bg-green-100 text-green-800 border-green-200');
+                    muatDataPengguna(); // Refresh jadual terus
+                } else {
+                    paparStatusUI("❌ Ralat: " + data.mesej, 'bg-red-100 text-red-800 border-red-200');
+                }
+            }).catch(err => {
+                paparStatusUI("⚠️ Gagal menghubungi server.", 'bg-red-100 text-red-800 border-red-200');
+            });
+        }
+
+        // FUNGSI UTILITI
+        function tutupModal(id) { document.getElementById(id).classList.add('hidden'); }
+        
+        function paparStatusUI(teks, warnaClass) {
+            const sm = document.getElementById('statusMesejUtama');
+            sm.className = `mb-4 p-4 rounded-lg text-center text-sm font-bold shadow-sm border ${warnaClass}`;
+            sm.innerText = teks;
+            sm.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => sm.classList.add('hidden'), 5000);
+        }
+    </script>
+</body>
+</html>

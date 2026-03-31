@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Penyelidikan & Inovasi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Efek scrollbar nipis untuk nampak lebih premium */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* Smooth scroll untuk anchor links */
+        html { scroll-behavior: smooth; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans flex flex-col md:flex-row min-h-screen">
+
+    <aside class="w-full md:w-64 lg:w-72 bg-blue-900 text-white flex flex-col shadow-2xl z-20 flex-shrink-0 md:h-screen md:sticky top-0 overflow-y-auto">
+        
+        <div class="p-5 text-center md:text-left border-b border-blue-800 bg-blue-950">
+            <h1 class="text-xl md:text-2xl font-extrabold tracking-wide text-white flex items-center justify-center md:justify-start gap-3">
+                <span class="text-2xl">🚀</span> Portal R&I
+            </h1>
+            <p class="text-blue-300 text-xs mt-2 font-medium">Pusat Akses Berpusat Modul</p>
+        </div>
+
+        <div class="p-5 flex-grow flex flex-col items-center md:items-start gap-4">
+            
+            <a href="login.html" id="btnLogMasuk" class="w-full bg-yellow-400 text-blue-900 px-4 py-2.5 rounded-lg font-bold shadow-md hover:bg-yellow-300 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5 text-sm">
+                🔒 Log Masuk Utama
+            </a>
+
+            <a href="tukar-katalaluan.html" id="btnTukarKataLaluan" class="hidden w-full mt-2 bg-slate-700 text-white px-4 py-2.5 rounded-lg font-bold shadow-md hover:bg-slate-800 transition-all items-center justify-center gap-2 transform hover:-translate-y-0.5 text-sm">
+            🔑 Tukar Kata Laluan
+            </a>
+
+            <button onclick="logKeluar()" id="btnLogKeluar" class="hidden w-full bg-red-500 text-white px-4 py-2.5 rounded-lg font-bold shadow-md hover:bg-red-600 transition-all items-center justify-center gap-2 transform hover:-translate-y-0.5 text-sm">
+                🚪 Log Keluar
+            </button>
+
+            <div id="infoPengguna" class="hidden w-full mt-2 bg-blue-800 rounded-xl p-4 border border-blue-700 shadow-inner text-center md:text-left relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 text-5xl opacity-10">👤</div>
+                <p class="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">Selamat Datang,</p>
+                <p id="paparNama" class="font-bold text-yellow-300 text-sm md:text-base leading-tight truncate"></p>
+                <div class="mt-2 pt-2 border-t border-blue-700">
+                    <p class="text-xs text-blue-100">Peranan: <span id="paparPeranan" class="font-bold uppercase text-white"></span></p>
+                    <p class="text-xs text-blue-100 mt-0.5">Jabatan: <span id="paparJabatan" class="font-bold uppercase text-white"></span></p>
+                </div>
+            </div>
+
+            <nav class="w-full mt-4 space-y-2 border-t border-blue-800 pt-5">
+                <p class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2 px-2">Menu Pantas</p>
+                
+                <a href="#seksyen-organisasi" class="w-full flex items-center gap-3 bg-blue-800 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg transition-all text-xs lg:text-sm font-semibold shadow-sm border border-transparent hover:border-blue-600">
+                    🏢 Carta Organisasi
+                </a>
+                
+                <a href="kemaskini-penyelaras.html" id="btnSidePenyelaras" class="hidden w-full items-center gap-3 bg-blue-800 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg transition-all text-xs lg:text-sm font-semibold shadow-sm border border-transparent hover:border-blue-600">
+                    👥 Senarai Penyelaras
+                </a>
+                
+                <a href="pengurusan-data.html" id="btnSidePengurusan" class="hidden w-full items-center gap-3 bg-blue-800 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg transition-all text-xs lg:text-sm font-semibold shadow-sm border border-transparent hover:border-blue-600">
+                    ⚙️ Pengurusan Data
+                </a>
+
+        <div class="mt-6 border-t border-blue-700 pt-6">
+            <p class="text-xs text-blue-300 font-bold uppercase tracking-wider mb-3 px-2">Akses Terbuka</p>
+    
+            <a href="daftar-penyelaras.html" class="w-full bg-gradient-to-r from-blue-700 to-indigo-600 hover:from-blue-600 hover:to-indigo-500 text-white px-4 py-3 rounded-xl shadow-lg font-bold transition transform hover:-translate-y-1 flex items-center justify-center gap-2 border border-blue-500 text-sm">
+              <span class="text-lg">👨‍🏫</span> Daftar Penyelaras
+               </a>
+             </div>
+
+            </nav>
+        </div>
+
+        <footer class="p-4 text-center text-blue-400 text-xs border-t border-blue-800 bg-blue-950">
+            &copy; 2024 Sistem R&I
+        </footer>
+    </aside>
+
+    <main class="flex-1 flex flex-col min-h-screen bg-slate-50 relative">
+        
+        <div class="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+            
+            <section id="seksyen-organisasi" class="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-4 md:p-6 flex flex-col items-center scroll-mt-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    👥 Carta Organisasi
+                </h2>
+                <div class="border-4 border-slate-100 rounded-xl overflow-hidden bg-gray-50 shadow-inner transition transform hover:scale-[1.01] duration-300 w-full max-w-2xl">
+                    <a href="organisasi/carta.jpeg" target="_blank" title="Klik untuk besarkan carta">
+                        <img src="organisasi/carta.jpeg" alt="Carta Organisasi" class="w-full h-auto object-contain cursor-pointer" onerror="this.onerror=null; this.src='https://via.placeholder.com/600x200?text=Sila+Upload+Gambar+Carta+Organisasi';">
+                    </a>
+                </div>
+                <p class="text-xs text-slate-400 mt-3 font-semibold uppercase tracking-widest text-center">👆 Klik gambar untuk lihat saiz penuh</p>
+            </section>
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+                
+                <section class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden flex flex-col h-full transform transition hover:shadow-lg">
+                    <div class="bg-emerald-600 text-white p-4 flex items-center gap-3">
+                        <div class="bg-white bg-opacity-20 p-2 rounded-lg text-lg">🔬</div>
+                        <h2 class="text-lg md:text-xl font-bold uppercase tracking-wider">Penyelidikan</h2>
+                    </div>
+                    
+                    <div class="p-4 flex-grow flex flex-col gap-3">
+                        <div class="grid grid-cols-2 gap-2 lg:gap-3">
+                            <a href="#" onclick="aksesModul(event, 'penerbitan.html')" class="group bg-emerald-50 hover:bg-emerald-600 border border-emerald-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-xl md:text-2xl group-hover:scale-110 transition-transform">📚</span>
+                                <span class="font-bold text-emerald-800 group-hover:text-white text-xs lg:text-sm">Penerbitan</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'kik.html')" class="group bg-emerald-50 hover:bg-emerald-600 border border-emerald-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-xl md:text-2xl group-hover:scale-110 transition-transform">💡</span>
+                                <span class="font-bold text-emerald-800 group-hover:text-white text-xs lg:text-sm">KIK</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'e-daftar.html')" class="group col-span-2 bg-teal-50 hover:bg-teal-600 border border-teal-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-row items-center justify-center gap-2 hover:shadow-md">
+                                <span class="text-xl md:text-2xl group-hover:scale-110 transition-transform">📝</span>
+                                <span class="font-bold text-teal-800 group-hover:text-white text-xs lg:text-sm">e-Daftar R&D</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'dashboard.html')" class="group bg-slate-50 hover:bg-emerald-600 border border-slate-200 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-xl md:text-2xl group-hover:scale-110 transition-transform">📊</span>
+                                <span class="font-bold text-slate-700 group-hover:text-white text-xs lg:text-sm">Dashboard</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'dashboard-penyelidikan.html')" class="group bg-slate-50 hover:bg-emerald-600 border border-slate-200 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-xl md:text-2xl group-hover:scale-110 transition-transform">📈</span>
+                                <span class="font-bold text-slate-700 group-hover:text-white text-xs lg:text-sm">KPI</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-slate-50 border-t border-gray-100">
+                        <a href="pengurusan-data.html" id="btnPengurusanPenyelidikan" class="hidden w-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 text-white font-bold py-2.5 px-4 rounded-lg shadow-sm transition items-center justify-center gap-2 text-sm">
+                            ⚙️ Pengurusan Penyelidikan
+                        </a>
+                    </div>
+                </section>
+
+                <section class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden flex flex-col h-full transform transition hover:shadow-lg">
+                    <div class="bg-purple-600 text-white p-4 flex items-center gap-3">
+                        <div class="bg-white bg-opacity-20 p-2 rounded-lg text-lg">🚀</div>
+                        <h2 class="text-lg md:text-xl font-bold uppercase tracking-wider">Inovasi</h2>
+                    </div>
+                    
+                    <div class="p-4 flex-grow flex flex-col gap-3">
+                        <div class="grid grid-cols-2 gap-2 lg:gap-3">
+                            <a href="#" onclick="aksesModul(event, 'pencapaian_pelajar.html')" class="group bg-purple-50 hover:bg-purple-600 border border-purple-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-xl md:text-2xl group-hover:scale-110 transition-transform">🎓</span>
+                                <span class="font-bold text-purple-800 group-hover:text-white text-xs lg:text-sm">Projek Pelajar</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'geran.html')" class="group bg-purple-50 hover:bg-purple-600 border border-purple-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-xl md:text-2xl group-hover:scale-110 transition-transform">💰</span>
+                                <span class="font-bold text-purple-800 group-hover:text-white text-xs lg:text-sm">Geran</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'komersilan.html')" class="group bg-purple-50 hover:bg-purple-600 border border-purple-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-xl md:text-2xl group-hover:scale-110 transition-transform">💎</span>
+                                <span class="font-bold text-purple-800 group-hover:text-white text-xs lg:text-sm">Komersilan</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'harta-intelek.html')" class="group bg-purple-50 hover:bg-purple-600 border border-purple-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-xl md:text-2xl group-hover:scale-110 transition-transform">©️</span>
+                                <span class="font-bold text-purple-800 group-hover:text-white text-xs lg:text-sm">Harta Intelek</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'senarai-pertandingan.html')" class="group col-span-2 bg-pink-50 hover:bg-pink-600 border border-pink-100 p-3 rounded-xl text-center transition-all duration-300 flex flex-row items-center justify-center gap-2 hover:shadow-md">
+                                <span class="text-xl md:text-2xl group-hover:scale-110 transition-transform">🏆</span>
+                                <span class="font-bold text-pink-800 group-hover:text-white text-xs lg:text-sm">Senarai Pertandingan</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'dashboard.html')" class="group bg-slate-50 hover:bg-purple-600 border border-slate-200 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-xl md:text-2xl group-hover:scale-110 transition-transform">📊</span>
+                                <span class="font-bold text-slate-700 group-hover:text-white text-xs lg:text-sm">Dashboard</span>
+                            </a>
+                            <a href="#" onclick="aksesModul(event, 'dashboard-kpi.html')" class="group bg-slate-50 hover:bg-purple-600 border border-slate-200 p-3 rounded-xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-1 hover:shadow-md">
+                                <span class="text-xl md:text-2xl group-hover:scale-110 transition-transform">📈</span>
+                                <span class="font-bold text-slate-700 group-hover:text-white text-xs lg:text-sm">KPI</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-slate-50 border-t border-gray-100">
+                        <a href="pengurusan-data.html" id="btnPengurusanInovasi" class="hidden w-full bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-700 hover:to-indigo-600 text-white font-bold py-2.5 px-4 rounded-lg shadow-sm transition items-center justify-center gap-2 text-sm">
+                            ⚙️ Pengurusan Inovasi
+                        </a>
+                    </div>
+                </section>
+                
+            </div>
+            
+            <div class="mt-8 text-center text-slate-400 text-xs pb-6">
+                Sistem Pengurusan Inovasi & Penyelidikan versi 2.0
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        window.onload = () => {
+            const sudahLogin = sessionStorage.getItem("userLulus") === "YA";
+            const perananPengguna = (sessionStorage.getItem("peranan") || "").trim().toUpperCase();
+
+            if (sudahLogin) {
+                const btnLogMasuk = document.getElementById('btnLogMasuk');
+                if (btnLogMasuk) {
+                    btnLogMasuk.classList.add('hidden');
+                    btnLogMasuk.style.display = 'none';
+                }
+
+                const infoPengguna = document.getElementById('infoPengguna');
+                if (infoPengguna) {
+                    infoPengguna.classList.remove('hidden');
+                    infoPengguna.style.display = 'block'; 
+                }
+
+                const pNama = document.getElementById('paparNama');
+                const pPeranan = document.getElementById('paparPeranan');
+                const pJabatan = document.getElementById('paparJabatan');
+                
+                if (pNama) pNama.innerText = sessionStorage.getItem("namaPengguna") || "Pengguna";
+                if (pPeranan) pPeranan.innerText = perananPengguna;
+                if (pJabatan) pJabatan.innerText = sessionStorage.getItem("jabatan") || "TIADA";
+
+                const btnLogKeluar = document.getElementById('btnLogKeluar');
+                if (btnLogKeluar) {
+                    btnLogKeluar.classList.remove('hidden');
+                    btnLogKeluar.style.display = 'flex';
+                }
+
+                const btnTukarKataLaluan = document.getElementById('btnTukarKataLaluan');
+                if (btnTukarKataLaluan && perananPengguna !== "STAF" && perananPengguna !== "") {
+                    btnTukarKataLaluan.classList.remove('hidden'); 
+                    btnTukarKataLaluan.style.display = 'flex';
+                }
+
+                const btnSidePenyelaras = document.getElementById('btnSidePenyelaras');
+                const btnSidePengurusan = document.getElementById('btnSidePengurusan');
+
+                if (["ADMIN", "PENYELARAS INOVASI", "PENYELARAS PENYELIDIKAN", "KUPIK"].includes(perananPengguna)) {
+                    if (btnSidePengurusan) { 
+                        btnSidePengurusan.classList.remove('hidden'); 
+                        btnSidePengurusan.style.display = 'flex';
+                    }
+                }
+                
+                if (perananPengguna !== "STAF" && perananPengguna !== "") {
+                    if (btnSidePenyelaras) { 
+                        btnSidePenyelaras.classList.remove('hidden'); 
+                        btnSidePenyelaras.style.display = 'flex';
+                    }
+                }
+            }
+        };
+
+        function aksesModul(event, sasaranURL) {
+            event.preventDefault(); 
+            const sudahLogin = sessionStorage.getItem("userLulus") === "YA";
+
+            if (sudahLogin) {
+                window.location.href = sasaranURL;
+            } else {
+                alert("Sila log masuk terlebih dahulu untuk mengakses modul ini.");
+                window.location.href = "login.html";
+            }
+        }
+
+        function logKeluar() {
+            sessionStorage.clear(); 
+            window.location.reload(); 
+        }
+    </script>
+</body>
+</html>

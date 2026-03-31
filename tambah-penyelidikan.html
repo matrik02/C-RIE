@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tambah KPI Penyelidikan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script>
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Akses ditolak! Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-gray-100 p-4 md:p-8 font-sans text-gray-800">
+
+    <div class="max-w-5xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-5 rounded-xl shadow-sm border border-gray-200 gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">➕ Tambah KPI Penyelidikan</h1>
+                <p class="text-sm text-gray-500 mt-1">Isi borang secara manual atau muat naik fail CSV untuk pukal (bulk).</p>
+            </div>
+            <div>
+                <a href="dashboard-penyelidikan.html" class="bg-slate-600 hover:bg-slate-700 text-white px-5 py-2.5 rounded-lg font-semibold transition shadow-md flex items-center gap-2 text-sm">
+                    &larr; Kembali Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div id="statusMesej" class="hidden mb-6 p-4 rounded-lg text-center text-sm font-semibold shadow-sm"></div>
+
+        <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+            <div class="flex border-b bg-gray-50">
+                <button onclick="tukarTab('manual')" id="tabManual" class="flex-1 py-4 font-bold text-purple-700 border-b-4 border-purple-700 hover:bg-gray-100 transition">✍️ Isi Manual</button>
+                <button onclick="tukarTab('csv')" id="tabCSV" class="flex-1 py-4 font-bold text-gray-500 border-b-4 border-transparent hover:bg-gray-100 transition">📂 Muat Naik CSV (Pukal)</button>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <div id="panelManual">
+                    <form id="borangPenyelidikan" class="space-y-6">
+                        <div class="border-b pb-4">
+                            <h2 class="text-lg font-bold text-gray-800 mb-4">A. Maklumat Utama Penerbitan</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Tajuk Penyelidikan <span class="text-red-500">*</span></label>
+                                    <input type="text" id="tajuk" required class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Nama Penulis <span class="text-red-500">*</span></label>
+                                    <input type="text" id="penulis" required class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Publisher (Penerbit) <span class="text-red-500">*</span></label>
+                                    <input type="text" id="publisher" required class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Volume / Issue</label>
+                                    <input type="text" id="volIssue" class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Tarikh Terbit <span class="text-red-500">*</span></label>
+                                    <input type="date" id="tarikhTerbit" required class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">DOI / Laman Rasmi <span class="text-red-500">*</span></label>
+                                    <input type="url" id="doiUrl" required class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-800 mb-4">B. Klasifikasi & Metrik</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Jabatan <span class="text-red-500">*</span></label>
+                                    <select id="jabatan" required class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none bg-gray-50"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Tahap Sebaran <span class="text-red-500">*</span></label>
+                                    <select id="tahapSebaran" required class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none bg-gray-50"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Laporan KPI (Sukuan) <span class="text-red-500">*</span></label>
+                                    <select id="laporanKpi" required class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none bg-gray-50"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Tahun <span class="text-red-500">*</span></label>
+                                    <input type="number" id="tahun" required min="2000" max="2099" class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Bahasa <span class="text-red-500">*</span></label>
+                                    <select id="bahasa" required class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none bg-gray-50"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">Index Status <span class="text-red-500">*</span></label>
+                                    <select id="indexStatus" required class="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                                        <option value="">-- Pilih Index --</option>
+                                        <option value="SCOPUS">SCOPUS</option>
+                                        <option value="WOS">Web of Science (WOS)</option>
+                                        <option value="ERA">ERA</option>
+                                        <option value="MyCITE">MyCITE</option>
+                                        <option value="Tidak Berindeks">Tidak Berindeks / Lain-lain</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">URL (Dokumen Bukti) <span class="text-red-500">*</span></label>
+                                    <input type="url" id="urlBukti" required class="w-full border border-blue-400 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-blue-50">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 mt-6 border-t flex items-center justify-end gap-3">
+                            <button type="button" onclick="form.reset()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2.5 rounded-lg font-bold transition">Batal</button>
+                            <button type="submit" id="btnHantar" disabled class="bg-green-600 hover:bg-green-700 text-white px-8 py-2.5 rounded-lg font-bold transition shadow-md flex items-center gap-2 opacity-50 cursor-not-allowed">
+                                ⏳ Menunggu Data...
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="panelCSV" class="hidden">
+                    <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6 text-sm text-blue-800">
+                        <p class="font-bold mb-1">💡 Panduan Muat Naik CSV:</p>
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li>Pastikan fail anda berformat <strong>.csv</strong>.</li>
+                            <li>Baris pertama (Header) <strong>WAJIB</strong> mengikut susunan ini tepat: <br>
+                                <span class="font-mono text-xs bg-white px-1 border">Tajuk, Penulis, Publisher, VolIssue, TarikhTerbit, DoiUrl, Jabatan, TahapSebaran, Sukuan, Tahun, Bahasa, IndexStatus, UrlBukti</span>
+                            </li>
+                            <li>Sila muat turun templat CSV di bawah untuk rujukan anda.</li>
+                        </ul>
+                        <button onclick="downloadTemplateCSV()" class="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-bold shadow transition">📥 Download Templat CSV</button>
+                    </div>
+
+                    <div class="mb-6 flex flex-col md:flex-row gap-4 items-center">
+                        <input type="file" id="inputCSV" accept=".csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 border border-gray-300 p-1 rounded-lg">
+                        <button onclick="prosesFailCSV()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-bold transition shadow-md whitespace-nowrap">🔍 Preview Data</button>
+                    </div>
+
+                    <div id="ruangPreview" class="hidden">
+                        <h3 class="font-bold text-gray-700 mb-2">👀 Preview Data (<span id="jumlahRekodCSV">0</span> rekod dikesan):</h3>
+                        <div class="overflow-x-auto border rounded-lg max-h-80 mb-4">
+                            <table class="w-full text-left border-collapse text-xs whitespace-nowrap">
+                                <thead class="bg-slate-800 text-white sticky top-0">
+                                    <tr>
+                                        <th class="p-2 border">Tajuk</th>
+                                        <th class="p-2 border">Penulis</th>
+                                        <th class="p-2 border">Jabatan</th>
+                                        <th class="p-2 border">Tahun</th>
+                                        <th class="p-2 border">Bukti</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="isiPreviewCSV" class="bg-white text-gray-700">
+                                    </tbody>
+                            </table>
+                        </div>
+
+                        <div class="border-t pt-4 flex justify-end">
+                            <button onclick="hantarDataCSV()" id="btnHantarCSV" class="bg-green-600 hover:bg-green-700 text-white px-8 py-2.5 rounded-lg font-bold transition shadow-md">
+                                🚀 Sah & Hantar Semua Rekod
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec"; 
+
+        let dataCSVSedia = []; // Simpan data CSV yang telah di-parse
+
+        window.onload = function() {
+            // Tarik Pilihan Dropdown
+            fetch(SCRIPT_URL + "?action=ambilPilihan")
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "BERJAYA") {
+                    isiDropdown("jabatan", data.jabatan, "-- Pilih Jabatan --");
+                    isiDropdown("tahapSebaran", data.tahapSebaran, "-- Pilih Tahap --");
+                    isiDropdown("bahasa", data.bahasa, "-- Pilih Bahasa --");
+                    isiDropdown("laporanKpi", data.laporanKpi, "-- Pilih Sukuan --");
+                    
+                    const userJabatan = sessionStorage.getItem("jabatan");
+                    if (userJabatan) document.getElementById("jabatan").value = userJabatan;
+                    document.getElementById("tahun").value = new Date().getFullYear();
+
+                    const btnHantar = document.getElementById("btnHantar");
+                    btnHantar.innerHTML = "💾 Hantar Rekod";
+                    btnHantar.disabled = false;
+                    btnHantar.classList.remove("opacity-50", "cursor-not-allowed");
+                }
+            }).catch(err => console.error(err));
+        };
+
+        function isiDropdown(id, data, placeholder) {
+            const el = document.getElementById(id);
+            el.innerHTML = `<option value="">${placeholder}</option>`;
+            data.forEach(item => el.innerHTML += `<option value="${item}">${item}</option>`);
+            el.classList.remove("bg-gray-50");
+        }
+
+        function paparMesej(mesej, jenis) {
+            const el = document.getElementById("statusMesej");
+            el.style.display = "block";
+            if (jenis === "BERJAYA") {
+                el.className = "mb-6 p-4 rounded-lg text-center text-sm font-bold bg-green-100 text-green-800 border border-green-200 block animate-pulse";
+            } else if (jenis === "RALAT") {
+                el.className = "mb-6 p-4 rounded-lg text-center text-sm font-bold bg-red-100 text-red-800 border border-red-200 block";
+            } else {
+                el.className = "mb-6 p-4 rounded-lg text-center text-sm font-bold bg-blue-100 text-blue-800 border border-blue-200 block";
+            }
+            el.innerText = mesej;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- FUNGSI TUKAR TAB ---
+        function tukarTab(tab) {
+            document.getElementById("statusMesej").style.display = "none";
+            if (tab === 'manual') {
+                document.getElementById("panelManual").classList.remove("hidden");
+                document.getElementById("panelCSV").classList.add("hidden");
+                document.getElementById("tabManual").className = "flex-1 py-4 font-bold text-purple-700 border-b-4 border-purple-700 hover:bg-gray-100 transition";
+                document.getElementById("tabCSV").className = "flex-1 py-4 font-bold text-gray-500 border-b-4 border-transparent hover:bg-gray-100 transition";
+            } else {
+                document.getElementById("panelManual").classList.add("hidden");
+                document.getElementById("panelCSV").classList.remove("hidden");
+                document.getElementById("tabManual").className = "flex-1 py-4 font-bold text-gray-500 border-b-4 border-transparent hover:bg-gray-100 transition";
+                document.getElementById("tabCSV").className = "flex-1 py-4 font-bold text-purple-700 border-b-4 border-purple-700 hover:bg-gray-100 transition";
+            }
+        }
+
+        // --- FUNGSI HANTAR MANUAL ---
+        document.getElementById("borangPenyelidikan").addEventListener("submit", function(e) {
+            e.preventDefault(); 
+            const btnHantar = document.getElementById("btnHantar");
+            btnHantar.innerHTML = "⏳ Menghantar...";
+            btnHantar.disabled = true;
+            paparMesej("Sistem sedang memproses maklumat...", "INFO");
+
+            const payload = {
+                action: "tambahKPIPenyelidikan",
+                tajuk: document.getElementById("tajuk").value.trim(),
+                penulis: document.getElementById("penulis").value.trim(),
+                publisher: document.getElementById("publisher").value.trim(),
+                volIssue: document.getElementById("volIssue").value.trim(),
+                tarikhTerbit: document.getElementById("tarikhTerbit").value,
+                doiUrl: document.getElementById("doiUrl").value.trim(),
+                jabatan: document.getElementById("jabatan").value,
+                tahapSebaran: document.getElementById("tahapSebaran").value,
+                laporanKpi: document.getElementById("laporanKpi").value,
+                tahun: document.getElementById("tahun").value,
+                bahasa: document.getElementById("bahasa").value,
+                indexStatus: document.getElementById("indexStatus").value,
+                urlBukti: document.getElementById("urlBukti").value.trim() 
+            };
+
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            }).then(res => res.json()).then(data => {
+                if (data.status === "BERJAYA") {
+                    paparMesej("✅ Rekod berjaya dihantar! Menunggu pengesahan.", "BERJAYA");
+                    document.getElementById("borangPenyelidikan").reset();
+                    setTimeout(() => window.location.href = "dashboard-penyelidikan.html", 2000);
+                } else {
+                    paparMesej("❌ Gagal: " + data.mesej, "RALAT");
+                    btnHantar.disabled = false;
+                    btnHantar.innerHTML = "💾 Hantar Rekod";
+                }
+            }).catch(() => {
+                paparMesej("⚠️ Ralat rangkaian.", "RALAT");
+                btnHantar.disabled = false;
+                btnHantar.innerHTML = "💾 Hantar Rekod";
+            });
+        });
+
+        // --- FUNGSI CSV PUKAL ---
+        function downloadTemplateCSV() {
+            const header = "Tajuk,Penulis,Publisher,VolIssue,TarikhTerbit,DoiUrl,Jabatan,TahapSebaran,Sukuan,Tahun,Bahasa,IndexStatus,UrlBukti\n";
+            const contoh = `"Kajian AI","Ali Bin Abu","Jurnal IT","Vol 1","2024-05-12","https://doi...","JTMK","Antarabangsa","S1","2024","Bahasa Inggeris","SCOPUS","https://drive..."`;
+            const blob = new Blob([header + contoh], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "Template_Upload_KPI.csv";
+            link.click();
+        }
+
+        function prosesFailCSV() {
+            const failInput = document.getElementById("inputCSV").files[0];
+            if (!failInput) {
+                alert("Sila pilih fail CSV terlebih dahulu!");
+                return;
+            }
+
+            Papa.parse(failInput, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if(results.errors.length > 0 && results.data.length === 0) {
+                        alert("Gagal membaca CSV. Pastikan format betul.");
+                        return;
+                    }
+                    dataCSVSedia = results.data;
+                    paparPreviewCSV(dataCSVSedia);
+                }
+            });
+        }
+
+        function paparPreviewCSV(data) {
+            const tbody = document.getElementById("isiPreviewCSV");
+            tbody.innerHTML = "";
+            document.getElementById("jumlahRekodCSV").innerText = data.length;
+
+            data.forEach((row, index) => {
+                // Tunjuk 5 lajur utama sahaja untuk preview
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="p-2 border truncate max-w-[200px]" title="${row.Tajuk || ''}">${row.Tajuk || '-'}</td>
+                    <td class="p-2 border truncate max-w-[150px]">${row.Penulis || '-'}</td>
+                    <td class="p-2 border">${row.Jabatan || '-'}</td>
+                    <td class="p-2 border text-center">${row.Tahun || '-'}</td>
+                    <td class="p-2 border text-blue-600 truncate max-w-[100px]">${row.UrlBukti ? '🔗 Ada' : '❌ Tiada'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById("ruangPreview").classList.remove("hidden");
+        }
+
+        function hantarDataCSV() {
+            if (dataCSVSedia.length === 0) return;
+
+            const btn = document.getElementById("btnHantarCSV");
+            btn.innerHTML = "⏳ Sedang Menghantar...";
+            btn.disabled = true;
+            paparMesej(`Sedang memproses ${dataCSVSedia.length} rekod. Jangan tutup tetingkap ini...`, "INFO");
+
+            const payload = {
+                action: "tambahBulkKPIPenyelidikan",
+                dataBulk: dataCSVSedia
+            };
+
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            }).then(res => res.json()).then(data => {
+                if (data.status === "BERJAYA") {
+                    paparMesej(`✅ ${data.jumlah} Rekod berjaya dimasukkan secara pukal!`, "BERJAYA");
+                    setTimeout(() => window.location.href = "dashboard-penyelidikan.html", 2500);
+                } else {
+                    paparMesej("❌ Gagal: " + data.mesej, "RALAT");
+                    btn.disabled = false;
+                    btn.innerHTML = "🚀 Sah & Hantar Semua Rekod";
+                }
+            }).catch(() => {
+                paparMesej("⚠️ Ralat rangkaian semasa hantar pukal.", "RALAT");
+                btn.disabled = false;
+                btn.innerHTML = "🚀 Sah & Hantar Semua Rekod";
+            });
+        }
+    </script>
+</body>
+</html>

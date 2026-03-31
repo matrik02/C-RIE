@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetapan Sasaran KPI C-RIE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-4 md:p-10 bg-gray-100 min-h-screen flex justify-center items-center">
+
+    <div class="max-w-2xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
+        <div class="bg-gray-800 text-white p-8 text-center shadow-md">
+            <h1 class="text-3xl font-extrabold tracking-tight">⚙️ Tetapan Sasaran KPI</h1>
+            <p class="text-gray-300 mt-2 font-medium">Ubah sasaran pencapaian KPI mengikut tahun penilaian.</p>
+        </div>
+
+        <form id="tetapanForm" class="p-6 md:p-10 space-y-8" onsubmit="simpanTetapan(event)">
+
+            <div class="flex items-center justify-between bg-blue-50 p-6 rounded-xl border border-blue-200">
+                <h2 class="text-lg font-bold text-gray-700">Tahun Penilaian:</h2>
+                <input type="number" id="tahunTetapan" class="w-32 px-4 py-2 border-2 border-blue-300 rounded-lg font-bold text-center text-xl focus:border-blue-600 outline-none" value="2026" required>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-blue-800 mb-1">Target Penyelidikan (Keseluruhan Platform)</label>
+                    <input type="number" id="targetPenyelidikan" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 outline-none" placeholder="Cth: 40" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-green-800 mb-1">Target Inovasi (Bilangan Produk)</label>
+                    <input type="number" id="targetInovasi" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-400 outline-none" placeholder="Cth: 10" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-yellow-800 mb-1">Target BM Teras 3 (Buku/Penerbitan)</label>
+                    <input type="number" id="targetBM3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-400 outline-none" placeholder="Cth: 2" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-purple-800 mb-1">Target BM Teras 6 (Abstrak/Laporan)</label>
+                    <input type="number" id="targetBM6" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400 outline-none" placeholder="Cth: 7" required>
+                </div>
+            </div>
+
+            <div id="statusTetapan" class="hidden p-4 rounded-lg font-bold text-center border-2"></div>
+
+            <div class="flex flex-col sm:flex-row justify-between gap-4 pt-4 border-t">
+                <button type="button" onclick="window.location.href='dashboard-prestasi.html'" class="w-full sm:w-auto px-6 py-3 bg-gray-500 hover:bg-gray-700 text-white font-bold rounded-lg shadow transition">
+                    ⬅️ Kembali
+                </button>
+                <button type="submit" id="btnSimpanTetapan" class="w-full sm:w-auto px-10 py-3 bg-blue-700 hover:bg-blue-900 text-white font-bold rounded-lg shadow-xl transition">
+                    💾 Simpan Tetapan
+                </button>
+            </div>
+        </form>
+    </div>
+
+<script>
+    // ==========================================================
+    // MASUKKAN WEB APP URL ANDA DI SINI
+    // ==========================================================
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+    function simpanTetapan(event) {
+        event.preventDefault();
+        const btn = document.getElementById('btnSimpanTetapan');
+        const statusBox = document.getElementById('statusTetapan');
+        
+        btn.innerHTML = "⏳ Menyimpan...";
+        btn.disabled = true;
+
+        const payload = {
+            tahunTetapan: document.getElementById('tahunTetapan').value,
+            targetPenyelidikan: document.getElementById('targetPenyelidikan').value,
+            targetInovasi: document.getElementById('targetInovasi').value,
+            targetBM3: document.getElementById('targetBM3').value,
+            targetBM6: document.getElementById('targetBM6').value
+        };
+
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "simpanTetapanKPI", payload: payload })
+        })
+        .then(response => response.json())
+        .then(res => {
+            btn.innerHTML = "💾 Simpan Tetapan";
+            btn.disabled = false;
+            statusBox.classList.remove("hidden");
+            
+            if(res.status === "BERJAYA") {
+                statusBox.className = "p-4 bg-green-100 text-green-800 rounded-lg border-2 border-green-500";
+                statusBox.innerHTML = "✅ " + res.mesej;
+            } else {
+                statusBox.className = "p-4 bg-red-100 text-red-800 rounded-lg border-2 border-red-500";
+                statusBox.innerHTML = "❌ Ralat: " + res.mesej;
+            }
+        })
+        .catch(error => {
+            btn.innerHTML = "💾 Simpan Tetapan";
+            btn.disabled = false;
+            statusBox.classList.remove("hidden");
+            statusBox.className = "p-4 bg-yellow-100 text-yellow-800 rounded-lg border-2 border-yellow-500";
+            statusBox.innerHTML = "⚠️ Data berjaya dihantar ke Google Sheet. Sila kembali ke Dashboard.";
+        });
+    }
+</script>
+</body>
+</html>

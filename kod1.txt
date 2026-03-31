@@ -1,0 +1,3949 @@
+// =========================================================================
+var SPREADSHEET_ID = "18sQkH8sGe82SmUtFCpqv8PQrW59RwwM7KJpzgRBoFxM"; 
+var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+// =========================================================================
+function doGet(e) {
+  var action = "";
+  if (e && e.parameter && e.parameter.action) {
+    action = e.parameter.action;
+  }
+
+
+// BUKA SATU SAJA BLOK TRY UNTUK SEMUA FUNGSI
+  try {
+
+// ==========================================
+    // 1. FUNGSI DOWNLOAD TEMPLATE (KALIS MULTI-ACCOUNT)
+    // ==========================================
+    if (action === "downloadTemplate") {
+      var folderId = "1NYqDHUyaz1HTnbJh4_6kh1Axgu60WaoC"; // ID Folder Kamus KPI
+      var folder = DriveApp.getFolderById(folderId);
+      var files = folder.getFiles();
+      var latestUrl = "";
+
+      // Cari fail di dalam folder tersebut
+      while (files.hasNext()) {
+        var file = files.next();
+        var fileName = file.getName();
+        
+        // Pastikan ia BUKAN fail yang dah dipadam atau diarkib
+        if (!fileName.startsWith("[ARKIB]") && !fileName.startsWith("[DIPADAM]")) {
+          latestUrl = "https://drive.google.com/uc?export=download&id=" + file.getId();
+          break; // Berhenti mencari selepas jumpa fail aktif yang pertama
+        }
+      }
+
+      // 🌟 KEMASKINI PENTING: Pulangkan sebagai JSON, BUKAN HTML 🌟
+      if (latestUrl !== "") {
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "BERJAYA",
+          "url": latestUrl
+        })).setMimeType(ContentService.MimeType.JSON);
+      } else {
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "GAGAL",
+          "mesej": "Tiada fail template ditemui."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
+    // --- A. AMBIL DATA INOVASI ---
+    if (action === "ambilData") {
+      var sheetInovasi = ss.getSheetByName("INOVASI");
+      if (!sheetInovasi) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab 'INOVASI' tidak dijumpai."})).setMimeType(ContentService.MimeType.JSON);
+      
+      // 🌟 Guna getDisplayValues() supaya ia baca nombor formula dengan tepat
+      var rowsInovasi = sheetInovasi.getDataRange().getDisplayValues(); 
+      if (rowsInovasi.length <= 1) return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": []})).setMimeType(ContentService.MimeType.JSON);
+      
+      rowsInovasi.shift(); // Buang header
+      
+      // Filter data kosong
+      var dataBersih = rowsInovasi
+        .filter(function(r) { return r[1] && String(r[1]).trim() !== ""; })
+        .map(function(r) { // ❌ BUANG 'index' di sini, kita tak perlukannya lagi
+          
+          // Jika r[9] tiada (rekod lama), kita letakkan default "MENUNGGU PENGESAHAN"
+          var status = r[9] ? String(r[9]).trim() : "MENUNGGU PENGESAHAN";
+          
+          // Ambil link sijil dari Lajur K (Index 10)
+          var linkSijil = r[10] ? String(r[10]).trim() : "";
+
+          // ✅ AMARAN: Jangan guna bilAuto. Mesti guna r[0] supaya nombor BIL tepat dengan Sheet!
+          return [
+            r[0], // 🌟 MESTI r[0] (Ini adalah BIL sebenar di dalam Sheet)
+            r[1], r[2], r[3], r[4], 
+            r[5], r[6], r[7], r[8], status,
+            linkSijil // Wajib hantar lajur ke-11 untuk paparan butang Download
+          ];
+        });
+        
+      return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": dataBersih})).setMimeType(ContentService.MimeType.JSON);
+    }
+
+ 
+
+    else if (action == "padamData") {
+      return fungsiPadamRekod(e.parameter.id);
+    }
+
+    // --- B. AMBIL DATA KPI ---
+    if (action === "ambilKPI") {
+      var sheetKPI = ss.getSheetByName("KPI");
+      if (!sheetKPI) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab 'KPI' tidak dijumpai."})).setMimeType(ContentService.MimeType.JSON);
+      
+      var rowsKPI = sheetKPI.getDataRange().getValues();
+      if (rowsKPI.length <= 1) return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": []})).setMimeType(ContentService.MimeType.JSON);
+      
+      rowsKPI.shift(); 
+      var kpiBersih = rowsKPI.filter(function(r) { return r[1] && String(r[1]).trim() !== ""; });
+      return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": kpiBersih})).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // --- C. AMBIL TETAPAN PERANAN & JABATAN ---
+    if (action === "ambilTetapan") {
+      var sheetPengguna = ss.getSheetByName("PENGGUNA");
+      if (!sheetPengguna) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab 'PENGGUNA' tidak dijumpai."})).setMimeType(ContentService.MimeType.JSON);
+      
+      var dataPengguna = sheetPengguna.getDataRange().getValues();
+      dataPengguna.shift(); 
+      
+      var senaraiPeranan = [];
+      var senaraiJabatan = [];
+      
+      for (var i = 0; i < dataPengguna.length; i++) {
+        var jab = String(dataPengguna[i][3]).trim().toUpperCase(); 
+        var per = String(dataPengguna[i][4]).trim().toUpperCase(); 
+        
+        if (jab !== "" && senaraiJabatan.indexOf(jab) === -1) senaraiJabatan.push(jab);
+        if (per !== "" && senaraiPeranan.indexOf(per) === -1) senaraiPeranan.push(per);
+      }
+      
+      if (senaraiPeranan.indexOf("STAF") === -1) senaraiPeranan.unshift("STAF");
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "BERJAYA", "peranan": senaraiPeranan, "jabatan": senaraiJabatan
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // --- D. AMBIL SENARAI PENGGUNA MENUNGGU PENGESAHAN ---
+    if (action === "ambilPenggunaPending") {
+      var sheetPengguna = ss.getSheetByName("PENGGUNA");
+      if (!sheetPengguna) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab PENGGUNA tiada."})).setMimeType(ContentService.MimeType.JSON);
+      
+      var dataPengguna = sheetPengguna.getDataRange().getValues();
+      var senaraiPending = [];
+      
+      for (var i = 1; i < dataPengguna.length; i++) {
+        var status = String(dataPengguna[i][6]).trim().toUpperCase(); // UBAH: STATUS kini lajur ke-7 (Index 6)
+        if (status === "MENUNGGU PENGESAHAN" || status === "MENUNGGU") {
+          senaraiPending.push({
+            "ic": String(dataPengguna[i][0]).trim(),
+            "nama": String(dataPengguna[i][1]).trim(),
+            "jabatan": String(dataPengguna[i][3]).trim(),
+            "peranan": String(dataPengguna[i][4]).trim()
+          });
+        }
+      }
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "BERJAYA", "data": senaraiPending
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+// --- F. AMBIL SENARAI KPI MENUNGGU PENGESAHAN ---
+    if (action === "ambilKPIPending") {
+      var sheetKPI = ss.getSheetByName("KPI");
+      var dataKPI = sheetKPI.getDataRange().getValues();
+      var senaraiPending = [];
+      
+      for (var i = 1; i < dataKPI.length; i++) {
+        // PERBAIKAN: Status kini berada di Indeks 13 (Kolom N) karena adanya penambahan kolom Sukuan
+        var status = String(dataKPI[i][13] || "").trim().toUpperCase(); 
+        
+        if (status === "MENUNGGU PENGESAHAN") {
+          senaraiPending.push({
+            "bil": String(dataKPI[i][0]).trim(),
+            "namaProduk": String(dataKPI[i][1]).trim(),
+            "ketua": String(dataKPI[i][2]).trim(),
+            "telefon": String(dataKPI[i][3]).trim(), 
+            "email": String(dataKPI[i][4]).trim(),   
+            "ahli": String(dataKPI[i][5]).trim(),
+            "jabatan": String(dataKPI[i][6]).trim(),
+            "aplikasi": String(dataKPI[i][7]).trim(),
+            "jenis": String(dataKPI[i][8]).trim(),
+            "pendaftaran": String(dataKPI[i][9]).trim(),
+            "tahun": String(dataKPI[i][10]).trim(),
+            "url": String(dataKPI[i][11]).trim(),
+            // TAMBAHAN: Ambil data Sukuan di Indeks 12 (Kolom M)
+            "sukuan": String(dataKPI[i][12] || "").trim() 
+          });
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": senaraiPending})).setMimeType(ContentService.MimeType.JSON);
+    }
+
+// ==========================================================
+    // TAMBAHKAN KODE INI TEPAT DI BAWAH BLOK "ambilKPIPending"
+    // ==========================================================
+
+    // --- AMBIL SENARAI KPI PENYELIDIKAN ---
+    else if (action === "ambilKPIPenyelidikan") {
+      var sheetPenyelidikan = ss.getSheetByName("KPI PENYELIDIKAN");
+      
+      // Jika sheet/tab tidak ditemukan
+      if (!sheetPenyelidikan) {
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "GAGAL", 
+          "mesej": "Tab 'KPI PENYELIDIKAN' tiada dalam Google Sheets."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      var dataPenyelidikan = sheetPenyelidikan.getDataRange().getValues();
+      var senaraiPenyelidikan = [];
+      
+      for (var i = 1; i < dataPenyelidikan.length; i++) {
+        // Abaikan baris jika tajuk (kolom B) kosong
+        if (String(dataPenyelidikan[i][1]).trim() !== "") {
+          
+          // Format tanggal agar tampil rapi (DD/MM/YYYY) jika nilainya adalah objek Date
+          var rawDate = dataPenyelidikan[i][5];
+          var tarikhFormat = rawDate;
+          if (rawDate instanceof Date) {
+             var d = rawDate.getDate();
+             var m = rawDate.getMonth() + 1;
+             var y = rawDate.getFullYear();
+             tarikhFormat = (d < 10 ? '0'+d : d) + '-' + (m < 10 ? '0'+m : m) + '-' + y;
+          } else {
+             tarikhFormat = String(rawDate).trim();
+          }
+
+          senaraiPenyelidikan.push({
+            "bil": String(dataPenyelidikan[i][0]).trim(),
+            "tajuk": String(dataPenyelidikan[i][1]).trim(),
+            "penulis": String(dataPenyelidikan[i][2]).trim(),
+            "publisher": String(dataPenyelidikan[i][3]).trim(),
+            "volIssue": String(dataPenyelidikan[i][4]).trim(),
+            "tarikhTerbit": tarikhFormat, // [5]
+            "doiUrl": String(dataPenyelidikan[i][6]).trim(),
+            "jabatan": String(dataPenyelidikan[i][7]).trim(),
+            "tahapSebaran": String(dataPenyelidikan[i][8]).trim(),
+            "laporanKpi": String(dataPenyelidikan[i][9]).trim(),
+            "tahun": String(dataPenyelidikan[i][10]).trim(), // TAMBAH INI UNTUK TAHUN
+            "bahasa": String(dataPenyelidikan[i][11]).trim(), // BERGANJAK KE 11
+            "indexStatus": String(dataPenyelidikan[i][12]).trim(), // BERGANJAK KE 12
+            "urlBukti": String(dataPenyelidikan[i][13]).trim(), // BERGANJAK KE 13
+            "statusPengesahan": String(dataPenyelidikan[i][14] || "MENUNGGU").trim() // BERGANJAK KE 14
+          });
+        }
+      }
+      
+      // Balikkan urutan array (reverse) agar rekod terbaru muncul di atas
+      senaraiPenyelidikan.reverse();
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "BERJAYA", 
+        "data": senaraiPenyelidikan
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+// --- AMBIL DATA DROPDOWN DINAMIK ---
+    else if (action === "ambilPilihan") {
+      var sheetSistem = ss.getSheetByName("SISTEM");
+      var sheetKpi = ss.getSheetByName("PENETAPAN_KPI");
+      
+      var dataSistem = sheetSistem ? sheetSistem.getDataRange().getValues() : [];
+      var dataKpi = sheetKpi ? sheetKpi.getDataRange().getValues() : [];
+      
+      // Fungsi utiliti untuk cari lajur berdasarkan tajuk baris pertama
+      function getColData(data, headerName) {
+        var colIndex = -1;
+        if(data.length === 0) return [];
+        for (var i = 0; i < data[0].length; i++) {
+          if (String(data[0][i]).toUpperCase().trim() === headerName.toUpperCase()) {
+            colIndex = i; break;
+          }
+        }
+        if (colIndex === -1) return [];
+        var colData = [];
+        for (var j = 1; j < data.length; j++) {
+          if (String(data[j][colIndex]).trim() !== "") {
+            colData.push(String(data[j][colIndex]).trim());
+          }
+        }
+        return [...new Set(colData)]; // Buang duplikasi
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "BERJAYA", 
+        "jabatan": getColData(dataSistem, "JABATAN"),
+        "tahapSebaran": getColData(dataSistem, "TAHAP SEBARAN"),
+        "bahasa": getColData(dataSistem, "BAHASA"),
+        "laporanKpi": getColData(dataKpi, "SUKUAN")
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+  // --- AMBIL SENARAI JABATAN DARI SHEET SISTEM ---
+    else if (action === "ambilJabatanSistem") {
+      var sheet = ss.getSheetByName("SISTEM");
+      if (!sheet) throw new Error("Tab 'SISTEM' tiada!");
+
+      // JABATAN berada di Lajur B (Lajur ke-2 selepas BIL)
+      var dataSistem = sheet.getRange("B2:B" + sheet.getLastRow()).getValues(); 
+      
+      var senaraiJabatan = [];
+      for (var i = 0; i < dataSistem.length; i++) {
+        var jab = String(dataSistem[i][0]).trim();
+        if (jab !== "") {
+          senaraiJabatan.push(jab);
+        }
+      }
+
+      // Buang jabatan yang berulang supaya unik
+      var jabatanUnik = [...new Set(senaraiJabatan)];
+
+      return output.setContent(JSON.stringify({
+        "status": "BERJAYA",
+        "data": jabatanUnik
+      }));
+    }
+
+    else if (action === "ambilTetapanSukuan") {
+        var sheetTetapan = ss.getSheetByName("PENETAPAN_KPI");
+        // Andaian lajur Sukuan berada di Lajur A (A2 ke bawah)
+        var sukuanData = sheetTetapan.getRange("A1:A").getValues();
+        var senaraiSukuan = [];
+        
+        for (var i = 0; i < sukuanData.length; i++) {
+            if (sukuanData[i][0] !== "") {
+                senaraiSukuan.push(String(sukuanData[i][0]).trim());
+            }
+        }
+        
+        // Buang duplicate jika ada
+        senaraiSukuan = [...new Set(senaraiSukuan)];
+
+        return ContentService.createTextOutput(JSON.stringify({
+            "status": "BERJAYA",
+            "data": senaraiSukuan
+        })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+
+// --- AMBIL DATA SIJIL PENYELARAS JABATAN ---
+    else if (action === "ambilSijilPenyelaras") {
+      var sheetSijilP = ss.getSheetByName("SIJIL_PENYELARAS");
+      if (!sheetSijilP) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab SIJIL_PENYELARAS tiada."})).setMimeType(ContentService.MimeType.JSON);
+      
+      var dataSijilP = sheetSijilP.getDataRange().getValues();
+      var senaraiSijil = [];
+      
+      // Susunan lajur baru: Tahun(0), Jabatan(1), Nama(2), IC(3), Peranan(4), URL(5)
+      for (var i = 1; i < dataSijilP.length; i++) {
+        if (String(dataSijilP[i][0]).trim() !== "") {
+          senaraiSijil.push({
+            "tahun": String(dataSijilP[i][0]).trim(),
+            "jabatan": String(dataSijilP[i][1]).trim(),
+            "ic": String(dataSijilP[i][3]).trim(), // Tarik IC untuk padanan
+            "url": String(dataSijilP[i][5]).trim() // URL Sijil dari lajur F (Indeks 5)
+          });
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": senaraiSijil})).setMimeType(ContentService.MimeType.JSON);
+    }
+
+
+
+    // --- AMBIL SEMUA PENGGUNA (UNTUK ADMIN & DAFTAR PENYELARAS) ---
+    if (action === "ambilSemuaPengguna" || action === "ambilPengguna") {
+      var sheetPengguna = ss.getSheetByName("PENGGUNA");
+      if (!sheetPengguna) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab PENGGUNA tiada."})).setMimeType(ContentService.MimeType.JSON);
+      
+      var dataPengguna = sheetPengguna.getDataRange().getValues();
+      var senaraiPengguna = [];
+      
+      for (var i = 1; i < dataPengguna.length; i++) {
+        if (String(dataPengguna[i][0]).trim() !== "") {
+          senaraiPengguna.push({
+            "ic": String(dataPengguna[i][0]).trim(), 
+            "idPengguna": String(dataPengguna[i][0]).trim(),
+            "nama": String(dataPengguna[i][1]).trim(),
+            "kata_laluan": String(dataPengguna[i][2]).trim(),
+            "jabatan": String(dataPengguna[i][3]).trim(),
+            "peranan": String(dataPengguna[i][4]).trim(),
+            "bahagian": String(dataPengguna[i][5] || "").trim(), // UBAH: Tambah BAHAGIAN (Index 5)
+            "status": String(dataPengguna[i][6]).trim() // UBAH: STATUS beranjak ke Index 6
+          });
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": senaraiPengguna})).setMimeType(ContentService.MimeType.JSON);
+    }
+
+// --- G. AMBIL SENARAI JABATAN, BAHAGIAN, PERANAN, HI & PERINGKAT ---
+    if (action === "ambilTetapanSenarai") {
+      var sheetSistem = ss.getSheetByName("SISTEM");
+      if (!sheetSistem) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL"})).setMimeType(ContentService.MimeType.JSON);
+      
+      var dataSistem = sheetSistem.getDataRange().getValues();
+      var senaraiJabatan = [];
+      var senaraiPeranan = [];
+      var senaraiBahagian = [];
+      var senaraiHI = [];
+      var senaraiPeringkat = []; // TAMBAHAN BARU
+      
+      for (var i = 1; i < dataSistem.length; i++) {
+        if (dataSistem[i][1] && String(dataSistem[i][1]).trim() !== "") senaraiJabatan.push(String(dataSistem[i][1]).trim());   // Kolum B
+        if (dataSistem[i][2] && String(dataSistem[i][2]).trim() !== "") senaraiPeranan.push(String(dataSistem[i][2]).trim()); // Kolum C
+        if (dataSistem[i][3] && String(dataSistem[i][3]).trim() !== "") senaraiBahagian.push(String(dataSistem[i][3]).trim()); // Kolum D
+        // Andaian Lajur E (Indeks 4) ialah Harta Intelek
+        if (dataSistem[i][4] && String(dataSistem[i][4]).trim() !== "") senaraiHI.push(String(dataSistem[i][4]).trim()); //Kolum E (Harta Intelek)
+        // Andaian Lajur F (Indeks 5) ialah Peringkat
+        if (dataSistem[i][5] && String(dataSistem[i][5]).trim() !== "") senaraiPeringkat.push(String(dataSistem[i][5]).trim()); //Kolum F (PERINGKAT)
+
+
+      }
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "BERJAYA", 
+        "JABATAN": senaraiJabatan,
+        "PERANAN": senaraiPeranan,
+        "BAHAGIAN": senaraiBahagian,
+        "HARTA_INTELEK": senaraiHI,
+        "PERINGKAT": senaraiPeringkat // TAMBAHAN BARU
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+
+
+
+// --- AMBIL DATA PENDAFTARAN PROJEK (GET) ---
+    if (action === "ambilPendaftaranProjek") {
+      var sheetProjek = ss.getSheetByName("PENDAFTARAN_PROJEK");
+      if (!sheetProjek) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab PENDAFTARAN_PROJEK tiada."})).setMimeType(ContentService.MimeType.JSON);
+      
+      var data = sheetProjek.getDataRange().getValues();
+      var senaraiProjek = [];
+      
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]).trim() !== "") {
+          senaraiProjek.push({
+            "bil": String(data[i][0]).trim(),
+            "tarikhMula": String(data[i][1]).trim(), 
+            "ketua": String(data[i][3]).trim(),
+            // [4] ialah IC (Diabaikan untuk UI)
+            "tajuk": String(data[i][10]).trim(), // Lajur K
+            "jabatan": String(data[i][11]).trim(), // Lajur L
+            "urlMaklumat": String(data[i][12]).trim(), // Lajur M
+            "urlProposal": String(data[i][13]).trim(), // Lajur N
+            "urlMaklumatSah": String(data[i][14]).trim(), // Lajur O (Disahkan)
+            "urlProposalSah": String(data[i][15]).trim(), // Lajur P (Disahkan)
+            "status": String(data[i][16] || "MENUNGGU PENGESAHAN").trim(), // Lajur Q
+            
+            // --- MAKLUMAT BAHARU DITAMBAH ---
+            "suratLantikan": String(data[i][17] || "").trim(), // Lajur R (18)
+            "tahun": String(data[i][18] || "").trim() // Lajur S (19)
+          });
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": senaraiProjek})).setMimeType(ContentService.MimeType.JSON);
+    }
+{
+  try {
+    if (e.parameter.action === "ambilPautanBorang") {
+      var folderId = e.parameter.folderId;
+      var hasil = ambilPautanBorang(folderId);
+      
+      return ContentService.createTextOutput(JSON.stringify(hasil))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ "status": "GAGAL", "mesej": err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+// --- J. AMBIL DATA HARTA INTELEK ---
+    if (action === "ambilHartaIntelek") {
+      var sheetHI = ss.getSheetByName("HARTA_INTELEK");
+      if (!sheetHI) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab HARTA_INTELEK tiada."})).setMimeType(ContentService.MimeType.JSON);
+      
+      var dataHI = sheetHI.getDataRange().getValues();
+      var senaraiHI = [];
+      
+      for (var i = 1; i < dataHI.length; i++) {
+        if (String(dataHI[i][0]).trim() !== "") {
+          senaraiHI.push({
+            "bil": String(dataHI[i][0]).trim(),
+            "tahun": String(dataHI[i][1]).trim(),
+            "ketua": String(dataHI[i][2]).trim(),
+            "ahli1": String(dataHI[i][3]).trim(),
+            "ahli2": String(dataHI[i][4]).trim(),
+            "ahli3": String(dataHI[i][5]).trim(),
+            "ahli4": String(dataHI[i][6]).trim(),
+            "ahli5": String(dataHI[i][7]).trim(),
+            "tajuk": String(dataHI[i][8]).trim(),
+            "jabatan": String(dataHI[i][9]).trim(),
+            "pemilik": String(dataHI[i][10]).trim(),
+            "jenis": String(dataHI[i][11]).trim(),
+            "noDaftar": String(dataHI[i][12]).trim(),
+            "statusHI": String(dataHI[i][13]).trim() // TAMBAHAN: Lajur N (Index 13)
+          });
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": senaraiHI})).setMimeType(ContentService.MimeType.JSON);
+    }
+// --- K. AMBIL DATA JURI ---
+    if (action === "ambilJuri") {
+      var sheetJuri = ss.getSheetByName("JURI");
+      if (!sheetJuri) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab JURI tiada."})).setMimeType(ContentService.MimeType.JSON);
+      
+      var dataJuri = sheetJuri.getDataRange().getValues();
+      var senaraiJuri = [];
+      
+      for (var i = 1; i < dataJuri.length; i++) {
+        if (String(dataJuri[i][0]).trim() !== "") {
+          senaraiJuri.push({
+            "bil": String(dataJuri[i][0]).trim(),
+            "nama": String(dataJuri[i][1]).trim(),
+            "ic": String(dataJuri[i][2]).trim(),
+            "institusi": String(dataJuri[i][3]).trim(),
+            "telefon": String(dataJuri[i][4]).trim(),
+            "email": String(dataJuri[i][5]).trim(),
+            "jabatan": String(dataJuri[i][6]).trim(),
+            "statusJuri": String(dataJuri[i][7]).trim(),
+            "tahun": String(dataJuri[i][8]).trim()
+          });
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": senaraiJuri})).setMimeType(ContentService.MimeType.JSON);
+    }
+
+// --- L. AMBIL DATA PROJEK PELAJAR ---
+    if (action === "ambilProjekPelajar") {
+      var sheetProjek = ss.getSheetByName("PROJEK_PELAJAR");
+      if (!sheetProjek) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab PROJEK_PELAJAR tiada."})).setMimeType(ContentService.MimeType.JSON);
+      
+      var dataProjek = sheetProjek.getDataRange().getValues();
+      var senaraiProjek = [];
+      
+      for (var i = 1; i < dataProjek.length; i++) {
+        if (String(dataProjek[i][0]).trim() !== "") {
+          senaraiProjek.push({
+            "id": String(dataProjek[i][0]).trim(),
+            "jabatan": String(dataProjek[i][1]).trim(),
+            "kategori": String(dataProjek[i][2]).trim(),
+            "tajuk": String(dataProjek[i][3]).trim(),
+            "program": String(dataProjek[i][4]).trim(),
+            "emailKetua": String(dataProjek[i][5]).trim(),
+            "namaKetua": String(dataProjek[i][6]).trim(),
+            "matrikKetua": String(dataProjek[i][7]).trim(),
+            "icKetua": String(dataProjek[i][8]).trim(),
+            "nama2": String(dataProjek[i][9]).trim(),
+            "ic2": String(dataProjek[i][10]).trim(),
+            "matrik2": String(dataProjek[i][11]).trim(),
+            "nama3": String(dataProjek[i][12]).trim(),
+            "ic3": String(dataProjek[i][13]).trim(),
+            "matrik3": String(dataProjek[i][14]).trim(),
+            "nama4": String(dataProjek[i][15]).trim(),
+            "ic4": String(dataProjek[i][16]).trim(),
+            "matrik4": String(dataProjek[i][17]).trim(),
+            "penyelia": String(dataProjek[i][18]).trim(),
+            "icPenyelia": String(dataProjek[i][19]).trim(),
+            "hpPenyelia": String(dataProjek[i][20]).trim(),
+            "emailPenyelia": String(dataProjek[i][21]).trim(),
+            "tahun": String(dataProjek[i][22]).trim()
+          });
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": senaraiProjek})).setMimeType(ContentService.MimeType.JSON);
+    }
+
+
+// --- M. AMBIL DATA PENCAPAIAN PROJEK PELAJAR ---
+    if (action === "ambilPencapaianPelajar") {
+      var sheetPencapaian = ss.getSheetByName("PENCAPAIAN_PROJEK_PELAJAR");
+      if (!sheetPencapaian) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab PENCAPAIAN_PROJEK_PELAJAR tiada."})).setMimeType(ContentService.MimeType.JSON);
+      
+      var dataPencapaian = sheetPencapaian.getDataRange().getValues();
+      var senaraiPencapaian = [];
+      
+      for (var i = 1; i < dataPencapaian.length; i++) {
+        if (String(dataPencapaian[i][0]).trim() !== "") {
+          senaraiPencapaian.push({
+            "id": String(dataPencapaian[i][0]).trim(),
+            "kategori": String(dataPencapaian[i][1]).trim(),
+            "namaProjek": String(dataPencapaian[i][2]).trim(),
+            "jabatan": String(dataPencapaian[i][3]).trim(),
+            "namaKetua": String(dataPencapaian[i][4]).trim(),
+            "penyelia": String(dataPencapaian[i][5]).trim(),
+            "pencapaian": String(dataPencapaian[i][6]).trim(),
+            "tahun": String(dataPencapaian[i][7]).trim()
+          });
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": senaraiPencapaian})).setMimeType(ContentService.MimeType.JSON);
+    }
+   // --- E. AMBIL DATA SENARAI PERTANDINGAN (DIPERBAIKI UNTUK EDIT/DELETE) ---
+    if (action === "ambilPertandingan") {
+      var sheetPertandingan = ss.getSheetByName("SENARAI_INOVASI");
+      if (!sheetPertandingan) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab SENARAI_INOVASI tiada."})).setMimeType(ContentService.MimeType.JSON);
+      
+      var data = sheetPertandingan.getDataRange().getValues();
+      var senarai = [];
+      
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]).trim() !== "") {
+          senarai.push({
+            "id": String(data[i][0]).trim(),
+            "nama": String(data[i][1]).trim(),
+            "tahun": String(data[i][2]).trim(),
+            "tarikh": String(data[i][3]).trim(),
+            "tempat": String(data[i][4]).trim(),
+            "kaedah": String(data[i][5]).trim(),
+            "peringkat": String(data[i][6]).trim(),
+            "url": String(data[i][7]).trim()
+          });
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": senarai})).setMimeType(ContentService.MimeType.JSON);
+    }
+
+// --- N. AMBIL DATA LAPORAN KEMAJUAN ---
+    if (action === "ambilLaporanKemajuan") {
+      var sheetLaporan = ss.getSheetByName("LAPORAN_KEMAJUAN");
+      if (!sheetLaporan) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab LAPORAN_KEMAJUAN tiada."})).setMimeType(ContentService.MimeType.JSON);
+      
+      var dataLaporan = sheetLaporan.getDataRange().getValues();
+      var senaraiLaporan = [];
+      
+      for (var i = 1; i < dataLaporan.length; i++) {
+        if (String(dataLaporan[i][0]).trim() !== "") {
+          senaraiLaporan.push({
+            "id": String(dataLaporan[i][0]).trim(),
+            "tarikh": String(dataLaporan[i][1]).trim(),
+            "email": String(dataLaporan[i][2]).trim(),
+            "tajuk": String(dataLaporan[i][3]).trim(),
+            "namaKetua": String(dataLaporan[i][4]).trim(),
+            "icKetua": String(dataLaporan[i][5]).trim(),
+            "telefon": String(dataLaporan[i][6]).trim(),
+            "jabatan": String(dataLaporan[i][7]).trim(),
+            "url": String(dataLaporan[i][8]).trim(),
+            "status": String(dataLaporan[i][9]).trim()
+          });
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": senaraiLaporan})).setMimeType(ContentService.MimeType.JSON);
+    }
+
+// --- O. AMBIL DATA LAPORAN AKHIR ---
+    if (action === "ambilLaporanAkhir") {
+      var sheetLaporanAkhir = ss.getSheetByName("LAPORAN_PROJEK_AKHIR");
+      if (!sheetLaporanAkhir) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab LAPORAN_PROJEK_AKHIR tiada."})).setMimeType(ContentService.MimeType.JSON);
+      
+      var dataLaporan = sheetLaporanAkhir.getDataRange().getValues();
+      var senaraiLaporan = [];
+      
+      for (var i = 1; i < dataLaporan.length; i++) {
+        if (String(dataLaporan[i][0]).trim() !== "") {
+          senaraiLaporan.push({
+            "id": String(dataLaporan[i][0]).trim(),
+            "tarikh": String(dataLaporan[i][1]).trim(),
+            "email": String(dataLaporan[i][2]).trim(),
+            "tajuk": String(dataLaporan[i][3]).trim(),
+            "namaKetua": String(dataLaporan[i][4]).trim(),
+            "icKetua": String(dataLaporan[i][5]).trim(),
+            "telefon": String(dataLaporan[i][6]).trim(),
+            "jabatan": String(dataLaporan[i][7]).trim(),
+            "url": String(dataLaporan[i][8]).trim(),
+            "status": String(dataLaporan[i][9]).trim()
+          });
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": senaraiLaporan})).setMimeType(ContentService.MimeType.JSON);
+    }
+
+
+// ========================================================
+    // 1. AMBIL DATA SIJIL PENYELARAS (BERDASARKAN KPI DISAHKAN)
+    // ========================================================
+    if (action === "ambilDataPenyelaras") {
+      var sheetKPI = ss.getSheetByName("KPI");
+      var sheetPengguna = ss.getSheetByName("PENGGUNA");
+      var sheetSijil = ss.getSheetByName("SIJIL_PENYELARAS");
+
+      if (!sheetKPI || !sheetPengguna) {
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "GAGAL", 
+          "mesej": "Tab KPI atau PENGGUNA tidak dijumpai."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      var dataKPI = sheetKPI.getDataRange().getDisplayValues();
+      var dataPengguna = sheetPengguna.getDataRange().getDisplayValues();
+      var dataSijil = sheetSijil ? sheetSijil.getDataRange().getDisplayValues() : [];
+
+      // LANGKAH A: Cari senarai Penyelaras Jabatan dari Sheet PENGGUNA
+      var mapPenyelaras = {};
+      for (var p = 1; p < dataPengguna.length; p++) {
+        var peranan = String(dataPengguna[p][4]).trim().toUpperCase(); // Lajur E (Peranan)
+        if (peranan.includes("PENYELARAS JABATAN")) {
+          var jab = String(dataPengguna[p][3]).trim().toUpperCase(); // Lajur D (Jabatan)
+          mapPenyelaras[jab] = {
+            ic: String(dataPengguna[p][0]).trim(),
+            nama: String(dataPengguna[p][1]).trim(),
+            peranan: String(dataPengguna[p][4]).trim()
+          };
+        }
+      }
+
+      // LANGKAH B: Cari rekod URL Sijil yang dah dijana (Jika ada)
+      var mapSijil = {};
+      for (var s = 1; s < dataSijil.length; s++) {
+        var sTahun = String(dataSijil[s][0]).trim();
+        var sJab = String(dataSijil[s][1]).trim().toUpperCase();
+        var sIc = String(dataSijil[s][3]).trim();
+        var url = String(dataSijil[s][5]).trim();
+        if (sTahun && sJab && sIc) {
+          mapSijil[sTahun + "_" + sJab + "_" + sIc] = url;
+        }
+      }
+
+      // LANGKAH C: Cari Jabatan & Tahun yang ada KPI "DISAHKAN"
+      var kpiLulus = {};
+      for (var k = 1; k < dataKPI.length; k++) {
+        var statusKPI = String(dataKPI[k][13]).trim().toUpperCase(); // Lajur N (Status)
+        if (statusKPI === "DISAHKAN") {
+          var kJab = String(dataKPI[k][6]).trim().toUpperCase(); // Lajur G (Jabatan)
+          var kTahun = String(dataKPI[k][10]).trim(); // Lajur K (Tahun)
+          
+          if (kJab !== "" && kTahun !== "") {
+            var key = kTahun + "_" + kJab;
+            kpiLulus[key] = { tahun: kTahun, jabatan: kJab };
+          }
+        }
+      }
+
+      // LANGKAH D: Gabungkan data untuk dihantar ke HTML
+      var dataAkhir = [];
+      for (var key in kpiLulus) {
+        var tahun = kpiLulus[key].tahun;
+        var jabatan = kpiLulus[key].jabatan;
+        
+        var infoPenyelaras = mapPenyelaras[jabatan];
+        
+        // Pastikan jabatan tersebut ada Penyelaras yang berdaftar dalam sistem
+        if (infoPenyelaras) {
+          var urlKey = tahun + "_" + jabatan + "_" + infoPenyelaras.ic;
+          var urlSijil = mapSijil[urlKey] || "";
+
+          dataAkhir.push([
+            tahun,
+            jabatan,
+            infoPenyelaras.nama,
+            infoPenyelaras.ic,
+            infoPenyelaras.peranan,
+            urlSijil
+          ]);
+        }
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "BERJAYA", 
+        "data": dataAkhir
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+
+// --- AMBIL DATA SENARAI SEMINAR ---
+    if (action === "ambilSenaraiSeminar") {
+      var sheetSeminar = ss.getSheetByName("SENARAI_SEMINAR");
+      if (!sheetSeminar) return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tab SENARAI_SEMINAR tiada."})).setMimeType(ContentService.MimeType.JSON);
+      
+      var data = sheetSeminar.getDataRange().getValues();
+      var senarai = [];
+      
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]).trim() !== "") {
+          senarai.push({
+            "id": String(data[i][0]).trim(),
+            "nama": String(data[i][1]).trim(),
+            "tarikh": String(data[i][2]).trim(),
+            "tempat": String(data[i][3]).trim(),
+            "kaedah": String(data[i][4]).trim(),
+            "peringkat": String(data[i][5]).trim(),
+            "url": String(data[i][6]).trim()
+          });
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "data": senarai})).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+   
+    return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "mesej": "API Aktif."})).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": err.message})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function dapatkanSenaraiPlatform() {
+  try {
+    var sheet = ss.getSheetByName("SISTEM");
+    if (!sheet) return ["RALAT: Tab SISTEM tidak dijumpai"];
+    
+    var data = sheet.getDataRange().getValues(); // Ambil semua data
+    if (data.length < 2) return ["Tiada Data"];
+
+    var headers = data[0];
+    var colIndex = -1;
+
+    // Cari lajur "JENIS PLATFORM" secara dinamik (Kalis ralat nombor lajur)
+    for (var i = 0; i < headers.length; i++) {
+      if (headers[i].toString().toUpperCase().trim() === "JENIS PLATFORM") {
+        colIndex = i;
+        break;
+      }
+    }
+
+    if (colIndex === -1) return ["RALAT: Lajur 'JENIS PLATFORM' tidak ditemui"];
+
+    var senarai = [];
+    for (var j = 1; j < data.length; j++) {
+      var cellValue = data[j][colIndex];
+      if (cellValue && String(cellValue).trim() !== "") {
+        var bersih = String(cellValue).trim();
+        if (senarai.indexOf(bersih) === -1) {
+          senarai.push(bersih);
+        }
+      }
+    }
+    
+    return senarai.length > 0 ? senarai.sort() : ["Tiada pilihan ditemui"];
+  } catch (e) {
+    return ["RALAT SERVER: " + e.message];
+  }
+}
+
+function simpanDataKPI(data) {
+  try {
+    var sheet = ss.getSheetByName("PEMANTAUAN_KPI");
+    sheet.appendRow([
+      new Date(), data.tahunKpi, data.platformPenyelidikan, 
+      data.penyQ1, data.penyQ2, data.penyQ3, data.penyQ4,
+      data.namaProduk, data.statusIntelek, data.statusHakMilik, 
+      data.statusAplikasi, data.statusKeberkesanan, data.jenisPenerbitan, 
+      data.bmQ1, data.bmQ2, data.bmQ3, data.bmQ4
+    ]);
+    return {status: "Berjaya", mesej: "Rekod Berhasil Disimpan!"};
+  } catch (e) {
+    return {status: "Ralat", mesej: e.toString()};
+  }
+}
+
+
+
+const NAMA_SHEET = "KPI"; 
+const FOLDER_ID_SIJILKPI = "1R5D4jQ5PhV7Wm0UWTV4GG9h81Xake_Hx"; // Pastikan ini diisi
+function doPost(e) {
+// 1. Sediakan pembolehubah 'output' paling awal
+  var output = ContentService.createTextOutput().setMimeType(ContentService.MimeType.JSON);
+// 2. Tangkap dan parse data yang dihantar dari fail HTML
+  var data;
+  var action;
+
+  try {
+    // Jika data dihantar dalam format JSON
+    data = JSON.parse(e.postData.contents);
+    action = data.action; 
+  } catch (error) {
+    // Jika data dihantar menggunakan Form biasa
+    data = e.parameter || {};
+    action = data.action;
+  }
+    // Pastikan 'data' tidak undefined sebelum meneruskan
+    if (!data) {
+        return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Tiada data diterima."})).setMimeType(ContentService.MimeType.JSON);
+    }
+
+// ==========================================
+  // 2. PENGURUSAN ARAHAN (LOGIK IF-ELSE)
+  // ==========================================
+
+  // --- A. KEMASKINI TEMPLATE BORANG ---
+  if (action === "kemaskiniTemplateBorang") {
+    // Pastikan function kemaskiniTemplateBorang(data) wujud di skrip anda
+    var hasil = kemaskiniTemplateBorang(data); 
+    return output.setContent(JSON.stringify(hasil));
+  }
+
+  // --- B. UPLOAD TEMPLATE SENARAI SEMAK KPI & PADAM FAIL LAMA ---
+  else if (action === "uploadTemplate") {
+    try {
+      // ID Folder Kamus KPI anda
+      var folderId = "1NYqDHUyaz1HTnbJh4_6kh1Axgu60WaoC"; 
+      var folder = DriveApp.getFolderById(folderId);
+      
+      // 1. CARI DAN PADAM (MASUK TONG SAMPAH) SEMUA FAIL LAMA DALAM FOLDER
+      var files = folder.getFiles();
+      while (files.hasNext()) {
+        var oldFile = files.next();
+        try {
+          oldFile.setTrashed(true); // Buang fail lama ke tong sampah
+        } catch (err) {
+          // Jika dihalang (Access denied sebab bukan owner), kita ubah nama fail
+          oldFile.setName("[DIPADAM] " + oldFile.getName());
+        }
+      }
+
+      // 2. MUAT NAIK FAIL BAHARU
+      // Tidak perlu JSON.parse lagi kerana ia sudah dilakukan di bahagian atas
+      var failBase64 = Utilities.base64Decode(data.base64);
+      var blob = Utilities.newBlob(failBase64, data.mimeType, data.fileName);
+      var newFile = folder.createFile(blob);
+
+      // Beri keizinan supaya fail boleh dilihat oleh sesiapa sahaja melalui link
+      //newFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+      // Pulangkan respon BERJAYA ke HTML
+      return output.setContent(JSON.stringify({ status: "BERJAYA", url: newFile.getUrl() }));
+        
+    } catch (error) {
+      // Jika ralat berlaku
+      return output.setContent(JSON.stringify({ status: "RALAT", message: error.toString() }));
+    }
+  }
+
+// Fungsi OPTIONS untuk mengelakkan ralat CORS (kekalkan di atas atau luar)
+  if (e && e.postData && e.postData.type === "application/x-www-form-urlencoded" && Object.keys(e.parameter).length === 0) {
+    return ContentService.createTextOutput("")
+      .setMimeType(ContentService.MimeType.TEXT)
+      .setHeader("Access-Control-Allow-Origin", "*")
+      .setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+      .setHeader("Access-Control-Allow-Headers", "Content-Type");
+  }
+  try {
+    var payload = {};
+    if (e && e.postData && e.postData.contents) {
+      try { payload = JSON.parse(e.postData.contents); } catch (err) { payload = e.parameter; }
+    } else { payload = e.parameter || {}; }
+
+    var action = payload.action || "";
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+
+    // --- A. TAMBAH DATA INOVASI ---
+    if (action === "tambahData") {
+      var sheet = ss.getSheetByName("INOVASI");
+      if (!sheet) throw new Error("Tab 'INOVASI' tiada!");
+
+      var innovator = payload.innovator || payload.INNOVATOR || "";
+      var ahli      = payload.ahli_kumpulan || payload.AHLI || payload.ahli || "";
+      var jabatan   = payload.jabatan || payload.JABATAN || "";
+      var produk    = payload.produk_inovasi || payload.PRODUK || payload.produk || "";
+      var tajuk     = payload.NAMA || payload.nama || payload.tajuk_pertandingan || payload.NAMAPERTANDINGAN || ""; 
+      
+      var tarikh_input = payload.TARIKH || payload.tarikh_pertandingan || "";
+      var tempat_input = payload.TEMPAT || payload.tempat_pertandingan || "";
+      var tarikh = (tarikh_input !== "" && tempat_input !== "") ? tarikh_input + " | " + tempat_input : (tarikh_input || tempat_input || payload.TARIKHTEMPATPERTANDINGAN || "");
+
+      var pingat    = payload.pingat || payload.PINGAT || "";
+      var tahun     = payload.tahun || payload.TAHUN || "";
+      
+      // 🌟 TAMBAHAN UNTUK STATUS: Default kepada MENUNGGU PENGESAHAN jika tiada input dihantar
+      var statusInovasi = payload.status || payload.STATUS || "MENUNGGU PENGESAHAN";
+
+      if (innovator === "" && produk === "") return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tiada maklumat sah."}));
+
+      var dataB = sheet.getRange("B:B").getValues();
+      var lastRow = 0;
+      for (var i = dataB.length - 1; i >= 0; i--) { if (dataB[i][0] !== "") { lastRow = i + 1; break; } }
+      var nextRow = lastRow + 1;
+      var bil = (lastRow < 1) ? 1 : lastRow; 
+      // 🌟 PERUBAHAN DI SINI: Letak "=ROW()-1" sebagai data pertama
+      sheet.getRange(nextRow, 1, 1, 10).setValues([[ "=ROW()-1", innovator, ahli, jabatan, produk, tajuk, tarikh, pingat, tahun, statusInovasi ]]);
+      
+      return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod berjaya disimpan!"}));
+    }
+    
+    // --- FUNGSI TAMBAH DATA PUKAL VIA CSV ---
+    if (action === "tambahDataPukal") {
+      try {
+        var sheetInovasi = ss.getSheetByName("INOVASI");
+        var rekodPukal = payload.data;
+        
+        var lastRow = sheetInovasi.getLastRow();
+        var susunanData = [];
+        
+        for (var i = 0; i < rekodPukal.length; i++) {
+          var d = rekodPukal[i];
+          
+          // Susunan diselaraskan mengikut format: 
+          // BIL, INNOVATOR, AHLI, JABATAN, PRODUK, NAMA, TARIKH, PINGAT, TAHUN, STATUS
+          susunanData.push([
+            "=ROW()-1",      // Lajur A: Formula Automatik Google Sheets
+            d.INNOVATOR,     // Lajur B: INNOVATOR
+            d.AHLI,          // Lajur C: AHLI
+            d.JABATAN,       // Lajur D: JABATAN
+            d.PRODUK,        // Lajur E: PRODUK
+            d.NAMA,          // Lajur F: NAMA
+            d.TARIKH,        // Lajur G: TARIKH
+            d.PINGAT,        // Lajur H: PINGAT
+            d.TAHUN,         // Lajur I: TAHUN
+            d.STATUS         // Lajur J: STATUS ("DISAHKAN")
+          ]);
+        }
+        
+        // Memasukkan array 2D secara pukal (lebih pantas dan elak limitasi)
+        sheetInovasi.getRange(lastRow + 1, 1, susunanData.length, susunanData[0].length).setValues(susunanData);
+        
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "BERJAYA",
+          "mesej": susunanData.length + " rekod inovasi (DISAHKAN) berjaya dimuat naik secara pukal!"
+        })).setMimeType(ContentService.MimeType.JSON);
+        
+      } catch (error) {
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "GAGAL",
+          "mesej": "Ralat Muat Naik Pukal: " + error.toString()
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+// --- E. TAMBAH DATA KPI ---
+    else if (action === "tambahKPI") {
+      var sheet = ss.getSheetByName("KPI");
+      if (!sheet) throw new Error("Tab 'KPI' tiada!");
+
+      var namaProduk = payload.NAMA_PRODUK || "";
+      var ketua      = payload.KETUA || "";
+      var noTelefon  = payload.NO_TELEFON || ""; 
+      var email      = payload.EMAIL || "";      
+      var ahli       = payload.AHLI || "";
+      var jabatan    = payload.JABATAN || "";
+      var aplikasi   = payload.APLIKASI || "";
+      var jenis      = payload.JENIS || "";
+      var pendaftaran= payload.NO_PENDAFTARAN || "";
+      var tahun      = payload.TAHUN || "";
+      var url        = payload.URL || "";
+      
+      // 🌟 TAMBAHAN: Tangkap data SUKUAN dari HTML
+      var sukuan     = payload.SUKUAN || ""; 
+      
+      var statusKPI  = payload.STATUS || "DISAHKAN";
+
+      if (namaProduk === "") return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Nama Produk wajib diisi."}));
+
+      var dataB = sheet.getRange("B:B").getValues();
+      var lastRow = 0;
+      for (var i = dataB.length - 1; i >= 0; i--) { if (dataB[i][0] !== "") { lastRow = i + 1; break; } }
+      
+      var nextRow = lastRow + 1;
+      var bil = (lastRow < 1) ? 1 : lastRow; 
+
+      // 🌟 PERBAIKAN: Ubah 13 kepada 14, dan masukkan variabel 'sukuan' sebelum 'statusKPI'
+      sheet.getRange(nextRow, 1, 1, 14).setValues([[ bil, namaProduk, ketua, noTelefon, email, ahli, jabatan, aplikasi, jenis, pendaftaran, tahun, url, sukuan, statusKPI ]]);
+      
+      return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod KPI berjaya disimpan!"}));
+    }
+
+    // ===== [KOD BARU UNTUK BULK CSV] =====
+    else if (action === "tambahKPIBulk") {
+    try {
+      var sheetKPI = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("KPI");
+      
+      // 🌟 [PENYELESAIAN]: Parse data dari request terlebih dahulu
+      // e.postData.contents mengandungi string JSON dari front-end anda
+      var requestData = JSON.parse(e.postData.contents); 
+      
+      // Sekarang baru kita boleh baca rekodPukal dari requestData
+      var rekod = requestData.rekodPukal; 
+      
+      var dataUntukDimasukkan = [];
+      
+      // Semak baris terakhir (BIL)
+      var lastRow = sheetKPI.getLastRow();
+      var bil = (lastRow > 1) ? parseInt(sheetKPI.getRange(lastRow, 1).getValue()) || 0 : 0;
+      
+      // Gelung untuk setiap baris dari CSV
+      for (var i = 0; i < rekod.length; i++) {
+        var r = rekod[i];
+        bil++; // Tambah nombor Bilangan
+        
+        // Susunan data mesti sama dengan lajur di Sheet
+        var rowData = [
+          bil, 
+          String(r.NAMA_PRODUK).toUpperCase(), 
+          String(r.KETUA).toUpperCase(), 
+          r.NO_TELEFON, 
+          r.EMAIL, 
+          String(r.AHLI).toUpperCase(),
+          r.JABATAN, 
+          r.APLIKASI, 
+          r.JENIS, 
+          r.NO_PENDAFTARAN, 
+          r.TAHUN, 
+          r.URL, 
+          r.SUKUAN, 
+          "DISAHKAN" // Auto letak DISAHKAN
+        ];
+        
+        dataUntukDimasukkan.push(rowData);
+      }
+      
+      // Masukkan semua data sekaligus
+      var startRow = lastRow + 1;
+      var numRows = dataUntukDimasukkan.length;
+      var numCols = dataUntukDimasukkan[0].length;
+      
+      sheetKPI.getRange(startRow, 1, numRows, numCols).setValues(dataUntukDimasukkan);
+      
+      return ContentService.createTextOutput(JSON.stringify({ 
+        status: "BERJAYA", 
+        mesej: numRows + " rekod berjaya dimasukkan." 
+      })).setMimeType(ContentService.MimeType.JSON);
+      
+    } 
+    catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ 
+        status: "GAGAL", 
+        mesej: err.toString() 
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  // ===== [TAMAT KOD BARU BULK CSV] =====
+
+// ===== [KOD BARU: KEMASKINI DATA INOVASI] =====
+    else if (action === "kemaskiniData") {
+      var sheetInovasi = ss.getSheetByName("INOVASI");
+      if (!sheetInovasi) throw new Error("Tab 'INOVASI' tiada!");
+
+      var bilId = payload.bil || payload.BIL || "";
+      if (!bilId) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "ID / BIL tidak dihantar."}));
+
+      var data = sheetInovasi.getDataRange().getValues();
+      var rowIndex = -1;
+
+      // Cari baris berdasarkan BIL (Lajur A / index 0)
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]) === String(bilId)) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+
+      if (rowIndex !== -1) {
+        // Ambil data dari payload
+        var innovatorKemaskini = payload.innovator || "";
+        var ahliKemaskini      = payload.ahli || "";
+        var jabatanKemaskini   = payload.jabatan || "";
+        var produkKemaskini    = payload.produk || "";
+        var tajukKemaskini     = payload.pertandingan || "";
+        var tarikhKemaskini    = payload.tarikh_tempat || "";
+        var pingatKemaskini    = payload.pingat || "";
+        var tahunKemaskini     = payload.tahun || "";
+        
+        // 🌟 TAMBAHAN: Ambil data status yang dikemaskini oleh ADMIN
+        // Jika ADMIN tak ubah apa-apa status (hanya edit teks lain), kekalkan status lama dari Sheet
+        var statusSemasaDalamSheet = sheetInovasi.getRange(rowIndex, 10).getValue() || "MENUNGGU PENGESAHAN";
+        var statusKemaskini    = payload.status || payload.STATUS || statusSemasaDalamSheet;
+
+        // Kemaskini data pada baris yang ditemui
+        sheetInovasi.getRange(rowIndex, 2).setValue(innovatorKemaskini);
+        sheetInovasi.getRange(rowIndex, 3).setValue(ahliKemaskini);
+        sheetInovasi.getRange(rowIndex, 4).setValue(jabatanKemaskini);
+        sheetInovasi.getRange(rowIndex, 5).setValue(produkKemaskini);
+        sheetInovasi.getRange(rowIndex, 6).setValue(tajukKemaskini);
+        sheetInovasi.getRange(rowIndex, 7).setValue(tarikhKemaskini);
+        sheetInovasi.getRange(rowIndex, 8).setValue(pingatKemaskini);
+        sheetInovasi.getRange(rowIndex, 9).setValue(tahunKemaskini);
+        
+        // 🌟 PERBAIKAN: Kemaskini Lajur 10 untuk Status
+        sheetInovasi.getRange(rowIndex, 10).setValue(statusKemaskini.toUpperCase());
+
+        return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod berjaya dikemaskini!"}));
+      } else {
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Rekod tidak dijumpai."}));
+      }
+    }
+
+
+
+// ===== [KOD BARU: PADAM DATA INOVASI] =====
+    else if (action === "padamData") {
+      var sheetInovasi = ss.getSheetByName("INOVASI");
+      if (!sheetInovasi) throw new Error("Tab 'INOVASI' tiada!");
+
+      var bilId = payload.bil || payload.BIL || "";
+      if (!bilId) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "ID / BIL untuk dipadam tidak dihantar."}));
+
+      var data = sheetInovasi.getDataRange().getValues();
+      var rowIndex = -1;
+
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]) === String(bilId)) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+
+      if (rowIndex !== -1) {
+        sheetInovasi.deleteRow(rowIndex);
+        return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod berjaya dipadam."}));
+      } else {
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Rekod tidak dijumpai."}));
+      }
+    }
+
+// ==========================================
+    // TAMBAH KPI PENYELIDIKAN BAHARU
+    // ==========================================
+    else if (action === "tambahKPIPenyelidikan") {
+      var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("KPI PENYELIDIKAN");
+      
+      var lastRow = sheet.getLastRow();
+      var bilSemasa = 1;
+      if (lastRow > 1) {
+        bilSemasa = Number(sheet.getRange(lastRow, 1).getValue()) + 1;
+        if (isNaN(bilSemasa)) bilSemasa = lastRow; 
+      }
+
+      var barisBaharu = [
+        bilSemasa,                   // A: BIL
+        payload.tajuk || "",         // B: TAJUK
+        payload.penulis || "",       // C: PENULIS
+        payload.publisher || "",     // D: PUBLISHER
+        payload.volIssue || "",      // E: VOL / ISSUE
+        payload.tarikhTerbit || "",  // F: TARIKH TERBIT
+        payload.doiUrl || "",        // G: DOI / URL
+        payload.jabatan || "",       // H: JABATAN
+        payload.tahapSebaran || "",  // I: TAHAP SEBARAN
+        payload.laporanKpi || "",    // J: LAPORAN KPI
+        payload.tahun || "",         // K: TAHUN (Dibetulkan, elak nilai undefined)
+        payload.bahasa || "",        // L: BAHASA
+        payload.indexStatus || "",   // M: INDEX STATUS
+        payload.urlBukti || "",      // N: URL DOKUMEN BUKTI (LAJUR BARU)
+        "MENUNGGU"                   // O: STATUS PENGESAHAN (BERANJAK KE O)
+      ];
+
+      sheet.appendRow(barisBaharu);
+
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "BERJAYA", 
+        "mesej": "Rekod penyelidikan berjaya disimpan."
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+
+// --- D. PADAM REKOD ---
+    else if (action === "padamKPI") {
+      return padamRekod(payload, ss);
+    } 
+    
+    // --- E. KEMASKINI REKOD ---
+    else if (action === "kemaskiniKPI") {
+      return kemaskiniRekod(payload, ss);
+    } 
+    
+
+    // Untuk Sheet Inovasi
+    else if (action === "uploadSijilInovasi") {
+      return fungsiUploadSijil(payload); 
+    }
+    
+// --- UPLOAD SIJIL KPI KE DRIVE ---
+    else if (action === "uploadSijilKPI") {
+      // Panggil terus fungsi muatNaikSijil yang sedia ada
+      return muatNaikSijil(payload, ss); 
+    }
+
+// --- UPLOAD SIJIL PENYELARAS JABATAN KE DRIVE ---
+    else if (action === "uploadSijilPenyelaras") {
+      return muatNaikSijilPenyelaras(payload, ss); 
+    }
+
+  // ==========================================
+    // 🗑️ [TAMBAH KOD DI SINI] PADAM SIJIL PENYELARAS
+    // ==========================================
+    else if (action === "padamSijilPenyelaras") {
+      // Kita hantar 'payload' masuk ke dalam fungsi prosesPadamSijilPenyelaras
+      return prosesPadamSijilPenyelaras(payload);
+    }
+// ---------------------------------------------------
+  // BLOK 2: KEMASKINI STATUS (Yang baru ditambah)
+  // ---------------------------------------------------
+    else if (action === "kemaskiniStatusPenyelidikan") {
+      var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("KPI PENYELIDIKAN");
+      
+      // ... (masukkan baki kod pengesahan dari jawapan saya sebelum ini di sini) ...
+      
+      var bilTarget = String(payload.bil).trim();
+      var statusBaru = payload.statusBaru;
+      var data = sheet.getDataRange().getValues();
+      var rekodDijumpai = false;
+
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]).trim() === bilTarget) {
+          sheet.getRange(i + 1, 15).setValue(statusBaru); // Kod Baharu (Selepas masuk lajur Tahun)
+          rekodDijumpai = true;
+          break;
+        }
+      }
+
+      if (rekodDijumpai) {
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "BERJAYA", 
+          "mesej": "Status berjaya dikemaskini."
+        })).setMimeType(ContentService.MimeType.JSON);
+      } else {
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "GAGAL", 
+          "mesej": "Rekod tidak dijumpai."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+  }
+
+// ==========================================
+    // TAMBAH KPI PENYELIDIKAN BAHARU (BULK CSV)
+    // ==========================================
+    else if (action === "tambahBulkKPIPenyelidikan") {
+      var sheetPenyelidikan = ss.getSheetByName("KPI PENYELIDIKAN");
+      if (!sheetPenyelidikan) throw new Error("Tab 'KPI PENYELIDIKAN' tiada!");
+
+      var bulkData = payload.dataBulk; 
+      var dataUntukDimasukkan = [];
+      
+      var lastRow = sheetPenyelidikan.getLastRow();
+      var lastBil = 0;
+      if (lastRow > 1) {
+        var val = sheetPenyelidikan.getRange(lastRow, 1).getValue();
+        lastBil = isNaN(parseInt(val)) ? 0 : parseInt(val);
+      }
+
+      for (var i = 0; i < bulkData.length; i++) {
+        var row = bulkData[i];
+        lastBil++;
+        
+        dataUntukDimasukkan.push([
+          lastBil,
+          row.Tajuk || "",
+          row.Penulis || "",
+          row.Publisher || "",
+          row.VolIssue || "",
+          row.TarikhTerbit || "",
+          row.DoiUrl || "",
+          row.Jabatan || "",
+          row.TahapSebaran || "",
+          row.Sukuan || "",
+          row.Tahun || "",
+          row.Bahasa || "",
+          row.IndexStatus || "",
+          row.UrlBukti || "",
+          "MENUNGGU"
+        ]);
+      }
+
+      if (dataUntukDimasukkan.length > 0) {
+        sheetPenyelidikan.getRange(lastRow + 1, 1, dataUntukDimasukkan.length, dataUntukDimasukkan[0].length).setValues(dataUntukDimasukkan);
+      }
+
+      return output.setContent(JSON.stringify({
+        "status": "BERJAYA",
+        "jumlah": dataUntukDimasukkan.length
+      }));
+    }
+// --- TAMBAH DAFTAR PROJEK (POST) ---
+  else if (action === "tambahPendaftaranProjek") {
+      try {
+          var sheet = ss.getSheetByName("PENDAFTARAN_PROJEK");
+          if (!sheet) throw new Error("Tab 'PENDAFTARAN_PROJEK' tiada di dalam Google Sheets!");
+
+          var tarikhMula = payload.TARIKH_MULA || "";
+          var tarikhAkhir = payload.TARIKH_AKHIR || payload.TARIKH_TAMAT || ""; 
+          var ketua = payload.KETUA || "";
+          var icKetua = payload.IC_KETUA || ""; 
+          var ahli1 = payload.AHLI_1 || payload.AHLI || ""; 
+          var ahli2 = payload.AHLI_2 || "";
+          var ahli3 = payload.AHLI_3 || "";
+          var ahli4 = payload.AHLI_4 || "";
+          var ahli5 = payload.AHLI_5 || "";
+          var tajuk = payload.TAJUK || "";
+          var jabatan = payload.JABATAN || "";
+
+          // =======================================================
+          // FUNGSI BARU: MUAT NAIK FAIL (BASE64) KE GOOGLE DRIVE
+          // =======================================================
+          var urlMaklumatDiUpload = "";
+          var urlProposalDiUpload = "";
+          
+          // MASUKKAN ID FOLDER DRIVE ANDA DI SINI JIKA ADA 
+          // (Biarkan "" untuk simpan di bahagian utama/root 'My Drive')
+          var folderIdDrive = ""; 
+          var folderSimpanan;
+          try {
+              folderSimpanan = (folderIdDrive !== "") ? DriveApp.getFolderById(folderIdDrive) : DriveApp.getRootFolder();
+          } catch(e) {
+              folderSimpanan = DriveApp.getRootFolder(); // Fallback jika ID Folder salah
+          }
+
+          // 1. Bina fail Borang Maklumat Penyelidikan dari data Base64
+          if (payload.FAIL_MAKLUMAT && payload.FAIL_MAKLUMAT.dataBase64) {
+              var namaFail1 = ketua + " - Maklumat Projek.pdf";
+              var blobMaklumat = Utilities.newBlob(Utilities.base64Decode(payload.FAIL_MAKLUMAT.dataBase64), payload.FAIL_MAKLUMAT.mimeType, namaFail1);
+              var failMaklumatBaru = folderSimpanan.createFile(blobMaklumat);
+              failMaklumatBaru.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+              urlMaklumatDiUpload = failMaklumatBaru.getUrl();
+          }
+
+          // 2. Bina fail Borang Proposal dari data Base64
+          if (payload.FAIL_PROPOSAL && payload.FAIL_PROPOSAL.dataBase64) {
+              var namaFail2 = ketua + " - Proposal Projek.pdf";
+              var blobProposal = Utilities.newBlob(Utilities.base64Decode(payload.FAIL_PROPOSAL.dataBase64), payload.FAIL_PROPOSAL.mimeType, namaFail2);
+              var failProposalBaru = folderSimpanan.createFile(blobProposal);
+              failProposalBaru.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+              urlProposalDiUpload = failProposalBaru.getUrl();
+          }
+          // =======================================================
+
+          // Biarkan Lajur Disahkan (O & P) kosong semasa daftar awal
+          var urlMaklumatSah = ""; 
+          var urlProposalSah = "";
+          var statusRekod = payload.STATUS || "MENUNGGU PENGESAHAN"; 
+          var suratLantikan = ""; // R
+
+          // Dapatkan baris terakhir
+          var dataA = sheet.getRange("A:A").getValues();
+          var lastRow = 0;
+          for (var i = dataA.length - 1; i >= 0; i--) { if (dataA[i][0] !== "") { lastRow = i + 1; break; } }
+          var nextRow = lastRow + 1;
+          var bil = (lastRow < 1) ? 1 : lastRow; 
+
+          // Set 18 lajur serentak menggunakan pautan fail yang baru dijana
+          sheet.getRange(nextRow, 1, 1, 18).setValues([[ 
+              bil, tarikhMula, tarikhAkhir, ketua, icKetua, ahli1, ahli2, ahli3, ahli4, ahli5, tajuk, jabatan, urlMaklumatDiUpload, urlProposalDiUpload, urlMaklumatSah, urlProposalSah, statusRekod, suratLantikan 
+          ]]);
+          
+          return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Pendaftaran Projek dan dokumen berjaya disimpan!"}));
+          
+      } catch (e) {
+          // Tangkap sebarang ralat dan maklumkan kepada HTML
+          return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Ralat Server: " + e.message}));
+      }
+  }
+
+
+
+
+// =========================================================================
+  // FUNGSI KEMASKINI PROJEK
+  // =========================================================================
+  if (action === "kemaskiniProjek") {
+      try {
+          var ss = SpreadsheetApp.getActiveSpreadsheet();
+          var sheet = ss.getSheetByName("PENDAFTARAN_PROJEK");
+          var dataSheet = sheet.getDataRange().getValues();
+          var bilDicari = String(data.BIL);
+          var dikemaskini = false;
+      
+          // Mencari baris yang sepadan dengan BIL
+          for (var i = 1; i < dataSheet.length; i++) {
+              if (String(dataSheet[i][0]) === bilDicari) {
+                  var baris = i + 1; // Baris sebenar dalam Google Sheet
+                  
+                  // Mengemaskini data berdasarkan nombor lajur (Column 1 - 17)
+                  sheet.getRange(baris, 2).setValue(data.TARIKH_MULA);   // Lajur 2: TARIKH MULA PROJEK
+                  sheet.getRange(baris, 3).setValue(data.TARIKH_AKHIR);  // Lajur 3: TARIKH AKHIR PROJEK
+                  sheet.getRange(baris, 4).setValue(data.KETUA);         // Lajur 4: NAMA KETUA PROJEK
+                  sheet.getRange(baris, 5).setValue(data.KP_KETUA);      // Lajur 5: IC_KETUA
+                  sheet.getRange(baris, 6).setValue(data.AHLI_1);        // Lajur 6: NAMA AHLI 1
+                  sheet.getRange(baris, 7).setValue(data.AHLI_2);        // Lajur 7: NAMA AHLI 2
+                  sheet.getRange(baris, 8).setValue(data.AHLI_3);        // Lajur 8: NAMA AHLI 3
+                  sheet.getRange(baris, 9).setValue(data.AHLI_4);        // Lajur 9: NAMA AHLI 4
+                  sheet.getRange(baris, 10).setValue(data.AHLI_5);       // Lajur 10: NAMA AHLI 5
+                  sheet.getRange(baris, 11).setValue(data.TAJUK);        // Lajur 11: TAJUK
+                  sheet.getRange(baris, 12).setValue(data.JABATAN);      // Lajur 12: JABATAN
+                  sheet.getRange(baris, 13).setValue(data.URL_MAKLUMAT); // Lajur 13: URL MAKLUMAT (DIUPLOAD)
+                  sheet.getRange(baris, 14).setValue(data.URL_PROPOSAL); // Lajur 14: URL PROPOSAL (DIUPLOAD)
+                  sheet.getRange(baris, 17).setValue(data.STATUS);       // Lajur 17: STATUS
+                  
+                  dikemaskini = true;
+                  break;
+              }
+          }
+      
+          if (dikemaskini) {
+              return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "mesej": "Semua maklumat projek dan ahli telah dikemaskini."})).setMimeType(ContentService.MimeType.JSON);
+          } else {
+              return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Rekod tidak dijumpai."})).setMimeType(ContentService.MimeType.JSON);
+          }
+      } catch (e) {
+          return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Ralat Server: " + e.message})).setMimeType(ContentService.MimeType.JSON);
+      }
+  }
+  
+  // =========================================================================
+  // FUNGSI PADAM PROJEK & FAIL DRIVE
+  // =========================================================================
+  if (action === "padamProjek") {
+      try {
+          var ss = SpreadsheetApp.getActiveSpreadsheet();
+          var sheet = ss.getSheetByName("PENDAFTARAN_PROJEK");
+          var dataSheet = sheet.getDataRange().getValues();
+          var bilDicari = String(data.BIL);
+          var dipadam = false;
+      
+          for (var i = 1; i < dataSheet.length; i++) {
+              if (String(dataSheet[i][0]) === bilDicari) {
+                  
+                  // Kumpul semua URL fail yang perlu dipadam dari Google Drive
+                  // Index array bermula dari 0 (Contoh: Lajur 13 = Index 12)
+                  var urlMaklumatDiUpload = dataSheet[i][12]; // Lajur 13
+                  var urlProposalDiUpload = dataSheet[i][13]; // Lajur 14
+                  var urlMaklumatDisahkan = dataSheet[i][14]; // Lajur 15
+                  var urlProposalDisahkan = dataSheet[i][15]; // Lajur 16
+                  var urlSuratLantikan    = dataSheet[i][17]; // Lajur 18 (Jika ada)
+                  
+                  var urutanURL = [urlMaklumatDiUpload, urlProposalDiUpload, urlMaklumatDisahkan, urlProposalDisahkan, urlSuratLantikan];
+      
+                  // Memadam setiap fail yang ditemui URL-nya
+                  urutanURL.forEach(function(url) {
+                      if (url && url.toString().trim() !== "" && url.toString().indexOf("drive.google.com") !== -1) {
+                          try {
+                              var failId = url.match(/[-\w]{25,}/);
+                              if (failId && failId[0]) {
+                                  DriveApp.getFileById(failId[0]).setTrashed(true);
+                              }
+                          } catch (error) {
+                              // Abaikan ralat sekiranya fail tersebut telahpun dipadam secara manual sebelumnya
+                          }
+                      }
+                  });
+      
+                  // Padam baris data di dalam Google Sheets
+                  sheet.deleteRow(i + 1);
+                  dipadam = true;
+                  break;
+              }
+          }
+      
+          if (dipadam) {
+              return ContentService.createTextOutput(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod projek beserta semua lampiran fail di Google Drive telah berjaya dipadam."})).setMimeType(ContentService.MimeType.JSON);
+          } else {
+              return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Rekod tidak dijumpai."})).setMimeType(ContentService.MimeType.JSON);
+          }
+      } catch (e) {
+          return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "Ralat Server: " + e.message})).setMimeType(ContentService.MimeType.JSON);
+      }
+  }
+// --- I. PENGURUSAN TETAPAN (TAMBAH, KEMASKINI, PADAM) ---
+    
+    // 1. TAMBAH TETAPAN
+    else if (action === "tambahTetapanJabatan") {
+        var sheetTetapan = ss.getSheetByName("SISTEM");
+        var kategori = String(payload.KATEGORI || "").toUpperCase();
+        var nilaiInput = String(payload.NILAI || "").trim().toUpperCase();
+
+        var lajurSasaran = 0;
+        switch(kategori) {
+            case "JABATAN": lajurSasaran = 2; break; // B
+            case "PERANAN": lajurSasaran = 3; break; // C
+            case "BAHAGIAN": lajurSasaran = 4; break; // D
+            case "HARTA_INTELEK": lajurSasaran = 5; break; // E
+            case "PERINGKAT": lajurSasaran = 6; break; // F
+            default: return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Kategori tidak sah!"}));
+        }
+        
+        var dataLajur = sheetTetapan.getRange(1, lajurSasaran, sheetTetapan.getMaxRows(), 1).getValues();
+        var barisKosong = 0;
+        for (var j = 1; j < dataLajur.length; j++) {
+            if (String(dataLajur[j][0]).trim() === "") { barisKosong = j + 1; break; }
+        }
+        if (barisKosong === 0) barisKosong = sheetTetapan.getLastRow() + 1;
+
+        sheetTetapan.getRange(barisKosong, lajurSasaran).setValue(nilaiInput);
+        return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod disimpan!"}));
+    }
+
+    // 2. KEMASKINI TETAPAN
+    else if (action === "kemaskiniTetapan") {
+        var sheetTetapan = ss.getSheetByName("SISTEM");
+        var kategori = String(payload.KATEGORI || "").toUpperCase();
+        var nilaiLama = String(payload.NILAI_LAMA || "").trim();
+        var nilaiBaru = String(payload.NILAI_BARU || "").trim().toUpperCase();
+
+        var lajurSasaran = 0;
+        switch(kategori) {
+            case "JABATAN": lajurSasaran = 2; break;
+            case "PERANAN": lajurSasaran = 3; break;
+            case "BAHAGIAN": lajurSasaran = 4; break;
+            case "HARTA_INTELEK": lajurSasaran = 5; break;
+            case "PERINGKAT": lajurSasaran = 6; break;
+            default: return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Kategori tidak sah!"}));
+        }
+        
+        var lastRow = sheetTetapan.getLastRow();
+        if(lastRow < 2) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tiada data untuk dikemaskini."}));
+        
+        var dataLajur = sheetTetapan.getRange(1, lajurSasaran, lastRow, 1).getValues();
+
+        for (var i = 1; i < dataLajur.length; i++) {
+            if (String(dataLajur[i][0]).trim() === nilaiLama) {
+                sheetTetapan.getRange(i + 1, lajurSasaran).setValue(nilaiBaru);
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Berjaya dikemaskini!"}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Rekod tidak dijumpai."}));
+    }
+
+    // 3. PADAM TETAPAN
+    else if (action === "padamTetapan") {
+        var sheetTetapan = ss.getSheetByName("SISTEM");
+        var kategori = String(payload.KATEGORI || "").toUpperCase();
+        var nilai = String(payload.NILAI || "").trim();
+
+        var lajurSasaran = 0;
+        switch(kategori) {
+            case "JABATAN": lajurSasaran = 2; break;
+            case "PERANAN": lajurSasaran = 3; break;
+            case "BAHAGIAN": lajurSasaran = 4; break;
+            case "HARTA_INTELEK": lajurSasaran = 5; break;
+            case "PERINGKAT": lajurSasaran = 6; break;
+            default: return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Kategori tidak sah!"}));
+        }
+
+        var lastRow = sheetTetapan.getLastRow();
+        if(lastRow < 2) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tiada data untuk dipadam."}));
+
+        var dataLajur = sheetTetapan.getRange(1, lajurSasaran, lastRow, 1).getValues();
+
+        for (var i = 1; i < dataLajur.length; i++) {
+            if (String(dataLajur[i][0]).trim() === nilai) {
+                // Padam hanya sel tersebut dan tolak yang bawah naik ke atas
+                sheetTetapan.getRange(i + 1, lajurSasaran).deleteCells(SpreadsheetApp.Dimension.ROWS);
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Berjaya dipadam!"}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Rekod tidak dijumpai."}));
+    }
+// --- SAHKAN PENDAFTARAN PROJEK (POST) ---
+    else if (action === "sahkanProjek") {
+        try {
+            var bilInput = String(payload.BIL || "").trim();
+            var sheetProjek = ss.getSheetByName("PENDAFTARAN_PROJEK");
+            var dataSheet = sheetProjek.getDataRange().getValues();
+            
+            for (var i = 1; i < dataSheet.length; i++) {
+                if (String(dataSheet[i][0]).trim() === bilInput) {
+                    sheetProjek.getRange(i + 1, 17).setValue("DISAHKAN"); // Lajur Q (Ke-17) ialah Status
+                    return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Projek telah berjaya disahkan!"}));
+                }
+            }
+            return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Rekod projek tidak dijumpai."}));
+        } catch (e) {
+            return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Ralat: " + e.message}));
+        }
+    }
+
+  // --- SIMPAN URL DOKUMEN YANG DISAHKAN & UPLOAD KE DRIVE (POST) ---
+    else if (action === "simpanDokumenDisahkan") {
+        try {
+            var sheetProjek = ss.getSheetByName("PENDAFTARAN_PROJEK");
+            var bil = String(payload.BIL || "").trim();
+            var dataSheet = sheetProjek.getDataRange().getValues();
+            var barisDicari = -1;
+
+            // Cari baris rekod berdasarkan BIL
+            for (var i = 1; i < dataSheet.length; i++) {
+                if (String(dataSheet[i][0]).trim() === bil) {
+                    barisDicari = i + 1; // Baris sebenar dalam Google Sheet
+                    break;
+                }
+            }
+
+            if (barisDicari !== -1) {
+                
+                // ===============================================================
+                // TETAPAN ID FOLDER GOOGLE DRIVE
+                // ===============================================================
+                var FOLDER_ID_MAKLUMAT = "1OL7IutZ5HILF3CAHlBsNlj-2D_KQOLs6";
+                var FOLDER_ID_PROPOSAL = "13QlvoGiktx_XqmckzdcoAoZxy0zAvtod";
+                // ===============================================================
+
+                // Ambil Nama Ketua Projek (Lajur 4 / D) dan Tajuk Projek (Lajur 11 / K)
+                // Nota: Pastikan lajur ke-11 betul untuk Tajuk Projek berdasarkan sheet anda
+                var ketuaProjek = sheetProjek.getRange(barisDicari, 4).getValue(); 
+                var tajukProjek = sheetProjek.getRange(barisDicari, 11).getValue(); 
+
+                // 1. Proses Muat Naik Fail Maklumat (Lajur O / 15)
+                if (payload.FAIL_MAKLUMAT_SAH && payload.FAIL_MAKLUMAT_SAH.dataBase64) {
+                    var folderMaklumat;
+                    try { 
+                        folderMaklumat = DriveApp.getFolderById(FOLDER_ID_MAKLUMAT); 
+                    } catch(e) { 
+                        folderMaklumat = DriveApp.getRootFolder();
+                    }
+
+                    // Format nama fail baharu
+                    var namaFailMaklumat = "DISAHKAN - MAKLUMAT - " + tajukProjek + " - " + ketuaProjek + ".pdf";
+
+                    // Semak dan padam fail lama jika wujud nama yang sama
+                    var failLamaMaklumat = folderMaklumat.getFilesByName(namaFailMaklumat);
+                    while (failLamaMaklumat.hasNext()) {
+                        failLamaMaklumat.next().setTrashed(true);
+                    }
+
+                    // Buat fail baharu
+                    var blobMaklumat = Utilities.newBlob(Utilities.base64Decode(payload.FAIL_MAKLUMAT_SAH.dataBase64), payload.FAIL_MAKLUMAT_SAH.mimeType, namaFailMaklumat);
+                    var failBaruMaklumat = folderMaklumat.createFile(blobMaklumat);
+                    
+                    try {
+                        failBaruMaklumat.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+                    } catch(shareErr) {
+                        console.log("Perkongsian awam disekat oleh Organisasi.");
+                    }
+                    
+                    sheetProjek.getRange(barisDicari, 15).setValue(failBaruMaklumat.getUrl());
+                }
+
+                // 2. Proses Muat Naik Fail Proposal (Lajur P / 16)
+                if (payload.FAIL_PROPOSAL_SAH && payload.FAIL_PROPOSAL_SAH.dataBase64) {
+                    var folderProposal;
+                    try { 
+                        folderProposal = DriveApp.getFolderById(FOLDER_ID_PROPOSAL); 
+                    } catch(e) { 
+                        folderProposal = DriveApp.getRootFolder(); 
+                    }
+
+                    // Format nama fail baharu
+                    var namaFailProposal = "DISAHKAN - PROPOSAL - " + tajukProjek + " - " + ketuaProjek + ".pdf";
+
+                    // Semak dan padam fail lama jika wujud nama yang sama
+                    var failLamaProposal = folderProposal.getFilesByName(namaFailProposal);
+                    while (failLamaProposal.hasNext()) {
+                        failLamaProposal.next().setTrashed(true);
+                    }
+
+                    // Buat fail baharu
+                    var blobProposal = Utilities.newBlob(Utilities.base64Decode(payload.FAIL_PROPOSAL_SAH.dataBase64), payload.FAIL_PROPOSAL_SAH.mimeType, namaFailProposal);
+                    var failBaruProposal = folderProposal.createFile(blobProposal);
+                    
+                    try {
+                        failBaruProposal.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+                    } catch(shareErr) {
+                        console.log("Perkongsian awam disekat oleh Organisasi.");
+                    }
+                    
+                    sheetProjek.getRange(barisDicari, 16).setValue(failBaruProposal.getUrl());
+                }
+
+                // 3. Automatik tukar status kepada DISAHKAN di Lajur Q (Ke-17)
+                sheetProjek.getRange(barisDicari, 17).setValue("DISAHKAN");
+
+                return output.setContent(JSON.stringify({
+                    "status": "BERJAYA", 
+                    "mesej": "Dokumen yang disahkan berjaya dimuat naik ke Drive dan rekod dikemaskini!"
+                }));
+
+            } else {
+                return output.setContent(JSON.stringify({
+                    "status": "GAGAL", 
+                    "mesej": "Rekod projek tidak dijumpai."
+                }));
+            }
+        } catch (e) {
+            return output.setContent(JSON.stringify({
+                "status": "GAGAL", 
+                "mesej": "Ralat Server: " + e.message
+            }));
+        }
+    }
+    
+// --- SIMPAN SURAT LANTIKAN (POST) ---
+    else if (action === "simpanSuratLantikan") {
+        try {
+            var sheetProjek = ss.getSheetByName("PENDAFTARAN_PROJEK");
+            var bil = String(payload.BIL || "").trim();
+            var tahun = String(payload.TAHUN || "").trim();
+            var jenisUpload = String(payload.JENIS_UPLOAD || "").trim();
+            
+            var data = sheetProjek.getDataRange().getValues();
+            
+            for (var i = 1; i < data.length; i++) {
+                if (String(data[i][0]).trim() === bil) {
+                    
+                    // Ambil maklumat projek dari array data untuk nama fail
+                    var ketuaProjek = String(data[i][3]).trim(); // Lajur D (4) - Index 3
+                    var tajukProjek = String(data[i][10]).trim(); // Lajur K (11) - Index 10
+                    
+                    var urlSuratAkhir = "";
+
+                    // ==========================================
+                    // SITUASI 1: PENGGUNA MUAT NAIK FAIL DARI PC
+                    // ==========================================
+                    if (jenisUpload === "fail" && payload.FAIL_SURAT && payload.FAIL_SURAT.dataBase64) {
+                        
+                        // ⚠️ MASUKKAN ID FOLDER GOOGLE DRIVE ANDA DI SINI
+                        var FOLDER_ID_SURAT = "1hT2rlamMQ5T0KVQM66EGFr7nZv8bjyFk";
+                        var folderSurat;
+                        
+                        try { 
+                            folderSurat = DriveApp.getFolderById(FOLDER_ID_SURAT); 
+                        } catch(e) { 
+                            folderSurat = DriveApp.getRootFolder(); 
+                        }
+
+                        // Format nama fail: SURAT LANTIKAN - TAHUN - TAJUK - KETUA PROJEK
+                        var namaFailSurat = "SURAT LANTIKAN - " + tahun + " - " + tajukProjek + " - " + ketuaProjek + ".pdf";
+
+                        // Semak dan padam fail lama jika wujud
+                        var failLama = folderSurat.getFilesByName(namaFailSurat);
+                        while (failLama.hasNext()) {
+                            failLama.next().setTrashed(true);
+                        }
+
+                        // Buat fail baharu di Google Drive
+                        var blobSurat = Utilities.newBlob(Utilities.base64Decode(payload.FAIL_SURAT.dataBase64), payload.FAIL_SURAT.mimeType, namaFailSurat);
+                        var failBaruSurat = folderSurat.createFile(blobSurat);
+                        
+                        // Buka akses fail kepada sesiapa yang ada link
+                        try {
+                            failBaruSurat.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+                        } catch(shareErr) {
+                            console.log("Perkongsian awam disekat oleh Organisasi.");
+                        }
+                        
+                        urlSuratAkhir = failBaruSurat.getUrl();
+                    } 
+                    
+                    // ==========================================
+                    // SITUASI 2: PENGGUNA MASUKKAN PAUTAN URL
+                    // ==========================================
+                    else if (jenisUpload === "url" && payload.URL_SURAT) {
+                        urlSuratAkhir = String(payload.URL_SURAT).trim();
+                    }
+
+                    // ==========================================
+                    // KEMASKINI GOOGLE SHEET
+                    // ==========================================
+                    
+                    // Berdasarkan kod asal anda: Lajur R ialah lajur ke-18
+                    if (urlSuratAkhir !== "") {
+                        sheetProjek.getRange(i + 1, 18).setValue(urlSuratAkhir);
+                    }
+                    
+                    // Simpan Tahun di Lajur S (19) *Boleh ubah jika berbeza*
+                    if (tahun !== "") {
+                        sheetProjek.getRange(i + 1, 19).setValue(tahun);
+                    }
+
+                    return output.setContent(JSON.stringify({
+                        "status": "BERJAYA", 
+                        "mesej": "Surat Lantikan berjaya dimuat naik dan disimpan!"
+                    }));
+                }
+            }
+            return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Rekod tidak dijumpai."}));
+            
+        } catch (e) {
+            // Tangkap ralat jika berlaku masalah (contoh: Base64 terlalu besar)
+            return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Ralat Server: " + e.message}));
+        }
+    }
+
+
+
+
+
+  else if (action === "kemaskiniPenggunaAdmin") {
+        var sheetPengguna = ss.getSheetByName("PENGGUNA");
+        var icLama = String(payload.NO_IC || "").trim(); // Ini IC untuk cari baris
+        var icBaru = String(payload.NO_IC_BARU || "").trim(); // Ini IC baru yang ditaip
+        
+        var nama = String(payload.NAMA || "").toUpperCase().trim();
+        var jabatan = String(payload.JABATAN || "").toUpperCase().trim();
+        var peranan = String(payload.PERANAN || "").toUpperCase().trim();
+        var bahagian = String(payload.BAHAGIAN || "").toUpperCase().trim();
+        var status = String(payload.STATUS || "").toUpperCase().trim();
+
+        var data = sheetPengguna.getDataRange().getValues();
+        
+        for (var i = 1; i < data.length; i++) {
+            // Cari IC lama
+            if (String(data[i][1]).trim() === icLama) { 
+                
+                // Jika IC Baru tidak kosong, update Lajur B (2), dan Lajur A (1) untuk Nama
+                if(icBaru !== "") {
+                   sheetPengguna.getRange(i + 1, 2).setValue(icBaru); 
+                }
+                sheetPengguna.getRange(i + 1, 1).setValue(nama);
+                
+                // Sambung kemaskini lajur lain seperti biasa
+                sheetPengguna.getRange(i + 1, 4).setValue(jabatan);
+                sheetPengguna.getRange(i + 1, 5).setValue(peranan);
+                sheetPengguna.getRange(i + 1, 6).setValue(status);
+                sheetPengguna.getRange(i + 1, 7).setValue(bahagian);
+                
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Pengguna dikemaskini!"}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "IC Pengguna tidak dijumpai."}));
+    }
+
+    // --- PADAM PENGGUNA (OLEH ADMIN) ---
+    else if (action === "padamPenggunaAdmin") {
+        var ic = String(payload.NO_IC || "").trim();
+        var sheetPengguna = ss.getSheetByName("PENGGUNA");
+        var data = sheetPengguna.getDataRange().getValues();
+        
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === ic) {
+                sheetPengguna.deleteRow(i + 1);
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Pengguna telah dipadam."}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Pengguna tidak dijumpai."}));
+    }
+
+    // --- RESET KATA LALUAN KEPADA NO IC (OLEH ADMIN) ---
+    else if (action === "resetPassAdmin") {
+        var ic = String(payload.NO_IC || "").trim();
+        var sheetPengguna = ss.getSheetByName("PENGGUNA");
+        var data = sheetPengguna.getDataRange().getValues();
+        
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === ic) {
+                sheetPengguna.getRange(i + 1, 3).setValue(ic); 
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Kata laluan telah di-reset kepada No. Kad Pengenalan."}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Pengguna tidak dijumpai."}));
+    }
+
+    // --- B. LOG MASUK ---
+    else if (action === "login") {
+      var icInput = String(payload.NO_IC || "").trim();
+      var passInput = String(payload.KATA_LALUAN || "").trim();
+      var jabatanInput = String(payload.JABATAN || "").trim().toUpperCase();
+      var perananInput = String(payload.PERANAN || "").trim().toUpperCase();
+      var bahagianInput = String(payload.BAHAGIAN || "").trim().toUpperCase(); // UBAH: Tambah input BAHAGIAN
+      
+      var sheetPengguna = ss.getSheetByName("PENGGUNA");
+      if (!sheetPengguna) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tab PENGGUNA tiada."}));
+      
+      var data = sheetPengguna.getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        var sheetIC = String(data[i][0]).trim();       
+        var sheetPass = String(data[i][2]).trim();     
+        var sheetJabatan = String(data[i][3]).trim().toUpperCase();  
+        var sheetPeranan = String(data[i][4]).trim().toUpperCase();  
+        var sheetBahagian = String(data[i][5] || "").trim().toUpperCase(); // UBAH: Ambil BAHAGIAN dari lajur ke-6
+        var statusPengguna = String(data[i][6] || "").trim().toUpperCase(); // UBAH: Ambil STATUS dari lajur ke-7
+
+        if (sheetIC === icInput && sheetPass === passInput) {
+          if (sheetJabatan !== jabatanInput || sheetPeranan !== perananInput) {
+            return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Jabatan dan Peranan tidak padan."}));
+          }
+          if (statusPengguna === "MENUNGGU PENGESAHAN" || statusPengguna === "MENUNGGU") {
+            return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Akaun anda sedang menunggu pengesahan pihak atasan."}));
+          }
+
+          return output.setContent(JSON.stringify({
+              "status": "BERJAYA", 
+              "nama": String(data[i][1]).trim(), 
+              "peranan": String(data[i][4]).trim(), 
+              "jabatan": String(data[i][3]).trim(),
+              "bahagian": String(data[i][5]).trim() // UBAH: Hantar Bahagian balik ke sistem
+          }));
+        }
+      }
+      return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "ID Pengguna/No. IC atau Kata Laluan salah!"}));
+    }
+
+    // --- C. RESET KATA LALUAN ---
+    else if (action === "resetPassword") {
+      var icInput = String(payload.NO_IC || "").trim();
+      var newPassInput = String(payload.KATA_LALUAN || "").trim();
+
+      if (icInput === "" || newPassInput === "") return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Sila lengkapkan maklumat."}));
+
+      var sheetPengguna = ss.getSheetByName("PENGGUNA");
+      var data = sheetPengguna.getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]).trim() === icInput) {
+          sheetPengguna.getRange(i + 1, 3).setValue(newPassInput);
+          return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Kata laluan berjaya dikemaskini!"}));
+        }
+      }
+      return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "ID Pengguna tidak wujud."}));
+    }
+
+  // --- D. DAFTAR PENGGUNA BARU / DAFTAR PENYELARAS ---
+    else if (action === "daftarPengguna" || action === "tambahPengguna") {
+        var nama = String(payload.NAMA || payload.nama || "").trim();
+        var ic = String(payload.NO_IC || payload.idPengguna || "").trim();
+        var pass = String(payload.KATA_LALUAN || payload.katalaluan || "").trim();
+        var jabatan = String(payload.JABATAN || payload.jabatan || "").trim().toUpperCase();
+        var peranan = String(payload.PERANAN || payload.peranan || "PENYELARAS JABATAN").trim().toUpperCase();
+        var bahagian = String(payload.BAHAGIAN || payload.bahagian || "").trim().toUpperCase(); 
+        
+        // TERIMA PARAMETER LOGIN_ROLE DARI HTML
+        var loginRole = String(payload.LOGIN_ROLE || "").trim().toUpperCase();
+        
+        // LOGIK STATUS: Jika yang daftar adalah Approver, terus AKTIF. Jika awam/staf, MENUNGGU PENGESAHAN.
+        var status = "MENUNGGU PENGESAHAN";
+        if (loginRole === "PENYELARAS INOVASI" || loginRole === "PENYELARAS PENYELIDIKAN" || loginRole === "KUPIK" || loginRole === "ADMIN") {
+            status = "AKTIF";
+        }
+        
+        if (nama === "" || ic === "" || pass === "" || jabatan === "") return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Sila lengkapkan semua medan."}));
+
+        var sheetPengguna = ss.getSheetByName("PENGGUNA");
+        if (!sheetPengguna) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tab PENGGUNA tiada."}));
+
+        var data = sheetPengguna.getRange("A:A").getValues();
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === ic) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "ID Pengguna telah didaftarkan sebelum ini."}));
+        }
+
+        var lastRow = sheetPengguna.getLastRow() + 1;
+        // Susunan: NO_IC, NAMA, KATA_LALUAN, JABATAN, PERANAN, BAHAGIAN, STATUS
+        sheetPengguna.getRange(lastRow, 1, 1, 7).setValues([[ic, nama, pass, jabatan, peranan, bahagian, status]]);
+        
+        var mesejBerjaya = (status === "AKTIF") ? "Pendaftaran berjaya! Pengguna telah diaktifkan secara automatik." : "Pendaftaran berjaya. Sila tunggu pengesahan.";
+        return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": mesejBerjaya}));
+    }
+
+    // --- E. SAHKAN PENGGUNA (Oleh Admin/Penyelaras Inovasi) ---
+    else if (action === "sahkanPengguna") {
+        var icInput = String(payload.NO_IC || payload.idPengguna || "").trim();
+        if(icInput === "") return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tiada ID disertakan."}));
+
+        var sheetPengguna = ss.getSheetByName("PENGGUNA");
+        var data = sheetPengguna.getDataRange().getValues();
+        
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === icInput) {
+                // UBAH: STATUS sekarang di lajur ke-7 (G)
+                sheetPengguna.getRange(i + 1, 7).setValue("AKTIF"); 
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Akaun pengguna telah disahkan dan diaktifkan!"}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Pengguna tidak dijumpai."}));
+    }
+
+    // --- F. TOLAK/PADAM PENGGUNA BARU ---
+    else if (action === "tolakPengguna") {
+        var icInput = String(payload.NO_IC || "").trim();
+        if(icInput === "") return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tiada ID disertakan."}));
+
+        var sheetPengguna = ss.getSheetByName("PENGGUNA");
+        var data = sheetPengguna.getDataRange().getValues();
+        
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === icInput) {
+                sheetPengguna.deleteRow(i + 1);
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Pendaftaran telah ditolak dan dipadam."}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Pengguna tidak dijumpai."}));
+    }
+    
+// --- G. SAHKAN KPI (Oleh Penyelaras Inovasi) ---
+    else if (action === "sahkanKPI") {
+        var bilInput = String(payload.BIL || "").trim();
+        var sheetKPI = ss.getSheetByName("KPI");
+        var data = sheetKPI.getDataRange().getValues();
+        
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === bilInput) {
+                // PERUBAHAN DI SINI: Tukar 13 kepada 14 (kerana STATUS kini di Kolum N)
+                sheetKPI.getRange(i + 1, 14).setValue("DISAHKAN"); 
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod KPI telah disahkan!"}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Rekod tidak dijumpai."}));
+    }
+
+    // --- H. TOLAK/PADAM KPI ---
+    else if (action === "tolakKPI") {
+        var bilInput = String(payload.BIL || "").trim();
+        var alasan = String(payload.ALASAN || "Tiada alasan diberikan").trim();
+        
+        var sheetKPI = ss.getSheetByName("KPI");
+        var data = sheetKPI.getDataRange().getValues();
+        
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === bilInput) {
+                // Tiada perubahan diperlukan di sini, deleteRow memadam seluruh baris
+                sheetKPI.deleteRow(i + 1);
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod KPI ditolak. Alasan: " + alasan}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Rekod tidak dijumpai."}));
+    }
+
+// --- AMBIL SENARAI JENIS HARTA INTELEK DARI SHEET SISTEM ---
+    else if (action === "ambilHartaIntelek") {
+      var sheet = ss.getSheetByName("SISTEM");
+      if (!sheet) return jsonResponse({"status": "GAGAL", "mesej": "Tab 'SISTEM' tiada!"});
+
+      // Guna Math.max untuk elak ralat jika sheet kosong (hanya ada header)
+      var maxRow = Math.max(2, sheet.getLastRow());
+      var dataHarta = sheet.getRange("E2:E" + maxRow).getValues(); 
+      
+      var senaraiHarta = [];
+      for (var i = 0; i < dataHarta.length; i++) {
+        // Pastikan petak tidak kosong / undefined
+        if (dataHarta[i][0] !== null && dataHarta[i][0] !== undefined) {
+          var harta = String(dataHarta[i][0]).trim();
+          
+          // Tapis teks kosong dan teks "[object Object]" yang mungkin tersilap masuk ke dalam Sheets
+          if (harta !== "" && harta !== "[object Object]") {
+            senaraiHarta.push(harta);
+          }
+        }
+      }
+
+      // Cara paling selamat/tradisional untuk buang data berulang (Alternatif kepada Set)
+      var hartaUnik = senaraiHarta.filter(function(item, index) {
+        return senaraiHarta.indexOf(item) === index;
+      });
+
+      return jsonResponse({
+        "status": "BERJAYA",
+        "data": hartaUnik
+      });
+    }
+
+
+// --- AMBIL SENARAI SUKUAN DARI SHEET PENETAPAN_KPI ---
+    else if (action === "ambilTetapanSukuan") {
+      var sheetTetapan = ss.getSheetByName("PENETAPAN_KPI");
+      if (!sheetTetapan) return jsonResponse({"status": "GAGAL", "mesej": "Tab 'PENETAPAN_KPI' tiada!"});
+
+      // Mula ambil data dari baris ke-2 (A2) untuk elak tajuk (Header)
+      var maxRow = Math.max(2, sheetTetapan.getLastRow());
+      var sukuanData = sheetTetapan.getRange("A2:A" + maxRow).getValues(); 
+      
+      var senaraiSukuan = [];
+      for (var i = 0; i < sukuanData.length; i++) {
+        if (sukuanData[i][0] !== null && sukuanData[i][0] !== undefined) {
+          var sukuan = String(sukuanData[i][0]).trim();
+          if (sukuan !== "" && sukuan !== "[object Object]") {
+            senaraiSukuan.push(sukuan);
+          }
+        }
+      }
+
+      // Buang duplicate jika ada
+      var sukuanUnik = senaraiSukuan.filter(function(item, index) {
+        return senaraiSukuan.indexOf(item) === index;
+      });
+
+      return jsonResponse({
+        "status": "BERJAYA",
+        "data": sukuanUnik
+      });
+    }
+
+
+
+// ==========================================
+    // PADAM REKOD PENYELIDIKAN
+    // ==========================================
+    else if (action === "padamKPIPenyelidikan") {
+      var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("KPI PENYELIDIKAN");
+      
+      if (!sheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "GAGAL", 
+          "mesej": "Tab 'KPI PENYELIDIKAN' tidak dijumpai!"
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      var data = sheet.getDataRange().getValues();
+      var bilTarget = String(payload.bil).trim();
+      var rekodDijumpai = false;
+
+      // Loop untuk cari rekod yang sepadan
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]).trim() === bilTarget) {
+          // Padam keseluruhan baris
+          sheet.deleteRow(i + 1);
+          rekodDijumpai = true;
+          break; // Berhenti cari lepas dah buang
+        }
+      }
+
+      if (rekodDijumpai) {
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "BERJAYA", 
+          "mesej": "Rekod berjaya dipadam dari pangkalan data."
+        })).setMimeType(ContentService.MimeType.JSON);
+      } else {
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "GAGAL", 
+          "mesej": "Rekod BIL " + bilTarget + " tidak dijumpai untuk dipadam."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+  // ================= PENGURUSAN HARTA INTELEK (HI) =================
+    
+    // 1. TAMBAH DAN KEMASKINI HARTA INTELEK
+    else if (action === "simpanHI" || action === "tambahHI" || action === "kemaskiniHI") {
+        var sheetHI = ss.getSheetByName("HARTA_INTELEK");
+        if (!sheetHI) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tab HARTA_INTELEK tiada."}));
+
+        var bilEdit = String(payload.BIL || "").trim();
+        var tahun = String(payload.TAHUN || "").trim();
+        var ketua = String(payload.KETUA || "").trim().toUpperCase();
+        var ahli1 = String(payload.AHLI1 || "").trim().toUpperCase();
+        var ahli2 = String(payload.AHLI2 || "").trim().toUpperCase();
+        var ahli3 = String(payload.AHLI3 || "").trim().toUpperCase();
+        var ahli4 = String(payload.AHLI4 || "").trim().toUpperCase();
+        var ahli5 = String(payload.AHLI5 || "").trim().toUpperCase();
+        var tajuk = String(payload.TAJUK || "").trim().toUpperCase();
+        var jabatan = String(payload.JABATAN || "").trim().toUpperCase();
+        var pemilik = String(payload.PEMILIK || "").trim().toUpperCase();
+        var jenis = String(payload.JENIS || "").trim().toUpperCase();
+        var noDaftar = String(payload.NO_DAFTAR || "").trim().toUpperCase();
+        
+        // Baca status sedia ada. Jika borang hantar status baru, guna itu. Jika tidak, kekal MENUNGGU.
+        var statusRekod = String(payload.STATUS || "MENUNGGU PENGESAHAN").trim().toUpperCase(); 
+
+        var dataA = sheetHI.getDataRange().getValues();
+
+        if (bilEdit !== "") { 
+            // PROSES KEMASKINI
+            for (var i = 1; i < dataA.length; i++) {
+                if (String(dataA[i][0]).trim() === bilEdit) {
+                    // Semasa kemaskini, kita tak perlu tukar STATUS kecuali Admin yang edit
+                    var currentStatus = String(dataA[i][13]).trim().toUpperCase();
+                    if (statusRekod === "MENUNGGU PENGESAHAN" && currentStatus === "DISAHKAN") {
+                         statusRekod = "DISAHKAN"; // Kekalkan pengesahan jika sudah disahkan
+                    }
+                    
+                    var rowData = [bilEdit, tahun, ketua, ahli1, ahli2, ahli3, ahli4, ahli5, tajuk, jabatan, pemilik, jenis, noDaftar, statusRekod];
+                    sheetHI.getRange(i + 1, 1, 1, 14).setValues([rowData]);
+                    return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod Harta Intelek berjaya dikemaskini!"}));
+                }
+            }
+            return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "ID Rekod tidak ditemui untuk dikemaskini."}));
+            
+        } else {
+            // PROSES TAMBAH BARU
+            var lastRow = 0;
+            var maxBil = 0;
+            for (var i = 1; i < dataA.length; i++) { 
+                if (String(dataA[i][0]).trim() !== "") { 
+                    lastRow = i + 1; 
+                    var currentBil = parseInt(dataA[i][0], 10);
+                    if (!isNaN(currentBil) && currentBil > maxBil) maxBil = currentBil;
+                } 
+            }
+            if (lastRow === 0) lastRow = 1; 
+            var bil = maxBil + 1; 
+
+            var rowData = [bil, tahun, ketua, ahli1, ahli2, ahli3, ahli4, ahli5, tajuk, jabatan, pemilik, jenis, noDaftar, statusRekod];
+            sheetHI.getRange(lastRow + 1, 1, 1, 14).setValues([rowData]);
+            return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod Harta Intelek berjaya didaftarkan!"}));
+        }
+    }
+
+    // 2. SAHKAN HARTA INTELEK
+    else if (action === "sahkanHI") {
+        var bilInput = String(payload.BIL || "").trim();
+        var sheetHI = ss.getSheetByName("HARTA_INTELEK");
+        var data = sheetHI.getDataRange().getValues();
+        
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === bilInput) {
+                sheetHI.getRange(i + 1, 14).setValue("DISAHKAN"); // Lajur N (ke-14)
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod disahkan!"}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Rekod tidak dijumpai."}));
+    }
+
+    // 3. PADAM HARTA INTELEK
+    else if (action === "padamHI") {
+        var bilInput = String(payload.BIL || "").trim();
+        var sheetHI = ss.getSheetByName("HARTA_INTELEK");
+        var data = sheetHI.getDataRange().getValues();
+        
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === bilInput) {
+                sheetHI.deleteRow(i + 1);
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod dipadam."}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Rekod tidak dijumpai."}));
+    }
+
+    // 4. IMPORT CSV HARTA INTELEK
+    else if (action === "importHICSV") {
+        var sheetHI = ss.getSheetByName("HARTA_INTELEK");
+        if (!sheetHI) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tab HARTA_INTELEK tiada."}));
+
+        var dataImport = payload.dataCSV || [];
+        if (!Array.isArray(dataImport) || dataImport.length === 0) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tiada data CSV."}));
+
+        var userRole = String(payload.USER_ROLE || "").toUpperCase();
+        var userJabatan = String(payload.USER_JABATAN || "").toUpperCase();
+        var isApprover = ["PENYELARAS INOVASI", "PENYELARAS PENYELIDIKAN", "ADMIN", "KUPIK"].includes(userRole);
+
+        var dataA = sheetHI.getDataRange().getValues();
+        var lastRow = 0; var maxBil = 0;
+        
+        for (var i = 1; i < dataA.length; i++) { 
+            if (String(dataA[i][0]).trim() !== "") { 
+                lastRow = i + 1; 
+                var currentBil = parseInt(dataA[i][0], 10);
+                if (!isNaN(currentBil) && currentBil > maxBil) maxBil = currentBil;
+            } 
+        }
+        if (lastRow === 0) lastRow = 1; 
+
+        var barisUntukDitambah = [];
+        var tolakJabatan = 0;
+
+        dataImport.forEach(function(row) {
+            function getVal(kunciPilihan) {
+                for (var key in row) {
+                    var kClean = key.toUpperCase().replace(/[^A-Z0-9]/g, ''); 
+                    for(var i=0; i<kunciPilihan.length; i++) {
+                        if(kClean === kunciPilihan[i].toUpperCase().replace(/[^A-Z0-9]/g, '')) return String(row[key]).trim();
+                    }
+                } return "";
+            }
+
+            var jabatanCSV = getVal(["JABATAN"]).toUpperCase();
+            if (!isApprover) {
+                if (jabatanCSV !== "" && jabatanCSV !== userJabatan) { tolakJabatan++; return; }
+                jabatanCSV = userJabatan;
+            } else if (jabatanCSV === "") jabatanCSV = "TIADA";
+
+            maxBil++;
+            var statusRekod = isApprover ? "DISAHKAN" : "MENUNGGU PENGESAHAN";
+
+            barisUntukDitambah.push([
+                maxBil, getVal(["TAHUN"]), getVal(["KETUA", "NAMAKETUA"]).toUpperCase(),
+                getVal(["AHLI1", "NAMA1"]).toUpperCase(), getVal(["AHLI2", "NAMA2"]).toUpperCase(),
+                getVal(["AHLI3", "NAMA3"]).toUpperCase(), getVal(["AHLI4", "NAMA4"]).toUpperCase(),
+                getVal(["AHLI5", "NAMA5"]).toUpperCase(), getVal(["TAJUK", "NAMAPROJEK"]).toUpperCase(),
+                jabatanCSV, getVal(["PEMILIK", "NAMAPEMILIK"]).toUpperCase() || "POLITEKNIK UNGKU OMAR",
+                getVal(["JENIS", "KATEGORIHI"]).toUpperCase(), getVal(["NODAFTAR", "PENDAFTARAN"]).toUpperCase(),
+                statusRekod // Lajur 14
+            ]);
+        });
+
+        if(barisUntukDitambah.length > 0) sheetHI.getRange(lastRow + 1, 1, barisUntukDitambah.length, 14).setValues(barisUntukDitambah);
+        
+        var msg = barisUntukDitambah.length + " rekod diimport.";
+        if (tolakJabatan > 0) msg += " (" + tolakJabatan + " ditolak kerana salah Jabatan).";
+        
+        return output.setContent(JSON.stringify({"status": (barisUntukDitambah.length > 0 ? "BERJAYA" : "GAGAL"), "mesej": msg}));
+    }
+
+
+// --- PENGURUSAN JURI ---
+    
+    // 1. TAMBAH/KEMASKINI JURI
+    else if (action === "simpanJuri") {
+        var sheetJuri = ss.getSheetByName("JURI");
+        if (!sheetJuri) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tab JURI tiada."}));
+
+        var bilEdit = String(payload.BIL || "").trim();
+        var nama = String(payload.NAMA || "").trim().toUpperCase();
+        var ic = String(payload.NO_IC || "").trim();
+        var institusi = String(payload.INSTITUSI || "").trim().toUpperCase();
+        var telefon = String(payload.NO_TELEFON || "").trim();
+        var email = String(payload.EMAIL || "").trim();
+        var jabatan = String(payload.JABATAN || "").trim().toUpperCase();
+        var statusJuri = String(payload.STATUS || "AKTIF").trim().toUpperCase();
+        var tahun = String(payload.TAHUN || "").trim();
+
+        var dataJuri = sheetJuri.getDataRange().getValues();
+
+        // KEMASKINI (Jika 'BIL' dikirimkan)
+        if (bilEdit !== "") {
+            for (var i = 1; i < dataJuri.length; i++) {
+                if (String(dataJuri[i][0]).trim() === bilEdit) {
+                    sheetJuri.getRange(i + 1, 2, 1, 8).setValues([[nama, ic, institusi, telefon, email, jabatan, statusJuri, tahun]]);
+                    return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod Juri berjaya dikemaskini!"}));
+                }
+            }
+        } 
+        // TAMBAH BARU
+        else {
+            var lastRow = 0;
+            for (var i = dataJuri.length - 1; i >= 0; i--) { if (String(dataJuri[i][0]).trim() !== "") { lastRow = i + 1; break; } }
+            var nextBil = (lastRow < 1) ? 1 : lastRow; 
+
+            sheetJuri.getRange(lastRow + 1, 1, 1, 9).setValues([[nextBil, nama, ic, institusi, telefon, email, jabatan, statusJuri, tahun]]);
+            return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod Juri baharu berjaya ditambah!"}));
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Sesuatu yang tidak kena berlaku."}));
+    }
+
+    // 2. PADAM JURI
+    else if (action === "padamJuri") {
+        var bilInput = String(payload.BIL || "").trim();
+        var sheetJuri = ss.getSheetByName("JURI");
+        var data = sheetJuri.getDataRange().getValues();
+        
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === bilInput) {
+                sheetJuri.deleteRow(i + 1);
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod Juri telah dipadam."}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Rekod tidak dijumpai."}));
+    }
+
+    // 3. UPLOAD / IMPORT CSV JURI (Menerima Array Data)
+    else if (action === "importJuriCSV") {
+        var sheetJuri = ss.getSheetByName("JURI");
+        if (!sheetJuri) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tab JURI tiada."}));
+
+        var dataImport = payload.dataCSV || []; // Harus berupa array of objects
+        if (!Array.isArray(dataImport) || dataImport.length === 0) {
+             return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tiada data CSV yang sah."}));
+        }
+
+        var dataSediaAda = sheetJuri.getRange("A:A").getValues();
+        var lastRow = 0;
+        for (var i = dataSediaAda.length - 1; i >= 0; i--) { if (String(dataSediaAda[i][0]).trim() !== "") { lastRow = i + 1; break; } }
+        var currentBil = (lastRow < 1) ? 1 : lastRow; 
+
+        var barisUntukDitambah = [];
+        
+        // Loop dan siapkan array 2D untuk dimasukkan serentak (lebih laju)
+        dataImport.forEach(function(row) {
+            barisUntukDitambah.push([
+                currentBil, 
+                String(row.NAMA || "").toUpperCase(), 
+                String(row.NO_IC || ""), 
+                String(row.INSTITUSI || "").toUpperCase(), 
+                String(row.NO_TELEFON || ""), 
+                String(row.EMAIL || ""), 
+                String(row.JABATAN || "").toUpperCase(), 
+                String(row.STATUS || "AKTIF").toUpperCase(), 
+                String(row.TAHUN || "")
+            ]);
+            currentBil++;
+        });
+
+        // Masukkan data sekaligus
+        if(barisUntukDitambah.length > 0) {
+            sheetJuri.getRange(lastRow + 1, 1, barisUntukDitambah.length, 9).setValues(barisUntukDitambah);
+        }
+
+        return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": barisUntukDitambah.length + " rekod berjaya diimport!"}));
+    }
+
+
+    
+ // --- PENGURUSAN PROJEK PELAJAR ---
+    
+    // 1. TAMBAH/KEMASKINI PROJEK PELAJAR (ID MENGIKUT JABATAN & KAWALAN DUPLICATE)
+    else if (action === "simpanProjekPelajar") {
+        var sheetProjek = ss.getSheetByName("PROJEK_PELAJAR");
+        if (!sheetProjek) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tab PROJEK_PELAJAR tiada."}));
+
+        // Maklumat Pengguna Semasa (Dihantar dari Frontend)
+        var userRole = String(payload.USER_ROLE || "").toUpperCase();
+        var userJabatan = String(payload.USER_JABATAN || "").toUpperCase();
+        var isApprover = ["PENYELARAS INOVASI", "PENYELARAS PENYELIDIKAN", "ADMIN", "KUPIK"].includes(userRole);
+
+        var idEdit = String(payload.PROJEK_ID || "").trim();
+        var jabatanInput = String(payload.JABATAN || "").toUpperCase();
+        
+        // 🔒 KAWALAN JABATAN: Jika bukan admin, paksa guna Jabatan pengguna yang login (Timpa input dari form)
+        if (!isApprover) {
+            jabatanInput = userJabatan;
+        }
+
+        var icKetua = String(payload.IC_KETUA || "").trim();
+        var matrikKetua = String(payload.MATRIK_KETUA || "").toUpperCase().trim();
+
+        var dataProjek = sheetProjek.getDataRange().getValues();
+
+        // 🛡️ SEMAKAN DUPLICATE (NO PENDAFTARAN ATAU IC KETUA)
+        for (var i = 1; i < dataProjek.length; i++) {
+            var rowId = String(dataProjek[i][0]).trim();
+            var rowMatrik = String(dataProjek[i][7]).toUpperCase().trim(); // Kolum H
+            var rowIC = String(dataProjek[i][8]).trim(); // Kolum I
+
+            // Jika sedang Edit, abaikan rekod dirinya sendiri
+            if (idEdit !== "" && rowId === idEdit) continue;
+
+            if ((matrikKetua !== "" && rowMatrik === matrikKetua) || (icKetua !== "" && rowIC === icKetua)) {
+                return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Ralat! Projek untuk Ketua (No Pendaftaran: " + matrikKetua + " / IC: " + icKetua + ") telah wujud."}));
+            }
+        }
+
+        var rowData = [
+            jabatanInput, String(payload.KATEGORI || "").toUpperCase(),
+            String(payload.TAJUK || "").toUpperCase(), String(payload.PROGRAM || "").toUpperCase(),
+            String(payload.EMAIL_KETUA || ""), String(payload.NAMA_KETUA || "").toUpperCase(),
+            matrikKetua, icKetua,
+            String(payload.NAMA_2 || "").toUpperCase(), String(payload.IC_2 || ""), String(payload.MATRIK_2 || "").toUpperCase(),
+            String(payload.NAMA_3 || "").toUpperCase(), String(payload.IC_3 || ""), String(payload.MATRIK_3 || "").toUpperCase(),
+            String(payload.NAMA_4 || "").toUpperCase(), String(payload.IC_4 || ""), String(payload.MATRIK_4 || "").toUpperCase(),
+            String(payload.PENYELIA || "").toUpperCase(), String(payload.IC_PENYELIA || ""), String(payload.HP_PENYELIA || ""),
+            String(payload.EMAIL_PENYELIA || ""), String(payload.TAHUN || "")
+        ];
+
+        if (idEdit !== "") { // KEMASKINI
+            for (var i = 1; i < dataProjek.length; i++) {
+                if (String(dataProjek[i][0]).trim() === idEdit) {
+                    // Update data kecuali ID Projek (Lajur 1)
+                    sheetProjek.getRange(i + 1, 2, 1, 22).setValues([rowData]);
+                    return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod Projek berjaya dikemaskini!"}));
+                }
+            }
+        } else { // TAMBAH BARU
+            var lastRow = 0;
+            var maxNum = 1000;
+            var prefix = (jabatanInput !== "") ? jabatanInput : "PRJ";
+
+            for (var i = 1; i < dataProjek.length; i++) { 
+                var val = String(dataProjek[i][0]).trim();
+                if (val !== "") { 
+                    lastRow = i + 1; 
+                    if (val.startsWith(prefix + "-")) { 
+                        var parts = val.split("-");
+                        var num = parseInt(parts[parts.length - 1], 10);
+                        if (!isNaN(num) && num > maxNum) maxNum = num;
+                    }
+                } 
+            }
+            if (lastRow === 0) lastRow = 1;
+            var nextBil = prefix + "-" + (maxNum + 1); 
+
+            sheetProjek.getRange(lastRow + 1, 1, 1, 23).setValues([[nextBil].concat(rowData)]);
+            return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Projek berjaya didaftarkan dengan ID: " + nextBil}));
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Sesuatu ralat berlaku."}));
+    }
+
+    // 2. PADAM PROJEK PELAJAR
+    else if (action === "padamProjekPelajar") {
+        var idInput = String(payload.PROJEK_ID || "").trim();
+        var sheetProjek = ss.getSheetByName("PROJEK_PELAJAR");
+        var data = sheetProjek.getDataRange().getValues();
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === idInput) {
+                sheetProjek.deleteRow(i + 1);
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod Projek telah dipadam."}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Rekod tidak dijumpai."}));
+    }
+
+    // 3. UPLOAD / IMPORT CSV PROJEK PELAJAR (ID MENGIKUT JABATAN & KAWALAN KETAT)
+    else if (action === "importProjekCSV") {
+        var sheetProjek = ss.getSheetByName("PROJEK_PELAJAR");
+        if (!sheetProjek) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tab PROJEK_PELAJAR tiada."}));
+
+        var dataImport = payload.dataCSV || [];
+        if (!Array.isArray(dataImport) || dataImport.length === 0) {
+             return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tiada data CSV yang sah dijumpai."}));
+        }
+
+        // Maklumat Pengguna Semasa
+        var userRole = String(payload.USER_ROLE || "").toUpperCase();
+        var userJabatan = String(payload.USER_JABATAN || "").toUpperCase();
+        var isApprover = ["PENYELARAS INOVASI", "PENYELARAS PENYELIDIKAN", "ADMIN", "KUPIK"].includes(userRole);
+
+        var dataSediaAda = sheetProjek.getDataRange().getValues();
+        var lastRow = 0;
+        var counters = {}; 
+        
+        // Cache untuk semak duplicate pantas
+        var wujudMatrik = {}; 
+        var wujudIC = {};
+
+        // BACA NOMBOR TERAKHIR DAN CACHE DATA SEDIA ADA
+        for (var i = 1; i < dataSediaAda.length; i++) { 
+            var val = String(dataSediaAda[i][0]).trim();
+            if (val !== "") { 
+                lastRow = i + 1; 
+                var parts = val.split("-");
+                if (parts.length >= 2) {
+                    var jab = parts[0].trim().toUpperCase();
+                    var num = parseInt(parts[parts.length - 1], 10);
+                    if (!isNaN(num)) {
+                        if (!counters[jab] || num > counters[jab]) counters[jab] = num;
+                    }
+                }
+                
+                // Simpan Matrik & IC ke dalam memori untuk semakan duplicate
+                var mKetua = String(dataSediaAda[i][7]).toUpperCase().trim();
+                var icK = String(dataSediaAda[i][8]).trim();
+                if(mKetua !== "") wujudMatrik[mKetua] = true;
+                if(icK !== "") wujudIC[icK] = true;
+            } 
+        }
+        if (lastRow === 0) lastRow = 1; 
+        
+        var barisUntukDitambah = [];
+        var jumlahDitolakDuplikat = 0; 
+        var jumlahDitolakJabatan = 0; // Tambahan: Kira rekod yang ditolak sebab salah Jabatan
+        
+        // PROSES DATA CSV
+        dataImport.forEach(function(row) {
+            function getVal(kunciPilihan) {
+                for (var key in row) {
+                    var kClean = key.toUpperCase().replace(/[^A-Z0-9]/g, ''); 
+                    for(var i=0; i<kunciPilihan.length; i++) {
+                        if(kClean === kunciPilihan[i].toUpperCase().replace(/[^A-Z0-9]/g, '')) {
+                            return String(row[key]).trim();
+                        }
+                    }
+                }
+                return "";
+            }
+
+            var jabatanCSV = getVal(["JABATAN"]).toUpperCase();
+            var matrikCSV = getVal(["NOMBORPENDAFTARANKETUA", "MATRIKKETUA", "NOPENDAFTARANKETUA"]).toUpperCase();
+            var icCSV = getVal(["NOICKETUA", "ICKETUA", "NOKPKETUA"]);
+            
+            // 🔒 KAWALAN JABATAN KETAT
+            // Jika pengguna BUKAN Admin, semak adakah Jabatan dalam CSV sama dengan Jabatan pengguna.
+            // Jika TIDAK SAMA, abaikan baris rekod ini sepenuhnya.
+            if (!isApprover) {
+                if (jabatanCSV !== userJabatan) {
+                    jumlahDitolakJabatan++;
+                    return; // Skip rekod ini
+                }
+            } else {
+                // Jika Admin tapi Jabatan CSV kosong, set sebagai TIADA
+                if (jabatanCSV === "") jabatanCSV = "TIADA";
+            }
+
+            // 🛡️ SEMAKAN DUPLICATE KETAT
+            if ((matrikCSV !== "" && wujudMatrik[matrikCSV]) || (icCSV !== "" && wujudIC[icCSV])) {
+                jumlahDitolakDuplikat++; 
+                return; // Skip rekod ini
+            }
+
+            // Simpan dalam cache supaya CSV dalam fail yang sama tidak bertindih sesama sendiri
+            if(matrikCSV !== "") wujudMatrik[matrikCSV] = true;
+            if(icCSV !== "") wujudIC[icCSV] = true;
+
+            // Generate ID baharu
+            var prefix = jabatanCSV;
+            if (!counters[prefix]) counters[prefix] = 1000;
+            counters[prefix]++; 
+            var nextId = prefix + "-" + counters[prefix];
+
+            barisUntukDitambah.push([
+                nextId, jabatanCSV, getVal(["KATEGORI"]).toUpperCase(), getVal(["NAMAPROJEK", "TAJUKPROJEK", "TAJUK"]).toUpperCase(),
+                getVal(["NAMAPROGRAM", "PROGRAM"]).toUpperCase(), getVal(["EMAILPESERTAKETUA", "EMAILKETUA", "EMELKETUA"]),
+                getVal(["NAMAAHLIKETUA", "NAMAKETUA", "KETUA"]).toUpperCase(), matrikCSV, icCSV,
+                getVal(["NAMAAHLIKEDUA", "NAMA2", "NAMAAHLI2"]).toUpperCase(), getVal(["NOICAHLIKEDUA", "IC2", "NOICAHLI2"]), getVal(["NOPENDAFTARANAHLIKEDUA", "MATRIK2", "NOPENDAFTARANAHLI2"]).toUpperCase(),
+                getVal(["NAMAAHLIKETIGA", "NAMA3", "NAMAAHLI3"]).toUpperCase(), getVal(["NOICAHLIKETIGA", "IC3", "NOICAHLI3"]), getVal(["NOPENDAFTARANKETIGA", "MATRIK3", "NOPENDAFTARANAHLI3"]).toUpperCase(),
+                getVal(["NAMAAHLIKEEMPAT", "NAMA4", "NAMAAHLI4"]).toUpperCase(), getVal(["NOICAHLIKEEMPAT", "IC4", "NOICAHLI4"]), getVal(["NOPENDAFTARANAHLIKEEMPAT", "MATRIK4", "NOPENDAFTARANAHLI4"]).toUpperCase(),
+                getVal(["PENYELIAPROJEK", "PENYELIA", "NAMAPENYELIA"]).toUpperCase(), getVal(["NOICPENYELIA", "ICPENYELIA", "NOKPPENYELIA"]), getVal(["NOHPPENYELIA", "HPPENYELIA", "TELEFONPENYELIA"]),
+                getVal(["NOEMAILPENYELIA", "EMAILPENYELIA", "EMELPENYELIA"]), getVal(["TAHUN", "TAHUNPROJEK"])
+            ]);
+        });
+
+        // MASUKKAN DATA KE GOOGLE SHEETS JIKA ADA YANG LULUS TAPISAN
+        if(barisUntukDitambah.length > 0) {
+            sheetProjek.getRange(lastRow + 1, 1, barisUntukDitambah.length, 23).setValues(barisUntukDitambah);
+        }
+
+        // BINA MESEJ MAKLUM BALAS KEPADA PENGGUNA
+        var statusMesej = barisUntukDitambah.length + " rekod berjaya diimport.";
+        var mesejTambahan = [];
+        
+        if (jumlahDitolakDuplikat > 0) {
+            mesejTambahan.push(jumlahDitolakDuplikat + " rekod ditolak kerana data duplikat.");
+        }
+        if (jumlahDitolakJabatan > 0) {
+            mesejTambahan.push(jumlahDitolakJabatan + " rekod ditolak kerana berlainan Jabatan.");
+        }
+        
+        if (mesejTambahan.length > 0) {
+            statusMesej += " (" + mesejTambahan.join(" | ") + ")";
+        }
+
+        // Jika tiada satu pun data yang berjaya diimport
+        if (barisUntukDitambah.length === 0) {
+            return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Gagal import: Semua data " + (jumlahDitolakJabatan > 0 ? "berlainan jabatan" : "telah wujud / duplikat") + "."}));
+        }
+
+        return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": statusMesej}));
+    }
+
+// ================= PENGURUSAN SENARAI PERTANDINGAN =================
+    
+    // 1. TAMBAH & KEMASKINI PERTANDINGAN
+    else if (action === "simpanPertandingan") {
+        var sheet = ss.getSheetByName("SENARAI_INOVASI");
+        if (!sheet) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tab SENARAI_INOVASI tiada."}));
+
+        var idEdit = String(payload.ID || "").trim();
+        var rowData = [
+            String(payload.NAMA || "").toUpperCase(), String(payload.TAHUN || ""),
+            String(payload.TARIKH || ""), String(payload.TEMPAT || "").toUpperCase(),
+            String(payload.KAEDAH || "").toUpperCase(), String(payload.PERINGKAT || "").toUpperCase(),
+            String(payload.URL || "")
+        ];
+
+        var data = sheet.getDataRange().getValues();
+
+        if (idEdit !== "") { // KEMASKINI
+            for (var i = 1; i < data.length; i++) {
+                if (String(data[i][0]).trim() === idEdit) {
+                    sheet.getRange(i + 1, 2, 1, 7).setValues([rowData]);
+                    return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod Pertandingan dikemaskini!"}));
+                }
+            }
+        } else { // TAMBAH BARU (Jana ID Autogen)
+            var lastRow = 0; var maxNum = 1000;
+            for (var i = 1; i < data.length; i++) { 
+                var val = String(data[i][0]).trim();
+                if (val !== "") { 
+                    lastRow = i + 1; 
+                    if (val.startsWith("PERT-")) { 
+                        var num = parseInt(val.split("-")[1], 10);
+                        if (!isNaN(num) && num > maxNum) maxNum = num;
+                    }
+                } 
+            }
+            if (lastRow === 0) lastRow = 1;
+            var nextId = "PERT-" + (maxNum + 1); 
+
+            sheet.getRange(lastRow + 1, 1, 1, 8).setValues([[nextId].concat(rowData)]);
+            return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Pertandingan baharu didaftarkan!"}));
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Sesuatu ralat berlaku."}));
+    }
+
+    // 2. PADAM PERTANDINGAN
+    else if (action === "padamPertandingan") {
+        var idInput = String(payload.ID || "").trim();
+        var sheet = ss.getSheetByName("SENARAI_INOVASI");
+        var data = sheet.getDataRange().getValues();
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === idInput) {
+                sheet.deleteRow(i + 1);
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod Pertandingan dipadam."}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Rekod tidak dijumpai."}));
+    }
+
+    // 3. IMPORT CSV PERTANDINGAN
+    else if (action === "importPertandinganCSV") {
+        var sheet = ss.getSheetByName("SENARAI_INOVASI");
+        var dataImport = payload.dataCSV || [];
+        if (!Array.isArray(dataImport) || dataImport.length === 0) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tiada data CSV yang sah."}));
+
+        var dataSediaAda = sheet.getDataRange().getValues();
+        var lastRow = 0; var maxNum = 1000;
+
+        for (var i = 1; i < dataSediaAda.length; i++) { 
+            var val = String(dataSediaAda[i][0]).trim();
+            if (val !== "") { 
+                lastRow = i + 1; 
+                if (val.startsWith("PERT-")) { 
+                    var num = parseInt(val.split("-")[1], 10);
+                    if (!isNaN(num) && num > maxNum) maxNum = num;
+                }
+            } 
+        }
+        if (lastRow === 0) lastRow = 1; 
+        
+        var barisUntukDitambah = [];
+        
+        dataImport.forEach(function(row) {
+            function getVal(kunciPilihan) {
+                for (var key in row) {
+                    var kClean = key.toUpperCase().replace(/[^A-Z0-9]/g, ''); 
+                    for(var i=0; i<kunciPilihan.length; i++) {
+                        if(kClean === kunciPilihan[i].toUpperCase().replace(/[^A-Z0-9]/g, '')) return String(row[key]).trim();
+                    }
+                } return "";
+            }
+
+            maxNum++; 
+            var nextId = "PERT-" + maxNum;
+
+            barisUntukDitambah.push([
+                nextId, 
+                getVal(["NAMAPERTANDINGAN", "NAMA", "PERTANDINGAN"]).toUpperCase(), 
+                getVal(["TAHUN"]), getVal(["TARIKH"]), getVal(["TEMPAT"]).toUpperCase(),
+                getVal(["KAEDAH"]).toUpperCase(), getVal(["PERINGKAT"]).toUpperCase(), getVal(["URL", "PAUTAN", "LINK"])
+            ]);
+        });
+
+        if(barisUntukDitambah.length > 0) sheet.getRange(lastRow + 1, 1, barisUntukDitambah.length, 8).setValues(barisUntukDitambah);
+        return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": barisUntukDitambah.length + " rekod pertandingan diimport!"}));
+    }
+
+    // ================= PENGURUSAN PENCAPAIAN PELAJAR =================
+    
+  // 1. KEMASKINI MAKLUMAT DAN PENCAPAIAN PELAJAR
+    else if (action === "kemaskiniPencapaianPelajar") {
+        var sheetPencapaian = ss.getSheetByName("PENCAPAIAN_PROJEK_PELAJAR");
+        if (!sheetPencapaian) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tab PENCAPAIAN_PROJEK_PELAJAR tiada."}));
+
+        var idEdit = String(payload.PROJEK_ID || "").trim();
+        if (idEdit === "") return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Sila berikan ID Projek."}));
+
+        var data = sheetPencapaian.getDataRange().getValues();
+
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === idEdit) {
+                // Sentiasa kemaskini lajur Pencapaian (Kolum G)
+                sheetPencapaian.getRange(i + 1, 7).setValue(String(payload.PENCAPAIAN || "").toUpperCase());
+
+                // Jika ada data lain (Dihantar oleh Admin/Penyelaras), kemaskini lajur berkaitan
+                if(payload.KATEGORI) sheetPencapaian.getRange(i + 1, 2).setValue(String(payload.KATEGORI).toUpperCase()); // Kolum B
+                if(payload.NAMA_PROJEK) sheetPencapaian.getRange(i + 1, 3).setValue(String(payload.NAMA_PROJEK).toUpperCase()); // Kolum C
+                if(payload.JABATAN) sheetPencapaian.getRange(i + 1, 4).setValue(String(payload.JABATAN).toUpperCase()); // Kolum D
+                if(payload.NAMA_KETUA) sheetPencapaian.getRange(i + 1, 5).setValue(String(payload.NAMA_KETUA).toUpperCase()); // Kolum E
+                if(payload.PENYELIA) sheetPencapaian.getRange(i + 1, 6).setValue(String(payload.PENYELIA).toUpperCase()); // Kolum F
+                
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Rekod telah berjaya dikemaskini!"}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Rekod Projek ID tidak dijumpai."}));
+    }
+
+// ================= PENGURUSAN LAPORAN KEMAJUAN =================
+
+    // 1. SIMPAN BORANG LAPORAN KEMAJUAN
+    else if (action === "simpanLaporanKemajuan") {
+        var sheetLaporan = ss.getSheetByName("LAPORAN_KEMAJUAN");
+        if (!sheetLaporan) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tab LAPORAN_KEMAJUAN tiada."}));
+
+        var email = String(payload.EMAIL || "").trim();
+        var tajuk = String(payload.TAJUK_PROJEK || "").trim().toUpperCase();
+        var nama = String(payload.NAMA_KETUA || "").trim().toUpperCase();
+        var ic = String(payload.IC_KETUA || "").trim();
+        var telefon = String(payload.TELEFON || "").trim();
+        var jabatan = String(payload.JABATAN || "").trim().toUpperCase();
+        var urlLaporan = String(payload.URL_LAPORAN || "").trim();
+        var tarikhHantar = String(payload.TARIKH_HANTAR || "").trim();
+        var statusAwal = "MENUNGGU SEMAKAN"; // Status lalai
+
+        // Jana ID Unik (Contoh: LKP-1001)
+        var dataA = sheetLaporan.getRange("A:A").getValues();
+        var maxNum = 1000;
+        var lastRow = 0;
+        for (var i = 1; i < dataA.length; i++) { 
+            var val = String(dataA[i][0]).trim();
+            if (val !== "") { 
+                lastRow = i + 1; 
+                if (val.startsWith("LKP-")) { 
+                    var num = parseInt(val.split("-")[1], 10);
+                    if (!isNaN(num) && num > maxNum) maxNum = num;
+                }
+            } 
+        }
+        if (lastRow === 0) lastRow = 1;
+        var nextId = "LKP-" + (maxNum + 1); 
+
+        var rowData = [nextId, tarikhHantar, email, tajuk, nama, ic, telefon, jabatan, urlLaporan, statusAwal];
+        sheetLaporan.getRange(lastRow + 1, 1, 1, 10).setValues([rowData]);
+
+        return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Laporan Kemajuan berjaya direkodkan!"}));
+    }
+
+    // 2. KEMASKINI STATUS LAPORAN (Oleh Admin/Penyelaras)
+    else if (action === "kemaskiniStatusLaporan") {
+        var idLaporan = String(payload.ID || "").trim();
+        var statusBaru = String(payload.STATUS || "").trim().toUpperCase();
+        
+        var sheetLaporan = ss.getSheetByName("LAPORAN_KEMAJUAN");
+        var data = sheetLaporan.getDataRange().getValues();
+
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === idLaporan) {
+                sheetLaporan.getRange(i + 1, 10).setValue(statusBaru); // Lajur J (ke-10)
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Status laporan berjaya dikemaskini!"}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "ID Laporan tidak dijumpai."}));
+    }
+
+// ================= PENGURUSAN LAPORAN AKHIR =================
+    else if (action === "simpanLaporanAkhir") {
+        var sheetLaporanAkhir = ss.getSheetByName("LAPORAN_PROJEK_AKHIR");
+        if (!sheetLaporanAkhir) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tab LAPORAN_PROJEK_AKHIR tiada."}));
+
+        var email = String(payload.EMAIL || "").trim();
+        var tajuk = String(payload.TAJUK_PROJEK || "").trim().toUpperCase();
+        var nama = String(payload.NAMA_KETUA || "").trim().toUpperCase();
+        var ic = String(payload.IC_KETUA || "").trim();
+        var telefon = String(payload.TELEFON || "").trim();
+        var jabatan = String(payload.JABATAN || "").trim().toUpperCase();
+        var urlLaporan = String(payload.URL_LAPORAN || "").trim();
+        var tarikhHantar = String(payload.TARIKH_HANTAR || "").trim();
+        var statusAwal = "MENUNGGU SEMAKAN"; // Status lalai apabila baru dihantar
+
+        // Jana ID Unik (Contoh: LPA-1001)
+        var dataA = sheetLaporanAkhir.getRange("A:A").getValues();
+        var maxNum = 1000;
+        var lastRow = 0;
+        for (var i = 1; i < dataA.length; i++) { 
+            var val = String(dataA[i][0]).trim();
+            if (val !== "") { 
+                lastRow = i + 1; 
+                if (val.startsWith("LPA-")) { 
+                    var num = parseInt(val.split("-")[1], 10);
+                    if (!isNaN(num) && num > maxNum) maxNum = num;
+                }
+            } 
+        }
+        if (lastRow === 0) lastRow = 1;
+        var nextId = "LPA-" + (maxNum + 1); 
+
+        var rowData = [nextId, tarikhHantar, email, tajuk, nama, ic, telefon, jabatan, urlLaporan, statusAwal];
+        sheetLaporanAkhir.getRange(lastRow + 1, 1, 1, 10).setValues([rowData]);
+
+        return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Laporan Akhir Projek berjaya direkodkan!"}));
+    }
+
+// KEMASKINI STATUS LAPORAN AKHIR
+    else if (action === "kemaskiniStatusLaporanAkhir") {
+        var idLaporan = String(payload.ID || "").trim();
+        var statusBaru = String(payload.STATUS || "").trim().toUpperCase();
+        
+        var sheetLaporanAkhir = ss.getSheetByName("LAPORAN_PROJEK_AKHIR");
+        if (!sheetLaporanAkhir) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tab LAPORAN_PROJEK_AKHIR tiada."}));
+
+        var data = sheetLaporanAkhir.getDataRange().getValues();
+
+        for (var i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === idLaporan) {
+                sheetLaporanAkhir.getRange(i + 1, 10).setValue(statusBaru); // Lajur J (ke-10)
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Status Laporan Akhir berjaya dikemaskini!"}));
+            }
+        }
+        return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "ID Laporan tidak dijumpai."}));
+    }
+
+// ========================================================
+    // A. MUAT NAIK TEMPLAT .DOCX DARI PC KE GOOGLE DRIVE (API v3)
+    // ========================================================
+    if (action === "uploadTemplateDocx") {
+      try {
+        var base64Data = payload.dataBase64;
+        var namaFail = payload.namaFail;
+        var decodedData = Utilities.base64Decode(base64Data);
+        var blob = Utilities.newBlob(decodedData, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", namaFail);
+        
+        // Konfigurasi metadata untuk Google Doc
+        var fileMetadata = {
+          name: "TEMPLAT_SIJIL_PENYELARAS_AKTIF",
+          mimeType: "application/vnd.google-apps.document" // Memaksa fail ditukar ke Google Doc
+        };
+        
+        // Menggunakan sintaks Drive API v3: Drive.Files.create()
+        var newTemplate = Drive.Files.create(fileMetadata, blob);
+        
+        var sheetSistem = ss.getSheetByName("SIJIL_PENYELARAS");
+        if (!sheetSistem) sheetSistem = ss.insertSheet("SIJIL_PENYELARAS");
+        
+        // Padam templat lama (Jika ada)
+        var oldId = sheetSistem.getRange("G2").getValue();
+        if (oldId && oldId !== "") {
+          try { DriveApp.getFileById(oldId).setTrashed(true); } catch(e) {}
+        }
+
+       // Simpan Header di G1 dan ID baharu di G2
+        sheetSistem.getRange("G1").setValue("ID Templat");
+        sheetSistem.getRange("G2").setValue(newTemplate.id);
+        
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "BERJAYA", 
+          "mesej": "Templat berjaya dimuat naik (menggunakan API v3) dan sistem sedia menjana sijil!"
+        })).setMimeType(ContentService.MimeType.JSON);
+      } catch (e) {
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "GAGAL", 
+          "mesej": "Ralat Muat Naik (API v3): " + e.message
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
+// ========================================================
+    // B. JANA SIJIL AUTOMATIK (TUKAR KEPADA PDF & BUANG DOC SEMENTARA)
+    // ========================================================
+    else if (action === "janaSijilAutomatik") {
+      try {
+        var sheetSistem = ss.getSheetByName("SIJIL_PENYELARAS");
+        
+        // Cipta sheet jika belum wujud untuk elak ralat
+        if (!sheetSistem) {
+          sheetSistem = ss.insertSheet("SIJIL_PENYELARAS");
+          // 🌟 KEMAS KINI: Tambah "ID Templat" pada Lajur G (Index ke-7)
+          sheetSistem.appendRow(["Tahun", "Jabatan", "Nama", "No IC", "Peranan", "URL Sijil", "ID Templat"]);
+        }
+
+        // Baca ID Templat dari G2
+        var templateId = sheetSistem.getRange("G2").getValue() || "";
+        
+        if (!templateId || templateId === "") {
+           return ContentService.createTextOutput(JSON.stringify({
+             "status": "GAGAL", 
+             "mesej": "Sila muat naik Templat Sijil (.docx) dari PC anda terlebih dahulu."
+           })).setMimeType(ContentService.MimeType.JSON);
+        }
+
+        var tahun = String(payload.TAHUN).trim();
+        var jabatan = String(payload.JABATAN).trim().toUpperCase();
+        var nama = String(payload.NAMA).trim().toUpperCase();
+        var ic = String(payload.NO_IC).trim();
+        var peranan = String(payload.PERANAN).trim().toUpperCase();
+
+        // 1. FOLDER UTAMA KPI
+        var folderIdUtama = "1R5D4jQ5PhV7Wm0UWTV4GG9h81Xake_Hx"; 
+        
+        var parentFolder;
+        try {
+          parentFolder = DriveApp.getFolderById(folderIdUtama);
+        } catch(err) {
+          return ContentService.createTextOutput(JSON.stringify({"status": "GAGAL", "mesej": "E-mel skrip tidak mempunyai akses ke Folder Utama."})).setMimeType(ContentService.MimeType.JSON);
+        }
+        
+        // 2. CIPTA / CARI FOLDER TAHUN & JABATAN
+        var tIter = parentFolder.getFoldersByName(tahun);
+        var folderTahun = tIter.hasNext() ? tIter.next() : parentFolder.createFolder(tahun);
+        
+        var jIter = folderTahun.getFoldersByName(jabatan);
+        var folderJabatan = jIter.hasNext() ? jIter.next() : folderTahun.createFolder(jabatan);
+
+        // 3. FORMAT NAMA FAIL: NO_IC_JABATAN_NAMA (PDF)
+        var namaFailSijil = ic + "_" + jabatan + "_" + nama;
+
+        // ===============================================================
+        // 🌟 KOD BARU: SEMAK DAN PADAM FAIL LAMA DI DRIVE (Double Check)
+        // ===============================================================
+        // 3.1 Padam fail PDF yang mempunyai nama yang sama
+        var failLamaPdf = folderJabatan.getFilesByName(namaFailSijil + ".pdf");
+        while (failLamaPdf.hasNext()) {
+          failLamaPdf.next().setTrashed(true);
+        }
+        
+        // 3.2 Padam fail Google Doc (sementara) yang mungkin tersangkut dari proses sebelum ini
+        var failLamaDoc = folderJabatan.getFilesByName(namaFailSijil);
+        while (failLamaDoc.hasNext()) {
+          failLamaDoc.next().setTrashed(true);
+        }
+        // ===============================================================
+
+        // 4. BUKA TEMPLAT DAN JANA DOKUMEN GOOGLE SEMENTARA
+        var templateFile = DriveApp.getFileById(templateId);
+        var tempDocFile = templateFile.makeCopy(namaFailSijil, folderJabatan);
+        var doc = DocumentApp.openById(tempDocFile.getId());
+        var body = doc.getBody();
+
+        // Ganti Placeholder dengan Data Sebenar
+        body.replaceText("{{NAMA}}", nama);
+        body.replaceText("{{NO_IC}}", ic);
+        body.replaceText("{{JABATAN}}", jabatan);
+        body.replaceText("{{PERANAN}}", peranan);
+        body.replaceText("{{TAHUN}}", tahun);
+        doc.saveAndClose(); 
+
+        // 5. TUKAR DOKUMEN KEPADA PDF & SIMPAN
+        var pdfBlob = tempDocFile.getAs('application/pdf');
+        var finalPdf = folderJabatan.createFile(pdfBlob).setName(namaFailSijil + ".pdf");
+        
+        try { finalPdf.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch(e){}
+        var pdfUrl = finalPdf.getUrl();
+
+        // 6. 🌟 KEMAS GOOGLE DRIVE: PADAM DOKUMEN GOOGLE SEMENTARA 🌟
+        tempDocFile.setTrashed(true);
+
+        // 7. 🌟 MASUKKAN/KEMAS KINI REKOD KE DALAM GOOGLE SHEET 🌟
+        var dataSheet = sheetSistem.getDataRange().getValues();
+        var rekodDijumpai = false;
+        
+        for (var i = 1; i < dataSheet.length; i++) {
+          // Semak jika rekod sudah wujud berdasarkan Tahun, Jabatan dan IC
+          if (String(dataSheet[i][0]).trim() === tahun && String(dataSheet[i][1]).toUpperCase() === jabatan && String(dataSheet[i][3]).trim() === ic) {
+            
+            // Padam PDF lama jika ada (Bila guna fungsi 'Ganti Semula' / Pautan Lama)
+            var urlLama = String(dataSheet[i][5]).trim(); 
+            if (urlLama !== "") {
+              try {
+                var fileIdMatch = urlLama.match(/[-\w]{25,}/);
+                if (fileIdMatch && fileIdMatch[0]) DriveApp.getFileById(fileIdMatch[0]).setTrashed(true);
+              } catch(e) {} // Abaikan ralat jika fail sudah dipadam di Langkah 3 di atas
+            }
+
+            // Kemas kini URL baru
+            sheetSistem.getRange(i + 1, 6).setValue(pdfUrl); 
+            rekodDijumpai = true;
+            break;
+          }
+        }
+
+        // Jika ini adalah kali pertama sijil dijana (Rekod tiada dalam sheet)
+        if (!rekodDijumpai) {
+          // Cari baris terakhir berdasarkan Lajur A supaya tidak terganggu oleh Lajur G
+          var colA = sheetSistem.getRange("A:A").getValues();
+          var lastRowA = 1;
+          for (var r = 0; r < colA.length; r++) {
+            if (String(colA[r][0]).trim() !== "") {
+              lastRowA = r + 1; // Rekod baris yang ada data
+            }
+          }
+          
+          // Masukkan data pada baris seterusnya, tapi HANYA untuk Lajur A (1) hingga F (6)
+          sheetSistem.getRange(lastRowA + 1, 1, 1, 6).setValues([[tahun, jabatan, nama, ic, peranan, pdfUrl]]);
+        }
+
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "BERJAYA", 
+          "mesej": "Sijil PDF berjaya dijana dan rekod telah disimpan ke dalam sistem!", 
+          "url": pdfUrl
+        })).setMimeType(ContentService.MimeType.JSON);
+        
+      } catch (error) {
+        return ContentService.createTextOutput(JSON.stringify({
+          "status": "GAGAL", 
+          "mesej": "Ralat Penjanaan Sijil: " + error.message
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
+// --- PENGURUSAN INFO SEMINAR ---
+
+    // 1. TAMBAH SEMINAR MANUAL
+    else if (action === "tambahSeminarManual") {
+        var sheetSeminar = ss.getSheetByName("SENARAI_SEMINAR");
+        
+        var nama = String(payload.NAMA || "").trim().toUpperCase();
+        var tarikh = String(payload.TARIKH || "").trim();
+        var tempat = String(payload.TEMPAT || "").trim().toUpperCase();
+        var kaedah = String(payload.KAEDAH || "").trim().toUpperCase();
+        var peringkat = String(payload.PERINGKAT || "").trim().toUpperCase();
+        var url = String(payload.URL || "").trim();
+
+        // Jana ID Unik (Contoh: SMR-1001)
+        var dataA = sheetSeminar.getRange("A:A").getValues();
+        var maxNum = 1000;
+        var lastRow = 0;
+        for (var i = 1; i < dataA.length; i++) { 
+            var val = String(dataA[i][0]).trim();
+            if (val !== "") { 
+                lastRow = i + 1; 
+                if (val.startsWith("SMR-")) { 
+                    var num = parseInt(val.split("-")[1], 10);
+                    if (!isNaN(num) && num > maxNum) maxNum = num;
+                }
+            } 
+        }
+        if (lastRow === 0) lastRow = 1;
+        var nextId = "SMR-" + (maxNum + 1); 
+
+        sheetSeminar.getRange(lastRow + 1, 1, 1, 7).setValues([[nextId, nama, tarikh, tempat, kaedah, peringkat, url]]);
+        return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": "Maklumat Seminar berjaya direkodkan!"}));
+    }
+
+    // 2. UPLOAD CSV SEMINAR
+    else if (action === "uploadCSVSeminar") {
+        var sheetSeminar = ss.getSheetByName("SENARAI_SEMINAR");
+        var csvDataString = payload.CSV_DATA || "";
+        
+        if (!csvDataString) return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Data CSV kosong."}));
+
+        try {
+            // Parse CSV string menggunakan Utilities bawaan Google
+            var parsedData = Utilities.parseCsv(csvDataString);
+            
+            // Abaikan baris pertama jika ia adalah Header (Tajuk Lajur)
+            var startIndex = 0;
+            if (parsedData[0] && parsedData[0][0].toString().toUpperCase().includes("NAMA")) {
+                startIndex = 1; 
+            }
+
+            var lastRow = sheetSeminar.getLastRow();
+            var idCounter = lastRow > 1 ? parseInt(String(sheetSeminar.getRange(lastRow, 1).getValue()).replace("SMR-", "")) : 1000;
+            if (isNaN(idCounter)) idCounter = 1000;
+
+            var rowsToInsert = [];
+            for (var i = startIndex; i < parsedData.length; i++) {
+                var row = parsedData[i];
+                if (row.length > 0 && row[0].trim() !== "") {
+                    idCounter++;
+                    var newId = "SMR-" + idCounter;
+                    
+                    // Susunan andaian dari CSV: [Nama, Tarikh, Tempat, Kaedah, Peringkat, URL]
+                    var pNama = String(row[0] || "").toUpperCase();
+                    var pTarikh = String(row[1] || "");
+                    var pTempat = String(row[2] || "").toUpperCase();
+                    var pKaedah = String(row[3] || "").toUpperCase();
+                    var pPeringkat = String(row[4] || "").toUpperCase();
+                    var pUrl = String(row[5] || "");
+
+                    rowsToInsert.push([newId, pNama, pTarikh, pTempat, pKaedah, pPeringkat, pUrl]);
+                }
+            }
+
+            if (rowsToInsert.length > 0) {
+                sheetSeminar.getRange(lastRow + 1, 1, rowsToInsert.length, 7).setValues(rowsToInsert);
+                return output.setContent(JSON.stringify({"status": "BERJAYA", "mesej": rowsToInsert.length + " rekod berjaya dimuat naik!"}));
+            } else {
+                return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Tiada data sah dijumpai dalam CSV."}));
+            }
+
+        } catch (e) {
+            return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Ralat memproses CSV: " + e.message}));
+        }
+    }
+
+    return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Arahan tidak dikenali."}));
+
+  } catch (error) {
+    return output.setContent(JSON.stringify({"status": "GAGAL", "mesej": "Ralat Server: " + error.message}));
+  }
+}
+
+
+// ========================================================
+// 1. DELETE REKOD DALAM INOVASI (Mesti berada di LUAR doPost)
+// ========================================================
+function fungsiPadamRekod(id) {
+  // PASTIKAN NAMA SHEET BETUL. Contoh: "INOVASI"
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("INOVASI"); 
+
+  // 🌟 TAMBAHAN KESELAMATAN: Semak jika tab tidak wujud
+  if (!sheet) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "GAGAL",
+      mesej: "Tab 'INOVASI' tidak dijumpai dalam database."
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  var data = sheet.getDataRange().getValues();
+  var barisDitemui = -1;
+  
+  // Mula loop dari baris 2 (index 1) kerana baris 1 adalah tajuk (Header)
+  for (var i = 1; i < data.length; i++) {
+    // data[i][0] bermaksud Kolum A (BIL). Jika ID anda di kolum lain, tukar index 0.
+    if (data[i][0] == id) { 
+      barisDitemui = i + 1; // +1 kerana index array mula dari 0, baris sheet mula dari 1
+      break;
+    }
+  }
+  
+  if (barisDitemui !== -1) {
+    sheet.deleteRow(barisDitemui); // Padam baris tersebut
+    
+    // ==============================================================
+    // 🌟 KOD BARU: SUSUN SEMULA NOMBOR BIL SECARA FIZIKAL DI SHEET
+    // ==============================================================
+    var barisTerakhir = sheet.getLastRow();
+    
+    // Semak jika masih ada data (lebih dari baris 1/tajuk)
+    if (barisTerakhir > 1) {
+      var jumlahData = barisTerakhir - 1;
+      var susunanNomborBaru = [];
+      
+      // Buat senarai nombor berturutan: 1, 2, 3, 4....
+      for (var n = 1; n <= jumlahData; n++) {
+        susunanNomborBaru.push([n]); 
+      }
+      
+      // Masukkan senarai nombor baru ini terus ke Kolum A bermula dari Baris 2
+      sheet.getRange(2, 1, susunanNomborBaru.length, 1).setValues(susunanNomborBaru);
+    }
+    // ==============================================================
+
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "BERJAYA",
+      mesej: "Rekod berjaya dipadam & nombor BIL telah disusun semula."
+    })).setMimeType(ContentService.MimeType.JSON);
+    
+  } else {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "GAGAL",
+      mesej: "ID Rekod tidak dijumpai di dalam database."
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function sahkanAkses() {
+  DriveApp.getFiles();
+}
+
+
+
+// ========================================================
+// 3. FUNGSI-FUNGSI BANTUAN (Mesti berada di LUAR doPost)
+// ========================================================
+
+function padamRekod(data, ss) {
+  const sheet = ss.getSheetByName(NAMA_SHEET);
+  const idBil = data.id; 
+  const semuaData = sheet.getDataRange().getValues();
+  
+  for (let i = 1; i < semuaData.length; i++) {
+    if (String(semuaData[i][0]) === String(idBil)) {
+      sheet.deleteRow(i + 1); 
+      return jsonResponse({ status: "BERJAYA", mesej: `Rekod BIL ${idBil} telah dipadam.` });
+    }
+  }
+  return jsonResponse({ status: "GAGAL", mesej: "Rekod tidak dijumpai." });
+}
+
+function kemaskiniRekod(data, ss) {
+  // Pastikan variabel NAMA_SHEET (contoh: "KPI") sudah dideklarasikan secara global
+  const sheet = ss.getSheetByName(NAMA_SHEET); 
+  
+  // Semakan keselamatan: Jika nama sheet salah/ubah
+  if (!sheet) {
+    return jsonResponse({ status: "RALAT", mesej: `Sheet ${NAMA_SHEET} tidak dijumpai.` });
+  }
+
+  // ==========================================
+  // SEMAKAN WAJIB (VALIDATION)
+  // ==========================================
+  // Pastikan namaProduk ada dan bukan sekadar ruang kosong
+  if (!data.namaProduk || data.namaProduk.toString().trim() === "") {
+    return jsonResponse({ status: "GAGAL", mesej: "Nama Produk adalah wajib diisi dan tidak boleh kosong." });
+  }
+  
+  // Pastikan ketua ada dan bukan sekadar ruang kosong
+  if (!data.ketua || data.ketua.toString().trim() === "") {
+    return jsonResponse({ status: "GAGAL", mesej: "Nama Ketua adalah wajib diisi dan tidak boleh kosong." });
+  }
+  // ==========================================
+
+  const idBil = data.id;
+  const semuaData = sheet.getDataRange().getValues();
+  
+  for (let i = 1; i < semuaData.length; i++) {
+    if (String(semuaData[i][0]) === String(idBil)) {
+      const rowSheet = i + 1;
+      
+      // Kemaskini kolum. 
+      // Untuk medan yang wajib (Nama Produk & Ketua), kita terus set nilainya kerana sudah disahkan tidak kosong di atas.
+      sheet.getRange(rowSheet, 2).setValue(data.namaProduk);   // Col B (Wajib)
+      sheet.getRange(rowSheet, 3).setValue(data.ketua);        // Col C (Wajib)
+      
+      // Untuk medan lain yang tidak wajib, kita kekalkan semakan !== undefined 
+      // supaya jika pengguna sengaja padam (hantar ""), ia akan dikosongkan di Sheet.
+      if(data.telefon !== undefined) sheet.getRange(rowSheet, 4).setValue(data.telefon);         // Col D
+      if(data.email !== undefined) sheet.getRange(rowSheet, 5).setValue(data.email);             // Col E
+      if(data.ahli !== undefined) sheet.getRange(rowSheet, 6).setValue(data.ahli);               // Col F
+      if(data.jabatan !== undefined) sheet.getRange(rowSheet, 7).setValue(data.jabatan);         // Col G
+      if(data.aplikasi !== undefined) sheet.getRange(rowSheet, 8).setValue(data.aplikasi);       // Col H
+      if(data.jenis !== undefined) sheet.getRange(rowSheet, 9).setValue(data.jenis);             // Col I
+      if(data.pendaftaran !== undefined) sheet.getRange(rowSheet, 10).setValue(data.pendaftaran);// Col J
+      if(data.tahun !== undefined) sheet.getRange(rowSheet, 11).setValue(data.tahun);            // Col K
+      if(data.url !== undefined) sheet.getRange(rowSheet, 12).setValue(data.url);                // Col L
+      if(data.sukuan !== undefined) sheet.getRange(rowSheet, 13).setValue(data.sukuan);          // Col M
+      if(data.status !== undefined) sheet.getRange(rowSheet, 14).setValue(data.status);          // Col N
+      
+      return jsonResponse({ status: "BERJAYA", mesej: `Rekod BIL ${idBil} berjaya dikemaskini.` });
+    }
+  }
+  
+  return jsonResponse({ status: "GAGAL", mesej: "Rekod tidak dijumpai untuk dikemaskini." });
+}
+
+function muatNaikSijil(data, ss) {
+  const sheet = ss.getSheetByName(NAMA_SHEET);
+  const idBil = data.id;
+  const failBase64 = data.failBase64;     
+  const namaFail = data.namaFail;   
+  const mimeType = data.mimeType; 
+  // 👇 TAMBAH INI: Ambil URL lama dari data yang dihantar
+  const urlSijilLama = data.urlSijilLama || "";
+  const semuaData = sheet.getDataRange().getValues();
+  let rowSheet = -1;
+  let tahunKPI = new Date().getFullYear().toString(); // Default jika tahun tak dijumpai
+
+  // 1. CARI REKOD DAN DAPATKAN TAHUN KPI
+  for (let i = 1; i < semuaData.length; i++) {
+    if (String(semuaData[i][0]) === String(idBil)) {
+      rowSheet = i + 1;
+      // Ambil data tahun dari Lajur K (Index 10)
+      if (semuaData[i][10] !== "") {
+        tahunKPI = String(semuaData[i][10]).trim(); 
+      }
+      break;
+    }
+  }
+
+  // Jika rekod tak wujud dalam sheet, hentikan proses
+  if (rowSheet === -1) {
+    return jsonResponse({ status: "GAGAL", mesej: "Rekod tidak dijumpai di pangkalan data." });
+  }
+
+// ==========================================
+  // 🌟 TAMBAH INI: LOGIK PADAM FAIL LAMA
+  // ==========================================
+  if (urlSijilLama !== "") {
+    try {
+      // Ekstrak ID Fail dari pautan (URL) Google Drive lama
+      const padananID = urlSijilLama.match(/[-\w]{25,}/);
+      
+      if (padananID && padananID[0]) {
+        const idFailLama = padananID[0];
+        // Pindahkan fail lama ke dalam Trash (Tong Sampah)
+        DriveApp.getFileById(idFailLama).setTrashed(true);
+      }
+    } catch (e) {
+      // Abaikan jika ralat (mungkin fail dah terpadam manual)
+      console.log("Gagal memadam fail lama: " + e.message);
+    }
+  }
+  // ==========================================
+
+
+  // 2. PENGURUSAN FOLDER DINAMIK
+  const folderUtama = DriveApp.getFolderById(FOLDER_ID_SIJILKPI);
+  let folderTahun;
+  
+  // Semak jika folder tahun (cth: "2025") sudah wujud dalam folder utama
+  const subFolders = folderUtama.getFoldersByName(tahunKPI);
+  if (subFolders.hasNext()) {
+    folderTahun = subFolders.next(); // Guna folder yang dah ada
+  } else {
+    folderTahun = folderUtama.createFolder(tahunKPI); // Bina folder tahun baharu
+  }
+  
+// 3. 🌟 PENYELESAIAN RALAT "COULD NOT DECODE STRING" 🌟
+  // Sistem akan automatik buang header 'data:image/xxx;base64,' jika ia wujud
+  let teksBersih = failBase64;
+  if (failBase64.indexOf(",") !== -1) {
+    teksBersih = failBase64.split(",")[1]; 
+  }
+  
+  // Convert teks bersih menjadi fail fizikal
+  const decodedData = Utilities.base64Decode(teksBersih); 
+  const blob = Utilities.newBlob(decodedData, mimeType, namaFail);
+  const failBaru = folderTahun.createFile(blob);
+  
+  const urlFail = failBaru.getUrl();
+
+
+  
+  // 4. SIMPAN URL SIJIL KE DALAM EXCEL (Lajur O / 15)
+  sheet.getRange(rowSheet, 15).setValue(urlFail); 
+  
+  return jsonResponse({ 
+    status: "BERJAYA", 
+    mesej: `Sijil berjaya dimuat naik ke dalam folder Tahun ${tahunKPI}.`, 
+    url: urlFail 
+  });
+}
+// ========================================================
+// FUNGSI BANTUAN UNTUK MEMULANGKAN JSON KE HTML
+// ========================================================
+function jsonResponse(data, kodStatus = 200) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+
+function benarkanDrive() {
+  // Fungsi ini hanya untuk trigger kebenaran Google Drive
+  DriveApp.getFolderById(FOLDER_ID_SIJILKPI);
+  var folderIdUtama = "1BfNhDB6FHnbBs5jOVnRjDKmgZG9PjXsV"; 
+  var parentFolder = DriveApp.getFolderById(folderIdUtama);
+
+}
+function paksaIzinPenuh() {
+  // Fungsi ini mencipta fail sementara dan memadamnya semula
+  // Tujuannya semata-mata untuk mencetuskan kebenaran "createFile" dari Google
+  var folder = DriveApp.getRootFolder();
+  var failUjian = folder.createFile("FailUjian.txt", "Ujian", MimeType.PLAIN_TEXT);
+  failUjian.setTrashed(true); // Terus padam masuk tong sampah
+}
+
+function paksaIzinDrive() {
+  // Kod ini dicipta semata-mata untuk memancing Google meminta izin "Write/Edit" Drive
+  var folder = DriveApp.getRootFolder();
+  var failUjian = folder.createFile("Ujian_Sementara.txt", "Sistem OK");
+  failUjian.setTrashed(true); // Terus buang ke tong sampah
+}
+// ========================================================
+// FUNGSI MUAT NAIK SIJIL KHAS PENYELARAS JABATAN
+// ========================================================
+function muatNaikSijilPenyelaras(data, ss) {
+  try {
+    // Wajib wujudkan tab "SIJIL_PENYELARAS" di Google Sheets anda 
+    let sheet = ss.getSheetByName("SIJIL_PENYELARAS");
+    if (!sheet) {
+      sheet = ss.insertSheet("SIJIL_PENYELARAS"); 
+      sheet.appendRow(["Tahun", "Jabatan", "Nama", "No IC", "Peranan", "URL Sijil"]);
+    }
+
+    const tahun = data.tahun;
+    const jabatan = data.jabatan;
+    const namaPenyelaras = data.namaPenyelaras || "-";
+    const icPenyelaras = data.icPenyelaras || "-"; // INI ADALAH KUNCI UTAMA (PRIMARY KEY)
+    const perananPenyelaras = data.perananPenyelaras || "-";
+    
+    const failBase64 = data.failBase64; 
+    const namaFail = data.namaFail;
+    const mimeType = data.mimeType;
+
+
+// ---------------------------------------------------------
+    // 1. TETAPKAN FORMAT NAMA FAIL: NO_IC_JABATAN_NAMA
+    // ---------------------------------------------------------
+    let ekstensi = "";
+    // 🌟 KEMAS KINI: Tukar namaFailAsal kepada namaFail
+    if (namaFail && namaFail.includes(".")) {
+      ekstensi = "." + namaFail.split('.').pop(); // Ambil jenis fail (cth: .pdf, .jpg)
+    }
+    const namaFailStandard = icPenyelaras + "_" + jabatan + "_" + namaPenyelaras + ekstensi;
+
+
+    /// ---------------------------------------------------------
+    // 2. Pengurusan Struktur Folder Bertingkat (Tahun -> Jabatan)
+    // ---------------------------------------------------------
+    const folderUtama = DriveApp.getFolderById(FOLDER_ID_SIJILKPI);
+    
+    let folderTahun;
+    const subFoldersTahun = folderUtama.getFoldersByName(tahun);
+    if (subFoldersTahun.hasNext()) { 
+      folderTahun = subFoldersTahun.next(); 
+    } else { 
+      folderTahun = folderUtama.createFolder(tahun); 
+    }
+
+    let folderJabatan;
+    const subFoldersJabatan = folderTahun.getFoldersByName(jabatan.toUpperCase());
+    if (subFoldersJabatan.hasNext()) { 
+      folderJabatan = subFoldersJabatan.next(); 
+    } else { 
+      folderJabatan = folderTahun.createFolder(jabatan.toUpperCase()); 
+    }
+
+    // ---------------------------------------------------------
+    // 3. 🌟 SEMAK DAN PADAM FAIL LAMA DENGAN NAMA YANG SAMA DI DRIVE 🌟
+    // ---------------------------------------------------------
+    const failLama = folderJabatan.getFilesByName(namaFailStandard);
+    while (failLama.hasNext()) {
+      failLama.next().setTrashed(true);
+    }
+
+    // ---------------------------------------------------------
+    // Pembersihan Kod Base64 & Upload
+    // ---------------------------------------------------------
+    let teksBersih = failBase64;
+    if (failBase64.indexOf(",") !== -1) { teksBersih = failBase64.split(",")[1]; }
+    
+    const decodedData = Utilities.base64Decode(teksBersih); 
+    // 🌟 KEMAS KINI PENTING: Guna namaFailStandard supaya nama fail ditukar dengan betul!
+    const blob = Utilities.newBlob(decodedData, mimeType, namaFailStandard);
+    const failBaru = folderJabatan.createFile(blob);
+    
+    const urlFail = failBaru.getUrl();
+    
+    // ---------------------------------------------------------
+    // Pengemaskinian / Penambahan Rekod di Google Sheets (Kemaskini: Cari IC)
+    // ---------------------------------------------------------
+    const semuaData = sheet.getDataRange().getValues();
+    let rowSheet = -1;
+    
+    for (let i = 1; i < semuaData.length; i++) {
+      
+      // 🌟 KEMASKINI: Sekarang kita check Tahun, Jabatan, DAN NO IC (Index 3 / Lajur D)
+      let rowTahun = String(semuaData[i][0]).trim();
+      let rowJabatan = String(semuaData[i][1]).trim().toUpperCase();
+      let rowIC = String(semuaData[i][3]).trim();
+
+      if (rowTahun === String(tahun).trim() && rowJabatan === String(jabatan).trim().toUpperCase() && rowIC === String(icPenyelaras).trim()) {
+        rowSheet = i + 1;
+
+        // 🌟 DOUBLE CHECK: Padam URL Sijil lama dari rekod Sheet (jika wujud)
+        let urlLama = String(semuaData[i][5]).trim();
+        if (urlLama !== "") {
+          try {
+            let fileIdMatch = urlLama.match(/[-\w]{25,}/);
+            if (fileIdMatch && fileIdMatch[0]) {
+              DriveApp.getFileById(fileIdMatch[0]).setTrashed(true);
+            }
+          } catch(e) {} // Abaikan jika fail dah dipadam di Langkah 3
+        }
+
+
+
+
+        break;
+      }
+    }
+
+    if (rowSheet !== -1) {
+      // Jika rekod wujud untuk IC tersebut: Kemaskini Nama, IC, Peranan dan URL
+      sheet.getRange(rowSheet, 3, 1, 4).setValues([[namaPenyelaras, icPenyelaras, perananPenyelaras, urlFail]]); 
+    } else {
+      // Jika rekod baharu (IC tak pernah upload sijil untuk Tahun/Jabatan tu): Masukkan baris baru
+      sheet.appendRow([tahun, jabatan.toUpperCase(), namaPenyelaras, icPenyelaras, perananPenyelaras, urlFail]);
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({ 
+      status: "BERJAYA", 
+      mesej: "Sijil Penyelaras berjaya dimuat naik.", 
+      url: urlFail 
+    })).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ 
+      status: "GAGAL", 
+      mesej: error.toString() 
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+
+
+
+
+
+function prosesPadamSijilPenyelaras(data) {
+  try {
+    var sheetName = "SIJIL_PENYELARAS"; 
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+    
+    // Jika sheet tiada
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "GAGAL", 
+        mesej: "Sheet " + sheetName + " tidak dijumpai."
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var sheetData = sheet.getDataRange().getValues();
+    var rowUntukDipadam = -1;
+    var urlSijilDrive = ""; // 🌟 KENA TAMBAH INI: Untuk simpan URL Sijil
+    // Loop dari bawah ke atas supaya susunan tak lari bila baris dipadam
+    for (var i = sheetData.length - 1; i >= 1; i--) { 
+      
+      // Susunan lajur berdasarkan SHEET SIJIL_PENYELARAS:
+      // [0]=Tahun, [1]=Jabatan, [2]=Nama, [3]=No IC, [4]=Peranan, [5]=URL Sijil
+      var rowTahun = String(sheetData[i][0]).trim();    
+      var rowJabatan = String(sheetData[i][1]).trim();  
+      var rowIC = String(sheetData[i][3]).trim();       
+
+      // Semak jika IC, Jabatan dan Tahun adalah sama
+      if (rowIC === String(data.icPenyelaras).trim() && 
+          rowJabatan.toUpperCase() === String(data.jabatan).trim().toUpperCase() && 
+          rowTahun === String(data.tahun).trim()) {
+        
+        rowUntukDipadam = i + 1; // Tambah 1 kerana index array mula dari 0, baris sheet mula dari 1
+        urlSijilDrive = String(sheetData[i][5]).trim(); // 🌟 KENA TAMBAH INI: Tangkap URL dari Lajur F (Index 5)
+        break; 
+      }
+    }
+
+    // Jika rekod dijumpai, padam baris tersebut
+    if (rowUntukDipadam !== -1) {
+
+      // 🌟 [KOD BARU] Padam fail di Google Drive
+      if (urlSijilDrive !== "") {
+        try {
+          // Guna Regex untuk ekstrak ID Fail dari URL yang panjang
+          var fileIdMatch = urlSijilDrive.match(/[-\w]{25,}/); 
+          if (fileIdMatch && fileIdMatch[0]) {
+            var idFail = fileIdMatch[0];
+            // setTrashed(true) akan buang fail ke tong sampah (Bin) Drive
+            DriveApp.getFileById(idFail).setTrashed(true); 
+          }
+        } catch (driveError) {
+          // Tangkap error jika fail tiada/sudah dipadam di Drive tapi teruskan padam row di Sheet
+          console.log("Ralat memadam fail di Drive: " + driveError.toString());
+        }
+      }
+
+      sheet.deleteRow(rowUntukDipadam);
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "BERJAYA", 
+        mesej: "Rekod dan fail sijil telah berjaya dipadam sepenuhnya."
+      })).setMimeType(ContentService.MimeType.JSON);
+      
+    } else {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "GAGAL", 
+        mesej: "Rekod sijil tidak dijumpai di dalam pangkalan data."
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+ } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "GAGAL", 
+      mesej: "Ralat Server: " + error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function forceAuth() {
+    DriveApp.getRootFolder();
+}
+
+
+function mintaIzinDocs() {
+  // 1. Buat dokumen sementara untuk memicu izin Google Docs
+  var docUjian = DocumentApp.create("Fail Ujian Sementara");
+  
+  // 2. Dapatkan ID dari dokumen yang baru dibuat
+  var docId = docUjian.getId();
+  
+  // 3. Gunakan DriveApp untuk membuang file tersebut ke tong sampah (trash)
+  DriveApp.getFileById(docId).setTrashed(true); 
+}
+
+// template borang penyelidikan
+// ==========================================
+// 4. LOGIK MUAT NAIK FAIL & AUTO-PADAM
+// ==========================================
+function kemaskiniTemplateBorang(data) {
+  try {
+    var folderId = data.FOLDER_ID;
+    var fileName = data.NAMA_FAIL;
+    var fileData = data.FAIL.dataBase64;
+    var mimeType = data.FAIL.mimeType;
+
+    var folder;
+    try {
+      folder = DriveApp.getFolderById(folderId);
+    } catch (e) {
+      throw new Error("Gagal akses folder. Pastikan ID Folder betul. Info: " + e.message);
+    }
+
+    // --- SISTEM AUTO-DELETE BERMULA DI SINI ---
+    // Cari fail lama dengan nama yang sama
+    var failLama = folder.getFilesByName(fileName);
+    while (failLama.hasNext()) {
+      var f = failLama.next();
+      try {
+        // Guna Advanced API untuk DELETE terus fail lama secara automatik!
+        Drive.Files.remove(f.getId(), {supportsAllDrives: true}); 
+      } catch (e) {
+        // (Backup/Pelan B) Jika atas sebab tertentu Google halang delete, 
+        // kita tukar nama supaya fail baharu tetap boleh masuk tanpa ralat.
+        var masaTerkini = new Date().getTime();
+        f.setName("LAMA_" + masaTerkini + "_" + fileName); 
+      }
+    }
+    // --- SISTEM AUTO-DELETE TAMAT ---
+
+    // Bina fail baharu dari PC
+    var decodedData = Utilities.base64Decode(fileData);
+    var blob = Utilities.newBlob(decodedData, mimeType, fileName);
+    var newFile = folder.createFile(blob);
+
+    // Kosongkan Cache supaya butang muat turun terus di-update
+    var cache = CacheService.getScriptCache();
+    cache.remove("CACHE_BORANG_" + folderId);
+
+    return {
+      status: "BERJAYA",
+      idBaru: newFile.getId(),
+      mesej: "Fail berjaya dimuat naik dan fail lama telah dipadam secara automatik."
+    };
+
+  } catch (err) {
+    return {
+      status: "GAGAL",
+      mesej: "Ralat spesifik: " + err.message
+    };
+  }
+}
+
+// template borang penyelidikan
+function cuciCacheManual() {
+  // Masukkan ID Folder Drive anda
+  var folderId = '1w48C0gfP-m7LhrqfYILXNOBYlc-QaCpB'; 
+  
+  // Padam memori (cache) untuk folder ini
+  var cache = CacheService.getScriptCache();
+  cache.remove("CACHE_BORANG_" + folderId);
+  
+  Logger.log("✅ Memori Cache berjaya dicuci!");
+}
+
+// template borang penyelidikan
+function bersihkanFailLamaAdvanced() {
+  var folderId = '1w48C0gfP-m7LhrqfYILXNOBYlc-QaCpB'; 
+  var folder = DriveApp.getFolderById(folderId);
+  var files = folder.getFiles();
+  var kiraan = 0;
+
+  while (files.hasNext()) {
+    var file = files.next();
+    var namaFail = file.getName();
+    var idFail = file.getId();
+
+    // Semak jika nama fail bermula dengan "LAMA_"
+    if (namaFail.indexOf("LAMA_") === 0) {
+      try {
+        // Guna Advanced API untuk memadam fail secara paksa di dalam Shared Drive
+        Drive.Files.remove(idFail, {supportsAllDrives: true}); 
+        kiraan++;
+        Logger.log("✅ BERJAYA padam: " + namaFail);
+      } catch (e) {
+        Logger.log("❌ GAGAL padam: " + namaFail + " | Punca: " + e.message);
+      }
+    }
+  }
+  
+  Logger.log("PROSES SELESAI. Jumlah fail yang dibersihkan: " + kiraan);
+}
+// ==========================================
+// 5. LOGIK AMBIL PAUTAN DINAMIK DENGAN CACHE
+// ==========================================
+function ambilPautanBorang(folderId) {
+  var cache = CacheService.getScriptCache();
+  var cacheKey = "CACHE_BORANG_" + folderId;
+  
+  var cachedData = cache.get(cacheKey);
+  if (cachedData) {
+    return JSON.parse(cachedData); 
+  }
+
+  var folder = DriveApp.getFolderById(folderId);
+  var files = folder.getFiles();
+  var senaraiFail = {};
+
+  while (files.hasNext()) {
+    var file = files.next();
+    senaraiFail[file.getName()] = "https://drive.google.com/uc?export=download&id=" + file.getId();
+  }
+
+  var hasil = {
+    status: "BERJAYA",
+    data: senaraiFail
+  };
+
+  cache.put(cacheKey, JSON.stringify(hasil), 21600);
+
+  return hasil;
+}
+
+
+
+
+
+
+
+function sahkanDrive() {
+  // Paksa Google minta kebenaran mencipta dan memadam fail
+  var folder = DriveApp.getRootFolder();
+  var failTest = folder.createFile("Test.txt", "Sistem OK");
+  failTest.setTrashed(true); // Terus buang ke tong sampah
+}
+// ========================================================
+// FUNGSI UPLOAD SIJIL KE GOOGLE DRIVE & UPDATE SHEET
+// ========================================================
+function fungsiUploadSijil(payload, ss) { 
+  try {
+    if (!ss) {
+      ss = SpreadsheetApp.getActiveSpreadsheet(); 
+    }
+
+    var bil = payload.bil;
+    var tahun = payload.tahun || "Tiada_Tahun";
+    var jabatan = payload.jabatan || "Tiada_Jabatan";
+    
+    // 1. GUNA FOLDER ID KHAS UNTUK FOLDER UTAMA
+    var folderIdUtama = "1BfNhDB6FHnbBs5jOVnRjDKmgZG9PjXsV"; 
+    
+    // UJI AKSES FOLDER (Jika ralat di sini, bermaksud e-mel skrip tiada akses Editor ke folder ini)
+    var parentFolder;
+    try {
+      parentFolder = DriveApp.getFolderById(folderIdUtama);
+    } catch(e) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "GAGAL",
+        mesej: "Akses Ditolak: E-mel yang menjalankan skrip ini BUKAN 'Editor' kepada Folder Utama Google Drive tersebut."
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // Cari atau cipta subfolder 'Tahun'
+    var tahunFolderIterator = parentFolder.getFoldersByName(tahun);
+    var tahunFolder = tahunFolderIterator.hasNext() ? tahunFolderIterator.next() : parentFolder.createFolder(tahun);
+    
+    // Cari atau cipta subfolder 'Jabatan'
+    var jabatanFolderIterator = tahunFolder.getFoldersByName(jabatan);
+    var jabatanFolder = jabatanFolderIterator.hasNext() ? jabatanFolderIterator.next() : tahunFolder.createFolder(jabatan);
+    
+    // 2. BINA & SIMPAN FAIL BARU
+    var decodedData = Utilities.base64Decode(payload.data);
+    var blob = Utilities.newBlob(decodedData, payload.mimeType, payload.namaFail);
+    var file = jabatanFolder.createFile(blob);
+    
+    // 🌟 KOD BARU: Abaikan ralat jika pemilik folder sekat penukaran Permission
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch(shareErr) {
+      // Abaikan. Fail akan ikut permission folder secara automatik.
+    }
+    
+    var fileUrl = file.getUrl();
+    
+    // 3. CARI REKOD DI GOOGLE SHEET DAN UPDATE LINK SERTA PADAM FAIL LAMA
+    var sheet = ss.getSheetByName("INOVASI"); 
+    
+    if (!sheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "GAGAL",
+          mesej: "Ralat: Tab 'INOVASI' tidak dijumpai di dalam Google Sheet."
+        })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var data = sheet.getDataRange().getDisplayValues(); 
+    var dijumpai = false;
+    
+    for (var i = 1; i < data.length; i++) {
+      var sheetBil = String(data[i][0]).trim();
+      var payloadBil = String(bil).trim();
+      
+      if (sheetBil === payloadBil && sheetBil !== "") {
+        
+        var urlSijilLama = String(data[i][10]).trim(); 
+        
+        if (urlSijilLama !== "") {
+          try {
+            var fileIdMatch = urlSijilLama.match(/[-\w]{25,}/);
+            if (fileIdMatch && fileIdMatch[0]) {
+              DriveApp.getFileById(fileIdMatch[0]).setTrashed(true);
+            }
+          } catch (e) {
+            // Abaikan jika fail tak jumpa atau tiada kebenaran padam
+          }
+        }
+
+        sheet.getRange(i + 1, 11).setValue(fileUrl);
+        dijumpai = true;
+        break;
+      }
+    }
+    
+    // JIKA TIDAK JUMPA REKOD
+    if (!dijumpai) {
+        try { file.setTrashed(true); } catch(e){} // Padam fail baru jika error
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "GAGAL",
+          mesej: "Rekod tidak dijumpai! Sistem mencari BIL: '" + bil + "' di Lajur A."
+        })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "BERJAYA",
+      mesej: "Sijil berjaya dikemaskini.",
+      url: fileUrl
+    })).setMimeType(ContentService.MimeType.JSON);
+    
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "GAGAL",
+      mesej: "Ralat sistem: " + error.message
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Harta Intelek</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script>
+        const userLulus = sessionStorage.getItem("userLulus");
+        if (userLulus !== "YA") {
+            alert("Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html";
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-amber-600 text-white shadow-md">
+        <div class="max-w-[95rem] mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">©️</span>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold tracking-wide">Dashboard Harta Intelek</h1>
+                    <p class="text-amber-100 mt-1 text-sm">Pengurusan Rekod Paten, Hak Cipta & Cap Dagangan</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="downloadCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg font-bold shadow transition text-sm flex items-center gap-2">
+                    📥 Download CSV
+                </button>
+                <button onclick="bukaModalTambah()" class="bg-white text-amber-700 px-4 py-2.5 rounded-lg font-bold shadow hover:bg-amber-50 transition text-sm flex items-center gap-2">
+                    ➕ Tambah Rekod
+                </button>
+                <a href="utama.html" class="bg-amber-800 text-white border border-amber-500 px-4 py-2.5 rounded-lg font-bold shadow hover:bg-amber-900 transition text-sm flex items-center gap-2">
+                    &larr; Utama
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[95rem] mx-auto px-4 py-8 flex-grow w-full">
+        
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row gap-4 items-end">
+            <div class="w-full md:w-1/4">
+                <label class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wide">Filter Tahun</label>
+                <select id="filterTahun" onchange="renderJadual()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none font-semibold bg-gray-50">
+                    <option value="SEMUA">-- Semua Tahun --</option>
+                </select>
+            </div>
+            
+            <div class="w-full md:w-1/4">
+                <label class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wide">Filter Jabatan</label>
+                <select id="filterJabatan" onchange="renderJadual()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none font-semibold bg-gray-50">
+                    <option value="SEMUA">-- Semua Jabatan --</option>
+                </select>
+            </div>
+
+            <div class="w-full md:w-auto ml-auto flex gap-2">
+                <div id="paparMesejUI" class="hidden font-bold text-sm px-4 py-2 rounded-lg flex items-center shadow-md"></div>
+                <button onclick="muatDataHI()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-6 rounded-lg transition shadow-md flex items-center justify-center gap-2">
+                    🔄 Refresh
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm whitespace-nowrap">
+                    <thead>
+                        <tr class="bg-amber-50 text-amber-900 uppercase tracking-wide text-[11px] border-b-2 border-amber-200">
+                            <th class="p-3 text-center">BIL</th>
+                            <th class="p-3">TAJUK INOVASI</th>
+                            <th class="p-3">KETUA PROJEK</th>
+                            <th class="p-3 text-center">JABATAN</th>
+                            <th class="p-3 text-center">JENIS</th>
+                            <th class="p-3">NO. DAFTAR</th>
+                            <th class="p-3 text-center">STATUS</th>
+                            <th class="p-3 text-center">TINDAKAN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiJadual" class="text-gray-700 bg-white">
+                        <tr><td colspan="8" class="p-10 text-center font-bold text-amber-600 animate-pulse">⏳ Memuat turun data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="modalBorang" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center backdrop-blur-sm transition-opacity p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8 overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-amber-600 p-4 text-white flex justify-between items-center sticky top-0 z-10 flex-shrink-0">
+                <h3 id="tajukModal" class="font-bold text-lg flex items-center gap-2">📝 Borang Harta Intelek</h3>
+                <button onclick="tutupModal()" class="text-white hover:text-amber-200 text-2xl font-bold leading-none">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-grow">
+                <div id="seksyenUploadCSV" class="mb-6 p-5 bg-emerald-50 rounded-xl border border-emerald-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h4 class="font-bold text-emerald-800 text-sm">📥 Daftar Pukal (Muat Naik CSV)</h4>
+                        <p class="text-xs text-emerald-600 mt-1">Sila pastikan header CSV anda mempunyai: <span class="font-mono text-emerald-700 font-bold">TAHUN, JABATAN, KATEGORIHI, TAJUK, KETUA</span></p>
+                    </div>
+					
+					<div class="flex-shrink-0 flex flex-col md:flex-row gap-2">
+						<button type="button" onclick="downloadTemplateCSV()" class="bg-teal-100 hover:bg-teal-200 text-teal-800 border border-teal-300 px-4 py-2.5 rounded-lg font-bold shadow-sm text-sm transition flex items-center justify-center gap-2">
+						📄 Download Template
+						</button>
+    
+						<input type="file" id="csvFileInputHI" accept=".csv" class="hidden" onchange="importCSVHI(event)">
+						<button type="button" onclick="document.getElementById('csvFileInputHI').click()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-lg font-bold shadow text-sm transition flex items-center justify-center gap-2">
+						📤 Upload Fail CSV
+						</button>
+					</div>
+                </div>
+
+                <div id="pemisahBorang" class="relative flex py-2 items-center mb-6">
+                    <div class="flex-grow border-t border-gray-300"></div>
+                    <span class="flex-shrink-0 mx-4 text-gray-400 text-xs font-bold uppercase">Atau Isi Borang Manual</span>
+                    <div class="flex-grow border-t border-gray-300"></div>
+                </div>
+
+                <form id="borangHI" onsubmit="hantarBorangHI(event)">
+                    <input type="hidden" id="editBil"> 
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Tahun</label>
+                            <input type="number" id="in_tahun" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Jabatan</label>
+                            <select id="in_jabatan" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none uppercase">
+                                <option value="">-- PILIH JABATAN --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Tajuk Projek / Inovasi</label>
+                        <input type="text" id="in_tajuk" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none uppercase">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Nama Ketua Projek</label>
+                            <input type="text" id="in_ketua" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none uppercase">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Nama Ahli 1</label>
+                            <input type="text" id="in_ahli1" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none uppercase">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Nama Ahli 2</label>
+                            <input type="text" id="in_ahli2" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none uppercase">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Nama Ahli 3</label>
+                            <input type="text" id="in_ahli3" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none uppercase">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Nama Ahli 4</label>
+                            <input type="text" id="in_ahli4" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none uppercase">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Nama Ahli 5</label>
+                            <input type="text" id="in_ahli5" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none uppercase">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 border-t pt-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Nama Pemilik</label>
+                            <input type="text" id="in_pemilik" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none uppercase" placeholder="Cth: POLITEKNIK UNGKU OMAR">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Jenis Harta Intelek</label>
+                            <select id="in_jenis" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none uppercase">
+                                <option value="">-- PILIH JENIS --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">No. Pendaftaran</label>
+                            <input type="text" id="in_noDaftar" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-gray-50 outline-none uppercase" placeholder="Jika ada">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-4 border-t">
+                        <button type="button" onclick="tutupModal()" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition">Batal</button>
+                        <button type="submit" id="btnSimpanMod" class="px-6 py-2 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 transition shadow-md">Simpan Rekod</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+        let dataGlobalHI = [];
+        let dataDitapisGlobal = [];
+
+        // TETAPAN PENGGUNA
+        const userPeranan = (sessionStorage.getItem("peranan") || "").toUpperCase();
+        const userJabatan = (sessionStorage.getItem("jabatan") || "").toUpperCase();
+        
+        // Approver yang ada kuasa pengesahan penuh
+        const isApprover = ["PENYELARAS INOVASI", "PENYELARAS PENYELIDIKAN", "KUPIK", "ADMIN"].includes(userPeranan);
+        // Boleh Tambah/Edit/Padam (tapi rekod mereka kena disahkan oleh Approver)
+        const isPenyelarasJabatan = userPeranan === "PENYELARAS JABATAN";
+        const isStaf = userPeranan === "STAF";
+
+        window.onload = () => {
+            muatDropdownSistem();
+            muatDataHI();
+        };
+
+        // FUNGSI SEDUT DROPDOWN DARI SHEET SISTEM
+        function muatDropdownSistem() {
+            fetch(`${SCRIPT_URL}?action=ambilTetapanSenarai`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "BERJAYA") {
+                    // Populate Jabatan Filter & Form
+                    let htmlJab = '<option value="SEMUA">-- Semua Jabatan --</option>';
+                    let htmlJabForm = '<option value="">-- PILIH JABATAN --</option>';
+                    
+                    data.JABATAN.forEach(j => {
+                        htmlJab += `<option value="${j}">${j}</option>`;
+                        htmlJabForm += `<option value="${j}">${j}</option>`;
+                    });
+                    
+                    const filterJab = document.getElementById('filterJabatan');
+                    filterJab.innerHTML = htmlJab;
+                    document.getElementById('in_jabatan').innerHTML = htmlJabForm;
+
+                    // Kunci Dropdown Jabatan untuk Staf / Penyelaras Jabatan
+                    if (!isApprover) {
+                        filterJab.value = userJabatan;
+                        filterJab.disabled = true;
+                        filterJab.classList.add("bg-gray-200", "cursor-not-allowed");
+                        
+                        document.getElementById('in_jabatan').value = userJabatan;
+                        document.getElementById('in_jabatan').disabled = true;
+                        document.getElementById('in_jabatan').classList.add("bg-gray-200", "cursor-not-allowed");
+                    }
+
+                    // Populate Jenis Harta Intelek (Dari lajur HARTA_INTELEK Sheet SISTEM)
+                    let htmlJenis = '<option value="">-- PILIH JENIS --</option>';
+                    data.HARTA_INTELEK.forEach(h => htmlJenis += `<option value="${h}">${h}</option>`);
+                    document.getElementById('in_jenis').innerHTML = htmlJenis;
+                }
+            });
+        }
+
+        // MUAT TURUN REKOD JADUAL
+        function muatDataHI() {
+            const tbody = document.getElementById('isiJadual');
+            tbody.innerHTML = `<tr><td colspan="8" class="p-10 text-center font-bold text-amber-600 animate-pulse">⏳ Memuat turun rekod dari pangkalan data...</td></tr>`;
+
+            fetch(`${SCRIPT_URL}?action=ambilHartaIntelek`)
+            .then(res => res.json())
+            .then(result => {
+                if (result.status === "BERJAYA") {
+                    dataGlobalHI = result.data || [];
+                    binaFilterTahun();
+                    renderJadual();
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-red-600 font-bold">❌ Mesej: ${result.mesej}</td></tr>`;
+                }
+            })
+            .catch(err => {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-red-600 font-bold">⚠️ Ralat menyambung ke pangkalan data.</td></tr>`;
+            });
+        }
+
+        function binaFilterTahun() {
+            const selTahun = document.getElementById('filterTahun');
+            const tahunUnik = [...new Set(dataGlobalHI.map(item => item.tahun).filter(t => t !== ""))].sort().reverse(); 
+            selTahun.innerHTML = '<option value="SEMUA">-- Semua Tahun --</option>';
+            tahunUnik.forEach(t => selTahun.innerHTML += `<option value="${t}">${t}</option>`);
+        }
+
+        function renderJadual() {
+            const tbody = document.getElementById('isiJadual');
+            const valTahun = document.getElementById('filterTahun').value;
+            const valJabatan = document.getElementById('filterJabatan').value;
+
+            dataDitapisGlobal = dataGlobalHI.filter(item => {
+                let matchTahun = (valTahun === "SEMUA" || item.tahun == valTahun);
+                let matchJabatan = (valJabatan === "SEMUA" || item.jabatan.toUpperCase() === valJabatan);
+                return matchTahun && matchJabatan;
+            });
+
+            tbody.innerHTML = "";
+
+            if (dataDitapisGlobal.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-10 text-center text-gray-500 font-medium">Tiada rekod dijumpai berdasarkan carian anda.</td></tr>`;
+                return;
+            }
+
+            dataDitapisGlobal.forEach((row, index) => {
+                const isSah = (row.statusHI === "DISAHKAN");
+                let badgeStatus = isSah 
+                    ? `<span class="bg-green-100 text-green-800 border border-green-300 px-2 py-1 rounded text-[10px] font-bold whitespace-nowrap">✅ DISAHKAN</span>`
+                    : `<span class="bg-orange-100 text-orange-800 border border-orange-300 px-2 py-1 rounded text-[10px] font-bold whitespace-nowrap">⏳ MENUNGGU</span>`;
+
+                let aksiBtn = `<span class="text-gray-300 text-[10px]">-</span>`;
+                
+                // Susunan logik Butang Tindakan
+                if (isApprover) {
+                    let btnSahkan = isSah ? "" : `<button onclick="sahkanRekod('${row.bil}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded shadow text-xs font-bold mb-1">Sahkan</button>`;
+                    let btnEdit = `<button onclick="bukaModalKemaskini('${row.bil}')" class="w-full bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded shadow text-xs font-bold mb-1">Edit</button>`;
+                    let btnPadam = `<button onclick="padamRekod('${row.bil}')" class="w-full bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded shadow text-xs font-bold">Padam</button>`;
+                    aksiBtn = `<div class="flex flex-col">${btnSahkan}${btnEdit}${btnPadam}</div>`;
+                } 
+                else if ((isStaf || isPenyelarasJabatan) && row.jabatan === userJabatan) {
+                    // Staf & Penyelaras Jabatan boleh Edit/Padam jika rekod tu milik jabatan mereka dan BELUM disahkan.
+                    if(!isSah) {
+                        aksiBtn = `
+                            <div class="flex flex-col">
+                                <button onclick="bukaModalKemaskini('${row.bil}')" class="w-full bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded shadow text-xs font-bold mb-1">Edit</button>
+                                <button onclick="padamRekod('${row.bil}')" class="w-full bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded shadow text-xs font-bold">Padam</button>
+                            </div>`;
+                    } else {
+                         aksiBtn = `<span class="text-green-600 text-[10px] font-bold">TERKUNCI</span>`;
+                    }
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-amber-50 transition duration-150";
+                tr.innerHTML = `
+                    <td class="p-3 text-center font-bold text-gray-500">${index + 1}</td>
+                    <td class="p-3">
+                        <div class="font-bold text-gray-800 whitespace-normal min-w-[150px] uppercase">${row.tajuk}</div>
+                        <div class="text-[10px] text-gray-500 mt-1">Pemilik: ${row.pemilik || "-"}</div>
+                    </td>
+                    <td class="p-3 font-semibold text-blue-700 uppercase">${row.ketua}</td>
+                    <td class="p-3 text-center font-bold text-gray-700 uppercase">${row.jabatan}</td>
+                    <td class="p-3 text-center"><span class="bg-gray-100 text-gray-700 border border-gray-300 px-2 py-1 rounded text-[10px] font-bold">${row.jenis || "-"}</span></td>
+                    <td class="p-3 font-mono font-bold text-gray-800">${row.noDaftar || "-"}</td>
+                    <td class="p-3 text-center">${badgeStatus}</td>
+                    <td class="p-3 text-center w-24">${aksiBtn}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ================= FUNGSI DOWNLOAD CSV =================
+        function downloadCSV() {
+            if (!dataDitapisGlobal || dataDitapisGlobal.length === 0) {
+                alert("Tiada rekod untuk dieksport.");
+                return;
+            }
+
+            paparToast("⏳ Menyediakan fail untuk dimuat turun...", "blue");
+
+            let csvContent = "BIL,TAHUN,KETUA,AHLI 1,AHLI 2,AHLI 3,AHLI 4,AHLI 5,TAJUK,JABATAN,PEMILIK,JENIS,NO DAFTAR,STATUS\n";
+            
+            dataDitapisGlobal.forEach((r, idx) => {
+                let clean = (str) => `"${(str || "").replace(/"/g, '""')}"`;
+                csvContent += `${idx + 1},${clean(r.tahun)},${clean(r.ketua)},${clean(r.ahli1)},${clean(r.ahli2)},${clean(r.ahli3)},${clean(r.ahli4)},${clean(r.ahli5)},${clean(r.tajuk)},${clean(r.jabatan)},${clean(r.pemilik)},${clean(r.jenis)},${clean(r.noDaftar)},${clean(r.statusHI)}\n`;
+            });
+
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", "Rekod_Harta_Intelek.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            setTimeout(() => { paparToast("✅ Berjaya dimuat turun!", "green"); }, 1000);
+        }
+
+        // ================= KAWALAN MODAL & BORANG =================
+        function importCSVHI(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            paparToast("⏳ Sedang membaca fail CSV...", "blue");
+            tutupModal(); 
+
+            Papa.parse(file, {
+                header: true, 
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if(results.data.length === 0) { paparToast("❌ Fail CSV kosong.", "red"); return; }
+                    
+                    paparToast(`⏳ Mengimport ${results.data.length} rekod Harta Intelek...`, "blue");
+                    
+                    fetch(SCRIPT_URL, { 
+                        method: 'POST', 
+                        body: JSON.stringify({ 
+                            action: "importHICSV", 
+                            dataCSV: results.data,
+                            USER_ROLE: userPeranan,
+                            USER_JABATAN: userJabatan
+                        }) 
+                    })
+                    .then(res => res.json()).then(data => {
+                        paparToast(data.status === "BERJAYA" ? `✅ ${data.mesej}` : `❌ ${data.mesej}`, data.status === "BERJAYA" ? "green" : "red");
+                        muatDataHI();
+                    }).catch(err => paparToast("❌ Ralat import CSV. Sila cuba lagi.", "red"));
+                }
+            });
+            event.target.value = ""; 
+        }
+
+		// ================= FUNGSI DOWNLOAD TEMPLATE CSV =================
+		function downloadTemplateCSV() {
+		// Header mestilah sama dengan apa yang Google Apps Script anda (importHICSV) perlukan.
+		// Ini disusun berdasarkan input borang manual anda.
+			const header = "TAHUN,JABATAN,TAJUK,KETUA,AHLI 1,AHLI 2,AHLI 3,AHLI 4,AHLI 5,PEMILIK,JENIS,NO DAFTAR\n";
+    
+		// Baris contoh untuk panduan pengguna (Data dummy)
+			const contohData = '2024,JTMK,"SISTEM PENGURUSAN DATA",ALI BIN ABU,AHMAD BIN ALI,SITI BINTI ABU,,,,"POLITEKNIK UNGKU OMAR",HAK CIPTA,MY-12345\n';
+    
+			const csvContent = header + contohData;
+    
+		// Convert kepada Blob dan force download
+			const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+    
+			link.setAttribute("href", url);
+			link.setAttribute("download", "Template_Upload_Pukal_HI.csv");
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+    
+			paparToast("📄 Template CSV berjaya dimuat turun!", "blue");
+		}
+
+        function bukaModalTambah() {
+            document.getElementById('borangHI').reset();
+            document.getElementById('editBil').value = ""; 
+            document.getElementById('tajukModal').innerHTML = "➕ Tambah Rekod Baru";
+            
+            if(!isApprover) document.getElementById('in_jabatan').value = userJabatan;
+            
+            document.getElementById('seksyenUploadCSV').classList.remove('hidden');
+            document.getElementById('pemisahBorang').classList.remove('hidden');
+            document.getElementById('modalBorang').classList.remove('hidden');
+        }
+
+        function bukaModalKemaskini(bil) {
+            const rekod = dataGlobalHI.find(item => item.bil === bil);
+            if(!rekod) return;
+
+            document.getElementById('editBil').value = rekod.bil;
+            document.getElementById('tajukModal').innerHTML = "✏️ Kemaskini Rekod";
+            
+            document.getElementById('seksyenUploadCSV').classList.add('hidden');
+            document.getElementById('pemisahBorang').classList.add('hidden');
+            
+            document.getElementById('in_tahun').value = rekod.tahun;
+            document.getElementById('in_jabatan').value = rekod.jabatan;
+            document.getElementById('in_tajuk').value = rekod.tajuk;
+            document.getElementById('in_ketua').value = rekod.ketua;
+            document.getElementById('in_ahli1').value = rekod.ahli1;
+            document.getElementById('in_ahli2').value = rekod.ahli2;
+            document.getElementById('in_ahli3').value = rekod.ahli3;
+            document.getElementById('in_ahli4').value = rekod.ahli4;
+            document.getElementById('in_ahli5').value = rekod.ahli5;
+            document.getElementById('in_pemilik').value = rekod.pemilik;
+            
+            let elJenis = document.getElementById('in_jenis');
+            let options = Array.from(elJenis.options).map(opt => opt.value);
+            if(options.includes(rekod.jenis)) elJenis.value = rekod.jenis;
+            
+            document.getElementById('in_noDaftar').value = rekod.noDaftar;
+            document.getElementById('modalBorang').classList.remove('hidden');
+        }
+
+        function tutupModal() {
+            document.getElementById('modalBorang').classList.add('hidden');
+        }
+
+        // ================= FUNGSI PELAYAN (API POST) =================
+        function hantarBorangHI(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSimpanMod');
+            btn.disabled = true; btn.innerText = "⏳ Memproses...";
+
+            const idBil = document.getElementById('editBil').value;
+            const actionType = (idBil === "") ? "tambahHI" : "kemaskiniHI";
+
+            const payload = {
+                action: actionType,
+                BIL: idBil,
+                TAHUN: document.getElementById('in_tahun').value,
+                JABATAN: document.getElementById('in_jabatan').value,
+                TAJUK: document.getElementById('in_tajuk').value,
+                KETUA: document.getElementById('in_ketua').value,
+                AHLI1: document.getElementById('in_ahli1').value,
+                AHLI2: document.getElementById('in_ahli2').value,
+                AHLI3: document.getElementById('in_ahli3').value,
+                AHLI4: document.getElementById('in_ahli4').value,
+                AHLI5: document.getElementById('in_ahli5').value,
+                PEMILIK: document.getElementById('in_pemilik').value,
+                JENIS: document.getElementById('in_jenis').value,
+                NO_DAFTAR: document.getElementById('in_noDaftar').value,
+                STATUS: (isApprover) ? "DISAHKAN" : "MENUNGGU PENGESAHAN" 
+            };
+
+            fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+            .then(res => res.json()).then(data => {
+                paparToast(data.status === "BERJAYA" ? "✅ Berjaya disimpan!" : "❌ Ralat", data.status === "BERJAYA" ? "green" : "red");
+                if(data.status === "BERJAYA") { tutupModal(); muatDataHI(); }
+            }).finally(() => { btn.disabled = false; btn.innerText = "Simpan Rekod"; });
+        }
+
+        function sahkanRekod(bil) {
+            if(!confirm("Pastikan anda telah menyemak dokumen. Sahkan rekod ini?")) return;
+            fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "sahkanHI", BIL: bil }) })
+            .then(res => res.json()).then(data => {
+                paparToast("✅ Rekod disahkan!", "green"); muatDataHI();
+            });
+        }
+
+        function padamRekod(bil) {
+            if(!confirm("Adakah anda pasti mahu memadam rekod ini secara kekal?")) return;
+            fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "padamHI", BIL: bil }) })
+            .then(res => res.json()).then(data => {
+                paparToast("✅ Rekod dipadam!", "green"); muatDataHI();
+            });
+        }
+
+        function paparToast(teks, warna) {
+            const msgBox = document.getElementById('paparMesejUI');
+            msgBox.className = `font-bold text-sm px-4 py-2 rounded-lg flex items-center shadow-md text-white fixed top-5 right-5 z-[100] transition-opacity ` + (warna === 'green' ? 'bg-emerald-500' : (warna === 'blue' ? 'bg-blue-500' : 'bg-red-500'));
+            msgBox.innerText = teks;
+            msgBox.classList.remove('hidden');
+            setTimeout(() => msgBox.classList.add('hidden'), 4000);
+        }
+    </script>
+</body>
+</html>

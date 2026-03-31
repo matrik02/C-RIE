@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Prestasi KPI C-RIE 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .progress-bar { transition: width 1s ease-in-out; }
+        
+        /* GAYA KHAS UNTUK CETAKAN (PRINT) KEMAS */
+        @media print {
+            .no-print { display: none !important; }
+            body { 
+                background-color: white !important; 
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .shadow-xl, .shadow-md { 
+                box-shadow: none !important; 
+                border: 1px solid #ddd !important; 
+            }
+            .bg-gradient-to-r {
+                background: white !important;
+                color: black !important;
+                border-bottom: 2px solid #000;
+                padding-bottom: 10px;
+                margin-bottom: 20px;
+            }
+            .text-white { color: black !important; }
+            .text-blue-200 { color: #555 !important; }
+            
+            #dashboardGrid > div {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                margin-bottom: 20px !important;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;   
+                color-adjust: exact !important;                 
+            }
+        }
+
+        /* Gaya khas list pecahan item */
+        .item-list li {
+            padding: 8px 12px;
+            border-bottom: 1px dashed #eee;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+        }
+        .item-list li:last-child { border-bottom: none; }
+        .item-list .qty { font-weight: bold; }
+    </style>
+</head>
+<body class="p-4 md:p-10 bg-gray-100 min-h-screen">
+
+    <div class="max-w-5xl mx-auto space-y-8">
+        
+        <div class="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-8 rounded-2xl shadow-xl flex flex-col lg:flex-row justify-between items-center gap-4">
+            <div class="text-center lg:text-left mb-4 lg:mb-0">
+                <h1 class="text-3xl font-extrabold tracking-tight">Prestasi Pencapaian KPI <span id="paparTahunKPI">...</span></h1>
+                <p class="text-blue-200 mt-2 font-medium">Pusat Kecemerlangan Penyelidikan dan Inovasi (C-RIE)</p>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row flex-wrap gap-3 w-full lg:w-auto justify-center no-print">
+                <button onclick="window.print()" class="w-full sm:w-auto px-6 py-3 bg-teal-600 border border-teal-400 text-white font-bold rounded-lg shadow hover:bg-teal-800 transition flex items-center justify-center gap-2">
+                    🖨️ Cetak
+                </button>
+                <button onclick="window.location.href='tetapan-kpi.html'" class="w-full sm:w-auto px-6 py-3 bg-gray-700 border border-gray-500 text-white font-bold rounded-lg shadow hover:bg-gray-900 transition flex items-center justify-center gap-2">
+                    ⚙️ Tetapan Target KPI
+                </button>
+                <button onclick="window.location.href='pengurusan-kpi.html'" class="w-full sm:w-auto px-6 py-3 bg-blue-800 border border-blue-400 text-white font-bold rounded-lg shadow hover:bg-blue-600 transition flex items-center justify-center gap-2">
+                    ⚙️ Pengurusan Data
+                </button>
+                <button onclick="window.location.href='pemantauan-kpi.html'" class="w-full sm:w-auto px-6 py-3 bg-white text-blue-900 font-bold rounded-lg shadow hover:bg-gray-100 transition flex items-center justify-center gap-2">
+                    ➕ Kemasukan Data
+                </button>
+            </div>
+        </div>
+
+        <div id="loader" class="text-center py-10 no-print">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-blue-700"></div>
+            <p class="mt-4 text-gray-600 font-medium">Memuat turun data prestasi terkini...</p>
+        </div>
+
+        <div id="dashboardGrid" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <div class="bg-white rounded-2xl shadow-md border-l-8 border-blue-500 flex flex-col">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg font-bold text-gray-700 w-2/3">KPI 18: Projek Penyelidikan Diaplikasi</h3>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">Keseluruhan Platform</span>
+                    </div>
+                    <div class="flex items-end gap-2 mb-2">
+                        <span id="pencapaianPeny" class="text-4xl font-black text-blue-600">0</span>
+                        <span id="targetPeny" class="text-lg font-bold text-gray-400 mb-1">/ 1</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 mb-1 overflow-hidden">
+                        <div id="barPeny" class="bg-blue-500 h-3 rounded-full progress-bar" style="width: 0%"></div>
+                    </div>
+                    <p id="peratusPeny" class="text-right text-sm font-bold text-gray-500">0%</p>
+                </div>
+                <div class="bg-gray-50 flex-grow rounded-b-2xl border-t border-gray-100">
+                    <ul id="senaraiPeny" class="item-list text-gray-600"></ul>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-md border-l-8 border-green-500 flex flex-col">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg font-bold text-gray-700 w-2/3">KPI 18: Projek Inovasi Berdaftar</h3>
+                        <span class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full">Produk</span>
+                    </div>
+                    <div class="flex items-end gap-2 mb-2">
+                        <span id="pencapaianInov" class="text-4xl font-black text-green-600">0</span>
+                        <span id="targetInov" class="text-lg font-bold text-gray-400 mb-1">/ 2</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 mb-1 overflow-hidden">
+                        <div id="barInov" class="bg-green-500 h-3 rounded-full progress-bar" style="width: 0%"></div>
+                    </div>
+                    <p id="peratusInov" class="text-right text-sm font-bold text-gray-500">0%</p>
+                </div>
+                <div class="bg-gray-50 flex-grow rounded-b-2xl border-t border-gray-100">
+                    <ul id="senaraiInov" class="item-list text-gray-600"></ul>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-md border-l-8 border-yellow-500 flex flex-col">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg font-bold text-gray-700">Pelan Tindakan BM Teras 3</h3>
+                        <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full">Buku/Penerbitan</span>
+                    </div>
+                    <div class="flex items-end gap-2 mb-2">
+                        <span id="pencapaianBM3" class="text-4xl font-black text-yellow-600">0</span>
+                        <span id="targetBM3" class="text-lg font-bold text-gray-400 mb-1">/ 2</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 mb-1 overflow-hidden">
+                        <div id="barBM3" class="bg-yellow-500 h-3 rounded-full progress-bar" style="width: 0%"></div>
+                    </div>
+                    <p id="peratusBM3" class="text-right text-sm font-bold text-gray-500">0%</p>
+                </div>
+                <div class="bg-gray-50 flex-grow rounded-b-2xl border-t border-gray-100">
+                    <ul id="senaraiBM3" class="item-list text-gray-600"></ul>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-md border-l-8 border-purple-500 flex flex-col">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg font-bold text-gray-700">Pelan Tindakan BM Teras 6</h3>
+                        <span class="bg-purple-100 text-purple-800 text-xs font-bold px-3 py-1 rounded-full">Abstrak/Laporan</span>
+                    </div>
+                    <div class="flex items-end gap-2 mb-2">
+                        <span id="pencapaianBM6" class="text-4xl font-black text-purple-600">0</span>
+                        <span id="targetBM6" class="text-lg font-bold text-gray-400 mb-1">/ 7</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 mb-1 overflow-hidden">
+                        <div id="barBM6" class="bg-purple-500 h-3 rounded-full progress-bar" style="width: 0%"></div>
+                    </div>
+                    <p id="peratusBM6" class="text-right text-sm font-bold text-gray-500">0%</p>
+                </div>
+                <div class="bg-gray-50 flex-grow rounded-b-2xl border-t border-gray-100">
+                    <ul id="senaraiBM6" class="item-list text-gray-600"></ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+<script>
+    // =========================================================================
+    // WAJIB: MASUKKAN WEB APP URL ANDA DI SINI
+    // =========================================================================
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+    function kemaskiniKad(idPrefix, pencapaian, target) {
+        document.getElementById(`pencapaian${idPrefix}`).innerText = pencapaian;
+        document.getElementById(`target${idPrefix}`).innerText = `/ ${target}`;
+        
+        let peratus = Math.round((pencapaian / target) * 100);
+        if (peratus > 100) peratus = 100; // Cap at 100%
+        
+        setTimeout(() => {
+            document.getElementById(`bar${idPrefix}`).style.width = `${peratus}%`;
+        }, 100);
+        
+        document.getElementById(`peratus${idPrefix}`).innerText = `${peratus}% Tercapai`;
+    }
+
+    // Paparkan list (Penyelidikan, BM3, BM6 - berbentuk Object {Nama: Kuantiti})
+    function renderListObj(htmlId, dataObj, emptyMsg) {
+        let ul = document.getElementById(htmlId);
+        let entries = Object.entries(dataObj);
+        
+        if (entries.length === 0) {
+            ul.innerHTML = `<li class="italic text-gray-400 text-center w-full block">${emptyMsg}</li>`;
+            return;
+        }
+
+        let content = "";
+        entries.forEach(([nama, kuantiti]) => {
+            if(kuantiti > 0) {
+                content += `<li><span>${nama}</span> <span class="qty">${kuantiti}</span></li>`;
+            }
+        });
+        ul.innerHTML = content || `<li class="italic text-gray-400 text-center w-full block">${emptyMsg}</li>`;
+    }
+
+    // Paparkan list Inovasi (berbentuk Array string)
+    function renderListInovasi(htmlId, dataArr, emptyMsg) {
+        let ul = document.getElementById(htmlId);
+        
+        // Buang style asal supaya tak konflik dengan layout Inovasi
+        ul.classList.remove('item-list'); 
+        
+        if (!dataArr || dataArr.length === 0) {
+            ul.innerHTML = `<li class="italic text-gray-400 text-center w-full block p-3">${emptyMsg}</li>`;
+            return;
+        }
+
+        let content = "";
+        dataArr.forEach((item, idx) => {
+            content += `
+            <li class="flex flex-col gap-1 p-3 border-b border-dashed border-gray-200 last:border-0">
+                <span class="font-bold text-gray-800 text-sm">${idx + 1}. ${item.nama}</span>
+                <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-[0.75rem] mt-1 pl-3 border-l-2 border-green-200">
+                    <span class="text-gray-500">🛡️ Intelek: <span class="font-semibold text-gray-700">${item.statusIntelek}</span></span>
+                    <span class="text-gray-500">📜 Hak Milik: <span class="font-semibold text-gray-700">${item.statusHakMilik}</span></span>
+                    <span class="text-gray-500">⚙️ Aplikasi: <span class="font-semibold text-gray-700">${item.statusAplikasi}</span></span>
+                    <span class="text-gray-500">📈 Keberkesanan: <span class="font-semibold text-gray-700">${item.statusKeberkesanan}</span></span>
+                </div>
+            </li>`;
+        });
+        ul.innerHTML = content;
+    }
+	
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch(WEB_APP_URL + "?action=dapatkanProgressKPI")
+            .then(response => response.json())
+            .then(res => {
+                document.getElementById('loader').classList.add('hidden');
+                document.getElementById('dashboardGrid').classList.remove('hidden');
+
+                if (res.status === "BERJAYA") {
+                    document.getElementById('paparTahunKPI').innerText = res.tahun;
+                    let d = res.data;
+
+                    // 1. Update nombor KPI
+                    kemaskiniKad("Peny", d.penyelidikan.pencapaian, d.penyelidikan.target);
+                    kemaskiniKad("Inov", d.inovasi.pencapaian, d.inovasi.target);
+                    kemaskiniKad("BM3", d.bmTeras3.pencapaian, d.bmTeras3.target);
+                    kemaskiniKad("BM6", d.bmTeras6.pencapaian, d.bmTeras6.target);
+
+                    // 2. Update senarai pecahan
+                    renderListObj("senaraiPeny", d.penyelidikan.pecahan, "Tiada data platform disahkan.");
+                    renderListInovasi("senaraiInov", d.inovasi.pecahan, "Tiada data produk direkodkan.");
+                    renderListObj("senaraiBM3", d.bmTeras3.pecahan, "Tiada data platform disahkan.");
+                    renderListObj("senaraiBM6", d.bmTeras6.pecahan, "Tiada data platform disahkan.");
+
+                } else {
+                    alert("Ralat memuatkan data: " + res.mesej);
+                }
+            })
+            .catch(err => {
+                document.getElementById('loader').innerHTML = `<p class="text-red-500 font-bold">Gagal berhubung dengan pangkalan data.<br>Sila pastikan Web App URL adalah betul.</p>`;
+                console.error(err);
+            });
+    });
+</script>
+</body>
+</html>

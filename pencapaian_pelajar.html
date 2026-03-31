@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pencapaian Projek Pelajar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Kawalan Akses Asas & Peranan
+        const userLulus = sessionStorage.getItem("userLulus");
+        const userPeranan = sessionStorage.getItem("peranan") || "";
+        
+        if (userLulus !== "YA") {
+            alert("Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html";
+        }
+
+        // Semak jika pengguna mempunyai akses kemaskini penuh
+        const bolehEditPenuh = ["PENYELARAS INOVASI", "KUPIK", "ADMIN"].includes(userPeranan.toUpperCase());
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-amber-600 text-white shadow-md">
+        <div class="max-w-[95rem] mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-4xl">🏅</span>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold tracking-wide">Pencapaian Projek Pelajar</h1>
+                    <p class="text-amber-100 mt-1 text-sm">Dashboard Rekod Kemenangan & Pencapaian Inovasi</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center justify-center md:justify-end gap-2">
+                <a href="juri.html" class="bg-purple-700 text-white px-4 py-2.5 rounded-lg font-bold shadow hover:bg-purple-800 transition text-sm flex items-center gap-2">
+                    👨‍⚖️ Juri/Panel
+                </a>
+                <a href="projek_pelajar.html" class="bg-indigo-700 text-white px-4 py-2.5 rounded-lg font-bold shadow hover:bg-indigo-800 transition text-sm flex items-center gap-2">
+                    🎓 Pencalonan Projek Pelajar
+                </a>
+                <a href="projek_pelajar.html" class="bg-emerald-700 text-white px-4 py-2.5 rounded-lg font-bold shadow hover:bg-emerald-800 transition text-sm flex items-center gap-2">
+                    ➕ Daftar Projek
+                </a>
+                <a href="utama.html" class="bg-slate-700 text-white px-4 py-2.5 rounded-lg font-bold shadow hover:bg-slate-800 transition text-sm flex items-center gap-2">
+                    &larr; Utama
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[95rem] mx-auto px-4 py-8 flex-grow w-full">
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4" id="statistikKad">
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+                <div class="text-3xl bg-blue-100 p-3 rounded-full">📊</div>
+                <div><p class="text-xs font-bold text-gray-500 uppercase">Jumlah Projek</p><h3 id="statJumlah" class="text-2xl font-black text-gray-800">0</h3></div>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-amber-200 shadow-sm flex items-center gap-4">
+                <div class="text-3xl bg-amber-100 p-3 rounded-full">🥇</div>
+                <div><p class="text-xs font-bold text-amber-600 uppercase">Pingat Emas</p><h3 id="statEmas" class="text-2xl font-black text-gray-800">0</h3></div>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-gray-300 shadow-sm flex items-center gap-4">
+                <div class="text-3xl bg-gray-200 p-3 rounded-full">🥈</div>
+                <div><p class="text-xs font-bold text-gray-600 uppercase">Pingat Perak</p><h3 id="statPerak" class="text-2xl font-black text-gray-800">0</h3></div>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-orange-200 shadow-sm flex items-center gap-4">
+                <div class="text-3xl bg-orange-100 p-3 rounded-full">🥉</div>
+                <div><p class="text-xs font-bold text-orange-600 uppercase">Pingat Gangsa</p><h3 id="statGangsa" class="text-2xl font-black text-gray-800">0</h3></div>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h2 class="text-sm font-bold text-gray-700 mb-3 uppercase border-b pb-2">🏢 Statistik Pencapaian Mengikut Jabatan</h2>
+            <div id="statistikJabatan" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                </div>
+        </div>
+        
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row gap-4 items-end">
+            <div class="w-full md:w-1/4">
+                <label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Tahun</label>
+                <select id="filterTahun" onchange="resetPageDanRender()" class="w-full px-4 py-2 border rounded-lg bg-gray-50 font-semibold outline-none focus:ring-2 focus:ring-amber-500">
+                    <option value="SEMUA">-- Semua Tahun --</option>
+                </select>
+            </div>
+            <div class="w-full md:w-1/4">
+                <label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Jabatan</label>
+                <select id="filterJabatan" onchange="resetPageDanRender()" class="w-full px-4 py-2 border rounded-lg bg-gray-50 font-semibold outline-none focus:ring-2 focus:ring-amber-500">
+                    <option value="SEMUA">-- Semua Jabatan --</option>
+                </select>
+            </div>
+            <div class="w-full md:w-1/4">
+                <label class="block text-xs font-bold text-gray-500 mb-1 uppercase">Pencapaian</label>
+                <select id="filterPencapaian" onchange="resetPageDanRender()" class="w-full px-4 py-2 border rounded-lg bg-gray-50 font-semibold outline-none focus:ring-2 focus:ring-amber-500">
+                    <option value="SEMUA">-- Semua Pencapaian --</option>
+                    <option value="EMAS">Emas</option>
+                    <option value="PERAK">Perak</option>
+                    <option value="GANGSA">Gangsa</option>
+                    <option value="SIJIL PENYERTAAN">Sijil Penyertaan</option>
+                </select>
+            </div>
+            <div class="w-full md:w-auto ml-auto flex gap-2">
+                <div id="paparMesejUI" class="hidden font-bold text-sm px-4 py-2 rounded-lg flex items-center text-white shadow-md"></div>
+                <button onclick="downloadCSV()" class="bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-700 shadow-md transition flex items-center gap-2">
+                    📥 Download CSV
+                </button>
+                <button onclick="muatDataPencapaian()" class="bg-amber-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-amber-600 shadow-md">🔄 Refresh</button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm whitespace-nowrap">
+                    <thead>
+                        <tr class="bg-amber-50 text-amber-900 uppercase tracking-wide text-[11px] border-b-2 border-amber-200">
+                            <th class="p-3 text-center">PROJEK ID</th>
+                            <th class="p-3 text-center">TAHUN</th>
+                            <th class="p-3 text-center">JABATAN</th>
+                            <th class="p-3">KATEGORI</th>
+                            <th class="p-3">NAMA PROJEK</th>
+                            <th class="p-3">KETUA / PENYELIA</th>
+                            <th class="p-3 text-center">PENCAPAIAN</th>
+                            <th class="p-3 text-center">TINDAKAN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiJadual" class="text-gray-700 bg-white">
+                        <tr><td colspan="8" class="p-10 text-center font-bold text-amber-600 animate-pulse">⏳ Memuat turun data pencapaian...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="paginationControls" class="flex justify-between items-center bg-gray-50 p-4 border-t border-gray-200 hidden">
+                <button onclick="tukarPage(-1)" id="btnPrev" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-bold text-sm shadow-sm transition">Sebelumnya</button>
+                <span id="pageInfo" class="text-sm font-bold text-gray-600">Muka 1 dari 1</span>
+                <button onclick="tukarPage(1)" id="btnNext" class="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-bold text-sm shadow-sm transition">Seterusnya</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="modalKemaskini" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-y-auto">
+            <div class="bg-amber-600 p-4 text-white flex justify-between items-center rounded-t-2xl sticky top-0 z-10">
+                <h3 class="font-bold text-lg">✏️ Kemaskini Maklumat Projek</h3>
+                <button onclick="tutupModal()" class="hover:text-amber-200 text-2xl font-bold leading-none">&times;</button>
+            </div>
+            
+            <div class="p-6">
+                <div id="amaranPeranan" class="hidden mb-4 p-3 bg-blue-50 text-blue-800 text-xs font-bold rounded-lg border border-blue-200">
+                    ℹ️ Mod Pentadbir Diaktifkan: Anda dibenarkan mengemaskini maklumat terperinci projek.
+                </div>
+
+                <form id="borangKemaskini" onsubmit="simpanKemaskini(event)">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Projek ID</label>
+                            <input type="text" id="in_projek_id" readonly class="w-full px-3 py-2 border rounded-lg bg-gray-100 font-bold text-gray-600 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Tahun</label>
+                            <input type="number" id="in_tahun" readonly class="w-full px-3 py-2 border rounded-lg bg-gray-100 font-bold text-gray-600 outline-none">
+                        </div>
+                        
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Nama Projek</label>
+                            <input type="text" id="in_nama_projek" class="w-full px-3 py-2 border rounded-lg outline-none uppercase transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Jabatan</label>
+                            <input type="text" id="in_jabatan" class="w-full px-3 py-2 border rounded-lg outline-none uppercase transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Kategori</label>
+                            <input type="text" id="in_kategori" class="w-full px-3 py-2 border rounded-lg outline-none uppercase transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Nama Ketua Projek</label>
+                            <input type="text" id="in_nama_ketua" class="w-full px-3 py-2 border rounded-lg outline-none uppercase transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Penyelia Projek</label>
+                            <input type="text" id="in_penyelia" class="w-full px-3 py-2 border rounded-lg outline-none uppercase transition-colors">
+                        </div>
+
+                        <div class="md:col-span-2 p-3 bg-amber-50 rounded-lg border border-amber-200 mt-2">
+                            <label class="block text-sm font-bold text-amber-800 mb-2">🏅 Kemaskini Pencapaian Semasa</label>
+                            <select id="in_pencapaian" required class="w-full px-4 py-2 border border-amber-300 rounded-lg font-bold text-amber-900 bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+                                <option value="">-- SILA PILIH PENCAPAIAN --</option>
+                                <option value="EMAS">EMAS</option>
+                                <option value="PERAK">PERAK</option>
+                                <option value="GANGSA">GANGSA</option>
+                                <option value="SIJIL PENYERTAAN">SIJIL PENYERTAAN</option>
+                                <option value="TIADA">TIADA</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                        <button type="button" onclick="tutupModal()" class="px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition">Batal</button>
+                        <button type="submit" id="btnSimpan" class="px-8 py-2.5 bg-amber-600 text-white rounded-lg font-bold hover:bg-amber-700 transition shadow-lg">Simpan Kemaskini</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+        let dataGlobal = [];
+        let dataDitapisGlobal = []; // Disimpan untuk fungsi export CSV
+        
+        let currentPage = 1;
+        const rowsPerPage = 10;
+
+        window.onload = () => {
+            if(bolehEditPenuh) {
+                document.getElementById('amaranPeranan').classList.remove('hidden');
+            }
+            muatDataPencapaian();
+        };
+
+        function muatDataPencapaian() {
+            const tbody = document.getElementById('isiJadual');
+            tbody.innerHTML = `<tr><td colspan="8" class="p-10 text-center font-bold text-amber-500 animate-pulse">⏳ Memuat turun pangkalan data pencapaian...</td></tr>`;
+
+            fetch(`${SCRIPT_URL}?action=ambilPencapaianPelajar`)
+            .then(res => res.json())
+            .then(result => {
+                if (result.status === "BERJAYA") {
+                    dataGlobal = result.data || [];
+                    binaFilterDropdown();
+                    resetPageDanRender();
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-red-600 font-bold">❌ Mesej: ${result.mesej}</td></tr>`;
+                }
+            }).catch(err => {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-red-600 font-bold">⚠️ Ralat menyambung ke pelayan.</td></tr>`;
+            });
+        }
+
+        function binaFilterDropdown() {
+            const selTahun = document.getElementById('filterTahun');
+            const tahunUnik = [...new Set(dataGlobal.map(item => item.tahun).filter(t => t !== ""))].sort().reverse(); 
+            selTahun.innerHTML = '<option value="SEMUA">-- Semua Tahun --</option>';
+            tahunUnik.forEach(t => selTahun.innerHTML += `<option value="${t}">${t}</option>`);
+
+            const selJabatan = document.getElementById('filterJabatan');
+            const jabatanUnik = [...new Set(dataGlobal.map(item => item.jabatan.toUpperCase()).filter(j => j !== ""))].sort();
+            selJabatan.innerHTML = '<option value="SEMUA">-- Semua Jabatan --</option>';
+            jabatanUnik.forEach(j => selJabatan.innerHTML += `<option value="${j}">${j}</option>`);
+        }
+
+        function resetPageDanRender() {
+            currentPage = 1; 
+            renderJadual();
+        }
+
+        function renderJadual() {
+            const tbody = document.getElementById('isiJadual');
+            const valTahun = document.getElementById('filterTahun').value;
+            const valJabatan = document.getElementById('filterJabatan').value;
+            const valPencapaian = document.getElementById('filterPencapaian').value;
+
+            // 1. Tapis Data
+            dataDitapisGlobal = dataGlobal.filter(item => {
+                let matchTahun = (valTahun === "SEMUA" || item.tahun === valTahun);
+                let matchJabatan = (valJabatan === "SEMUA" || item.jabatan.toUpperCase() === valJabatan);
+                let matchPencapaian = (valPencapaian === "SEMUA" || (item.pencapaian || "").toUpperCase() === valPencapaian);
+                return matchTahun && matchJabatan && matchPencapaian;
+            });
+
+            KiraStatistik(dataDitapisGlobal);
+
+            // 2. Logik Pagination
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const dataPaginasi = dataDitapisGlobal.slice(startIndex, endIndex);
+
+            tbody.innerHTML = "";
+
+            if (dataDitapisGlobal.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-10 text-center text-gray-500 font-medium">Tiada rekod pencapaian dijumpai.</td></tr>`;
+                document.getElementById('paginationControls').classList.add('hidden');
+                return;
+            }
+
+            // 3. Papar Data Paginasi
+            dataPaginasi.forEach((row) => {
+                let badgeColor = "bg-gray-100 text-gray-600";
+                let badgeIkon = "";
+                let statusPencapaian = (row.pencapaian || "").toUpperCase();
+                
+                if(statusPencapaian === "EMAS") { badgeColor = "bg-amber-100 text-amber-800 border border-amber-300"; badgeIkon = "🥇"; }
+                else if(statusPencapaian === "PERAK") { badgeColor = "bg-slate-200 text-slate-700 border border-slate-400"; badgeIkon = "🥈"; }
+                else if(statusPencapaian === "GANGSA") { badgeColor = "bg-orange-100 text-orange-800 border border-orange-300"; badgeIkon = "🥉"; }
+                else if(statusPencapaian.includes("SIJIL")) { badgeColor = "bg-blue-50 text-blue-700 border border-blue-200"; badgeIkon = "📜"; }
+
+                // Jika pengguna ada akses Admin/Penyelaras Inovasi, tunjuk butang. Kalau Staf, tunjuk sengkang (-)
+                let aksiBtn = bolehEditPenuh 
+                    ? `<button onclick="bukaModalKemaskini('${row.id}')" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded shadow text-xs font-bold w-full transition">Kemaskini</button>` 
+                    : `<span class="text-xs text-gray-400 font-bold">-</span>`;
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-amber-50/50 transition duration-150 text-xs";
+                tr.innerHTML = `
+                    <td class="p-3 text-center font-bold text-gray-500">${row.id}</td>
+                    <td class="p-3 text-center font-bold">${row.tahun}</td>
+                    <td class="p-3 text-center font-bold text-gray-700 uppercase">${row.jabatan}</td>
+                    <td class="p-3 font-semibold uppercase text-gray-600">${row.kategori}</td>
+                    <td class="p-3 font-bold text-gray-900 whitespace-normal min-w-[200px] uppercase">${row.namaProjek}</td>
+                    <td class="p-3 uppercase">
+                        <div class="font-bold text-blue-700" title="Penyelia">👨‍🏫 ${row.penyelia || '-'}</div>
+                        <div class="text-[10px] text-gray-500 mt-1" title="Ketua Projek">👤 ${row.namaKetua || '-'}</div>
+                    </td>
+                    <td class="p-3 text-center">
+                        <span class="px-2.5 py-1 rounded-full font-bold text-[10px] uppercase shadow-sm ${badgeColor}">
+                            ${badgeIkon} ${row.pencapaian || 'BELUM DIKEMASKINI'}
+                        </span>
+                    </td>
+                    <td class="p-3 text-center w-24">
+                        ${aksiBtn}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            urusButangPagination();
+        }
+
+        function urusButangPagination() {
+            const ctrlDiv = document.getElementById('paginationControls');
+            const jumlahPage = Math.ceil(dataDitapisGlobal.length / rowsPerPage) || 1;
+            
+            if (dataDitapisGlobal.length > 0) {
+                ctrlDiv.classList.remove('hidden');
+                document.getElementById('pageInfo').innerText = `Muka ${currentPage} dari ${jumlahPage}`;
+                document.getElementById('btnPrev').disabled = currentPage === 1;
+                document.getElementById('btnNext').disabled = currentPage === jumlahPage;
+            } else {
+                ctrlDiv.classList.add('hidden');
+            }
+        }
+
+        function tukarPage(arah) {
+            currentPage += arah;
+            renderJadual();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function KiraStatistik(data) {
+            let total = data.length;
+            let emas = data.filter(d => (d.pencapaian||"").toUpperCase() === "EMAS").length;
+            let perak = data.filter(d => (d.pencapaian||"").toUpperCase() === "PERAK").length;
+            let gangsa = data.filter(d => (d.pencapaian||"").toUpperCase() === "GANGSA").length;
+
+            document.getElementById('statJumlah').innerText = total;
+            document.getElementById('statEmas').innerText = emas;
+            document.getElementById('statPerak').innerText = perak;
+            document.getElementById('statGangsa').innerText = gangsa;
+
+            // --- KIRA STATISTIK MENGIKUT JABATAN ---
+            let statJabatan = {};
+            data.forEach(d => {
+                let jab = (d.jabatan || "TIADA").toUpperCase();
+                if (!statJabatan[jab]) {
+                    statJabatan[jab] = { total: 0, emas: 0, perak: 0, gangsa: 0 };
+                }
+                statJabatan[jab].total++;
+                let pencapaian = (d.pencapaian || "").toUpperCase();
+                if (pencapaian === "EMAS") statJabatan[jab].emas++;
+                else if (pencapaian === "PERAK") statJabatan[jab].perak++;
+                else if (pencapaian === "GANGSA") statJabatan[jab].gangsa++;
+            });
+
+            const bekasJabatan = document.getElementById('statistikJabatan');
+            bekasJabatan.innerHTML = "";
+
+            if (Object.keys(statJabatan).length === 0) {
+                bekasJabatan.innerHTML = `<div class="text-sm text-gray-500 italic col-span-full">Tiada rekod jabatan untuk dipaparkan.</div>`;
+                return;
+            }
+
+            // Susun Jabatan mengikut abjad
+            let senaraiJab = Object.keys(statJabatan).sort();
+
+            senaraiJab.forEach(jab => {
+                let s = statJabatan[jab];
+                let cardHTML = `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition">
+                        <div class="font-bold text-lg text-indigo-800 mb-2 border-b border-gray-100 pb-1">${jab}</div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-gray-500">Jumlah:</span>
+                            <span class="font-bold text-gray-700">${s.total}</span>
+                        </div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-amber-600 font-semibold">Emas:</span>
+                            <span class="font-bold text-amber-600">${s.emas}</span>
+                        </div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-500 font-semibold">Perak:</span>
+                            <span class="font-bold text-slate-500">${s.perak}</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-orange-500 font-semibold">Gangsa:</span>
+                            <span class="font-bold text-orange-500">${s.gangsa}</span>
+                        </div>
+                    </div>
+                `;
+                bekasJabatan.innerHTML += cardHTML;
+            });
+        }
+
+        // ================= FUNGSI DOWNLOAD CSV =================
+        function downloadCSV() {
+            if (!dataDitapisGlobal || dataDitapisGlobal.length === 0) {
+                alert("Tiada rekod untuk dieksport.");
+                return;
+            }
+
+            paparToast("⏳ Menyediakan fail untuk dimuat turun...", "blue");
+
+            let csvContent = "PROJEK ID,TAHUN,JABATAN,KATEGORI,NAMA PROJEK,NAMA KETUA,PENYELIA PROJEK,PENCAPAIAN\n";
+            
+            dataDitapisGlobal.forEach(r => {
+                let clean = (str) => `"${(str || "").replace(/"/g, '""')}"`;
+                
+                csvContent += `${clean(r.id)},${clean(r.tahun)},${clean(r.jabatan)},${clean(r.kategori)},${clean(r.namaProjek)},${clean(r.namaKetua)},${clean(r.penyelia)},${clean(r.pencapaian || "TIADA")}\n`;
+            });
+
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", "Laporan_Pencapaian_Pelajar.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            setTimeout(() => { paparToast("✅ Berjaya dimuat turun!", "green"); }, 1000);
+        }
+
+        // ================= PENGURUSAN MODAL KEMASKINI =================
+        function bukaModalKemaskini(id) {
+            if (!bolehEditPenuh) return; // Lapisan keselamatan tambahan
+
+            const r = dataGlobal.find(item => item.id === id);
+            if(!r) return;
+
+            document.getElementById('in_projek_id').value = r.id;
+            document.getElementById('in_tahun').value = r.tahun;
+            document.getElementById('in_nama_projek').value = r.namaProjek;
+            document.getElementById('in_jabatan').value = r.jabatan;
+            document.getElementById('in_kategori').value = r.kategori;
+            document.getElementById('in_nama_ketua').value = r.namaKetua || "";
+            document.getElementById('in_penyelia').value = r.penyelia || "";
+            document.getElementById('in_pencapaian').value = (r.pencapaian || "").toUpperCase();
+
+            const medanTambahan = ['in_nama_projek', 'in_jabatan', 'in_kategori', 'in_nama_ketua', 'in_penyelia'];
+            
+            // Medan-medan ini akan dibuka untuk diedit kerana fungsi bukaModalKemaskini 
+            // hanya dipanggil jika (bolehEditPenuh === true)
+            medanTambahan.forEach(medan => {
+                let elemen = document.getElementById(medan);
+                elemen.removeAttribute('readonly');
+                elemen.classList.remove('bg-gray-100', 'text-gray-500');
+                elemen.classList.add('bg-white', 'focus:ring-2', 'focus:ring-amber-400', 'border-gray-300');
+            });
+
+            document.getElementById('modalKemaskini').classList.remove('hidden');
+        }
+
+        function tutupModal() { 
+            document.getElementById('modalKemaskini').classList.add('hidden'); 
+        }
+
+        function simpanKemaskini(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSimpan');
+            btn.disabled = true; btn.innerText = "⏳ Menyimpan...";
+
+            const payload = {
+                action: "kemaskiniPencapaianPelajar", 
+                PROJEK_ID: document.getElementById('in_projek_id').value,
+                PENCAPAIAN: document.getElementById('in_pencapaian').value,
+                NAMA_PROJEK: document.getElementById('in_nama_projek').value.toUpperCase(),
+                JABATAN: document.getElementById('in_jabatan').value.toUpperCase(),
+                KATEGORI: document.getElementById('in_kategori').value.toUpperCase(),
+                NAMA_KETUA: document.getElementById('in_nama_ketua').value.toUpperCase(),
+                PENYELIA: document.getElementById('in_penyelia').value.toUpperCase()
+            };
+
+            fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+            .then(res => res.json())
+            .then(data => {
+                paparToast(data.status === "BERJAYA" ? `✅ ${data.mesej}` : `❌ ${data.mesej}`, data.status === "BERJAYA" ? "green" : "red");
+                if(data.status === "BERJAYA") { 
+                    tutupModal(); 
+                    muatDataPencapaian(); // Refresh jadual
+                }
+            }).finally(() => { 
+                btn.disabled = false; btn.innerText = "Simpan Kemaskini"; 
+            });
+        }
+
+        function paparToast(teks, warna) {
+            const msgBox = document.getElementById('paparMesejUI');
+            msgBox.className = `mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-md text-white fixed top-5 right-5 z-[100] transition-opacity ` + 
+                               (warna === 'green' ? 'bg-emerald-500' : (warna === 'blue' ? 'bg-blue-500' : 'bg-red-500'));
+            msgBox.innerText = teks;
+            msgBox.classList.remove('hidden');
+            setTimeout(() => msgBox.classList.add('hidden'), 4000);
+        }
+    </script>
+</body>
+</html>

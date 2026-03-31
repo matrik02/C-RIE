@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pengurusan KPI 18</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom print styling supaya nampak kemas jika di-print */
+        @media print {
+            body { background-color: white; padding: 0; margin: 0; }
+            .no-print { display: none !important; }
+            .shadow-xl { box-shadow: none; border: none; }
+            .print-border { border: 1px solid #000 !important; }
+        }
+        
+        /* Gaya untuk Tab Aktif dan Tidak Aktif */
+        .tab-active { 
+            border-bottom-width: 4px; 
+            border-color: #2563eb; /* Blue-600 */
+            color: #1e3a8a; /* Blue-900 */
+            background-color: #f8fafc; /* Slate-50 */
+        }
+        .tab-inactive { 
+            color: #6b7280; /* Gray-500 */
+            border-bottom-width: 4px;
+            border-color: transparent;
+        }
+        .tab-inactive:hover { 
+            color: #374151; 
+            border-color: #d1d5db; 
+            background-color: #f3f4f6;
+        }
+    </style>
+
+    <script>
+        // HALANG AKSES JIKA BELUM LOGIN
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Akses ditolak! Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-5xl mx-auto w-full mb-6 bg-white rounded-xl shadow-md overflow-hidden flex no-print border border-gray-200">
+        <button onclick="bukaTab('tab1')" id="btn-tab1" class="flex-1 py-4 text-center font-bold text-lg tab-active transition-all outline-none">
+            📋 Senarai Semak KPI
+        </button>
+        <button onclick="bukaTab('tab2')" id="btn-tab2" class="flex-1 py-4 text-center font-bold text-lg tab-inactive transition-all outline-none border-l border-gray-200">
+            ➕ Tambah Rekod KPI
+        </button>
+    </div>
+
+    <div id="tab1" class="tab-content max-w-5xl mx-auto w-full bg-white rounded-xl shadow-xl overflow-hidden border border-gray-200 print-border block">
+        
+        <div class="text-center pt-10 pb-6 px-8 border-b-4 border-yellow-500">
+            <div class="flex justify-center mb-4">
+                <div class="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center text-xs text-gray-500 font-bold border-2 border-dashed border-gray-400">
+                    [LOGO JATA NEGARA]
+                </div>
+            </div>
+            <h1 class="text-2xl md:text-3xl font-extrabold tracking-wide uppercase leading-tight">Kementerian Pendidikan Tinggi</h1>
+            <h2 class="text-xl md:text-2xl font-bold tracking-wide uppercase mt-1">Jabatan Pendidikan Politeknik dan Kolej Komuniti</h2>
+        </div>
+
+        <div class="bg-blue-50 py-6 px-8 text-center border-b border-gray-200">
+            <h3 class="text-xl font-bold text-blue-900 uppercase underline underline-offset-4 decoration-2">Senarai Semak</h3>
+            <p class="mt-3 font-semibold text-blue-800 max-w-3xl mx-auto leading-relaxed">
+                DOKUMEN BUKTI KPI 18: BILANGAN PROJEK RESEARCH, DEVELOPMENT, INNOVATION, COMMERCIALIZATION AND ECONOMY (RDICE) YANG DIAPLIKASIKAN KEPADA PEMEGANG TARUH
+            </p>
+        </div>
+
+        <form id="borangKPI18" class="p-6 md:p-8" onsubmit="hantarBorang(event)">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 bg-gray-50 p-5 rounded-lg border border-gray-200">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Tajuk Projek</label>
+                    <input id="tajukProjek" type="text" required class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none uppercase" placeholder="Masukkan tajuk projek">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Nama Penyelidik Utama</label>
+                    <input id="namaPenyelidik" type="text" required class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Institusi / Politeknik</label>
+                    <input id="institusi" type="text" required class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+                </div>
+            </div>
+
+            <div class="overflow-x-auto mb-8">
+                <table class="w-full border-collapse border border-gray-300 text-sm md:text-base">
+                    <thead>
+                        <tr class="bg-gray-200 text-gray-800">
+                            <th class="border border-gray-300 p-3 w-16 text-center font-bold">Item</th>
+                            <th class="border border-gray-300 p-3 text-left font-bold">Perkara</th>
+                            <th class="border border-gray-300 p-3 w-32 text-center font-bold">Semak</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="bg-gray-50">
+                            <td class="border border-gray-300 p-3 text-center font-bold text-lg align-top">1</td>
+                            <td class="border border-gray-300 p-3 font-bold text-lg" colspan="2">Penerbitan kertas penyelidikan</td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="border border-gray-300 p-3 text-center font-semibold align-top">a</td>
+                            <td class="border border-gray-300 p-3">Kertas penyelidikan penuh yang diterbitkan pada tahun semasa</td>
+                            <td class="border border-gray-300 p-2 text-center align-middle">
+                                <select id="semak1a" required class="w-full px-2 py-1.5 border border-gray-300 rounded outline-none font-bold text-center focus:ring-2 focus:ring-blue-500">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="ADA" class="text-green-600">✓ Ada</option>
+                                    <option value="TIADA" class="text-red-600">✗ Tiada</option>
+                                </select>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td class="border border-gray-300 p-3 text-center font-semibold align-top">b</td>
+                            <td class="border border-gray-300 p-3">Muka depan jurnal penyelidikan</td>
+                            <td class="border border-gray-300 p-2 text-center align-middle">
+                                <select id="semak1b" required class="w-full px-2 py-1.5 border border-gray-300 rounded outline-none font-bold text-center focus:ring-2 focus:ring-blue-500">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="ADA" class="text-green-600">✓ Ada</option>
+                                    <option value="TIADA" class="text-red-600">✗ Tiada</option>
+                                </select>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="border border-gray-300 p-3 text-center font-semibold align-top">c</td>
+                            <td class="border border-gray-300 p-3 font-semibold bg-gray-50" colspan="2">Maklumat kertas penyelidikan:</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-3 text-center align-top text-gray-500">i</td>
+                            <td class="border border-gray-300 p-3 pl-8">Isi kandungan tajuk penyelidikan</td>
+                            <td class="border border-gray-300 p-2 text-center align-middle">
+                                <select id="semak1ci" required class="w-full px-2 py-1.5 border border-gray-300 rounded outline-none font-bold text-center focus:ring-2 focus:ring-blue-500">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="ADA" class="text-green-600">✓ Ada</option>
+                                    <option value="TIADA" class="text-red-600">✗ Tiada</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-3 text-center align-top text-gray-500">ii</td>
+                            <td class="border border-gray-300 p-3 pl-8">No. DOI./No. ISBN/e-ISBN/ISSN</td>
+                            <td class="border border-gray-300 p-2 text-center align-middle">
+                                <select id="semak1cii" required class="w-full px-2 py-1.5 border border-gray-300 rounded outline-none font-bold text-center focus:ring-2 focus:ring-blue-500">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="ADA" class="text-green-600">✓ Ada</option>
+                                    <option value="TIADA" class="text-red-600">✗ Tiada</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-3 text-center align-top text-gray-500">iii</td>
+                            <td class="border border-gray-300 p-3 pl-8">Pautan URL jurnal</td>
+                            <td class="border border-gray-300 p-2 text-center align-middle">
+                                <select id="semak1ciii" required class="w-full px-2 py-1.5 border border-gray-300 rounded outline-none font-bold text-center focus:ring-2 focus:ring-blue-500">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="ADA" class="text-green-600">✓ Ada</option>
+                                    <option value="TIADA" class="text-red-600">✗ Tiada</option>
+                                </select>
+                            </td>
+                        </tr>
+
+                        <tr class="bg-gray-50 mt-4">
+                            <td class="border border-gray-300 p-3 text-center font-bold text-lg align-top">2</td>
+                            <td class="border border-gray-300 p-3 font-bold text-lg" colspan="2">Pemfailan harta intelek dan surat pengesahan daripada pemegang taruh</td>
+                        </tr>
+
+                        <tr>
+                            <td class="border border-gray-300 p-3 text-center font-semibold align-top">a</td>
+                            <td class="border border-gray-300 p-3 font-semibold bg-gray-50" colspan="2">Pendaftaran Harta Intelek pada tahun semasa:</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-3 text-center align-top text-gray-500">i</td>
+                            <td class="border border-gray-300 p-3 pl-8 leading-relaxed">Notis pemberitahuan/Sijil Pendaftaran Harta Intelek/surat perlindungan harta intelek hak cipta/paten/pembaharuan utiliti/reka bentuk perindustrian/cap dagang/integrated circuit pada tahun semasa; <span class="font-bold text-blue-700">ATAU</span></td>
+                            <td class="border border-gray-300 p-2 text-center align-middle">
+                                <select id="semak2ai" required class="w-full px-2 py-1.5 border border-gray-300 rounded outline-none font-bold text-center focus:ring-2 focus:ring-blue-500">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="ADA" class="text-green-600">✓ Ada</option>
+                                    <option value="TIADA" class="text-red-600">✗ Tiada</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-3 text-center align-top text-gray-500">ii</td>
+                            <td class="border border-gray-300 p-3 pl-8">Borang Permohonan CR1 dan resit pembayaran beserta nombor pendaftaran.</td>
+                            <td class="border border-gray-300 p-2 text-center align-middle">
+                                <select id="semak2aii" required class="w-full px-2 py-1.5 border border-gray-300 rounded outline-none font-bold text-center focus:ring-2 focus:ring-blue-500">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="ADA" class="text-green-600">✓ Ada</option>
+                                    <option value="TIADA" class="text-red-600">✗ Tiada</option>
+                                </select>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="border border-gray-300 p-3 text-center font-semibold align-top">b</td>
+                            <td class="border border-gray-300 p-3">Bukti surat pengesahan dari pemegang taruh bagi produk/perkhidmatan diaplikasikan pada tahun semasa</td>
+                            <td class="border border-gray-300 p-2 text-center align-middle">
+                                <select id="semak2b" required class="w-full px-2 py-1.5 border border-gray-300 rounded outline-none font-bold text-center focus:ring-2 focus:ring-blue-500">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="ADA" class="text-green-600">✓ Ada</option>
+                                    <option value="TIADA" class="text-red-600">✗ Tiada</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-8 rounded-r-lg">
+                <p class="text-sm text-yellow-800 font-semibold flex items-start gap-2">
+                    <span class="text-xl">⚠️</span>
+                    <span><strong>Nota Penting:</strong> Sila muat naik dokumen bukti secara pakej (1+2) mengikut item sasaran institusi, dan pastikan senarai semak yang telah disemak (✓ / ✗) turut dilampirkan bersama.</span>
+                </p>
+            </div>
+
+            <div class="flex flex-wrap justify-end gap-3 no-print border-t border-gray-200 pt-6 mt-6">
+                <a href="https://docs.google.com/document/d/1e2nxrTWmIdTBDgwBePS8kCz9h7yCm8r7/edit?usp=sharing&ouid=108965501691262983469&rtpof=true&sd=true" target="_blank" class="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded shadow transition flex items-center gap-2">
+                    📄 Muat Turun Template (Word)
+                </a>
+                <button type="button" onclick="window.print()" class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded shadow transition flex items-center gap-2">
+                    🖨️ Cetak / Simpan PDF
+                </button>
+                <button type="submit" class="px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded shadow transition flex items-center gap-2">
+                    💾 Simpan Senarai Semak
+                </button>
+            </div>
+        </form>
+    </div>
+
+
+    <div id="tab2" class="tab-content max-w-5xl mx-auto w-full bg-white rounded-xl shadow-xl overflow-hidden border border-gray-200 p-6 md:p-8 hidden">
+        
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <h1 class="text-2xl font-bold text-gray-800">➕ Tambah Rekod KPI</h1>
+            <a href="dashboard-kpi.html" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition shadow-sm text-sm">
+                &larr; Kembali ke Senarai KPI
+            </a>
+        </div>
+
+        <div id="statusMesej" class="hidden mb-4 p-4 rounded text-center text-sm font-semibold border"></div>
+
+        <div id="bahagianBulkCSV" class="mb-8">
+            <h2 class="text-lg font-bold text-gray-700 mb-2">Muat Naik Data Pukal (CSV)</h2>
+            <div class="bg-gray-50 border border-gray-300 p-4 rounded-lg flex items-center gap-4">
+                <input type="file" id="fileCSV" accept=".csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <button type="button" id="btnUpload" onclick="uploadCSV()" class="bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700 whitespace-nowrap">🚀 Muat Naik</button>
+            </div>
+            <p id="statusCSV" class="mt-3 text-sm font-bold text-center"></p>
+        </div>
+
+        <div id="bahagianBorang" class="bg-white shadow-md rounded-xl p-6 border border-gray-200">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Tambah Secara Manual</h2>
+            
+            <form onsubmit="tambahKPIManual(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Tajuk Projek / Inovasi</label>
+                        <input type="text" id="kpi_tajuk" required class="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none uppercase" placeholder="Contoh: SISTEM PENGURUSAN E-DAFTAR">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Nama Penyelidik Utama</label>
+                        <input type="text" id="kpi_penyelidik" required class="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Institusi / Politeknik</label>
+                        <input type="text" id="kpi_institusi" required class="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Kategori (Pilih)</label>
+                        <select id="kpi_kategori" required class="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">-- Sila Pilih --</option>
+                            <option value="PENYELIDIKAN">Penyelidikan (Research)</option>
+                            <option value="INOVASI">Inovasi (Innovation)</option>
+                            <option value="KOMERSIL">Pengkomersialan (Commercialization)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Tahun Pelaksanaan</label>
+                        <input type="number" id="kpi_tahun" required class="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="2024" min="2000" max="2099">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Status Semasa</label>
+                        <select id="kpi_status" required class="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="SEDANG BERJALAN">Sedang Berjalan</option>
+                            <option value="SELESAI">Selesai</option>
+                            <option value="DIBATALKAN">Dibatalkan</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end mt-6">
+                    <button type="submit" id="btnSubmitManual" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded shadow transition">
+                        💾 Simpan Rekod
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="bahagianBerjaya" class="hidden text-center py-10">
+            <h2 class="text-2xl font-bold text-green-600 mb-2">✅ Berjaya!</h2>
+            <p id="mesejKejayaan" class="text-gray-700 mb-4"></p>
+            <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition">
+                Tambah Rekod Lain
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // MASUKKAN URL WEB APP ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec';
+
+        // --- 1. LOGIK PERTUKARAN TAB ---
+        function bukaTab(tabPilihan) {
+            // Sembunyikan semua kandungan tab
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+                tab.classList.remove('block');
+            });
+            
+            // Buat semua butang tab menjadi 'inactive'
+            document.getElementById('btn-tab1').className = "flex-1 py-4 text-center font-bold text-lg tab-inactive transition-all outline-none";
+            document.getElementById('btn-tab2').className = "flex-1 py-4 text-center font-bold text-lg tab-inactive transition-all outline-none border-l border-gray-200";
+            
+            // Tunjukkan tab yang ditekan sahaja
+            document.getElementById(tabPilihan).classList.remove('hidden');
+            document.getElementById(tabPilihan).classList.add('block');
+            
+            // Jadikan butang tab yang ditekan kepada 'active'
+            document.getElementById('btn-' + tabPilihan).className = "flex-1 py-4 text-center font-bold text-lg tab-active transition-all outline-none";
+        }
+
+        // --- 2. LOGIK TAB 1 (SENARAI SEMAK) ---
+        function hantarBorang(e) {
+            e.preventDefault();
+            
+            const btnSubmit = document.querySelector('#borangKPI18 button[type="submit"]');
+            const originalText = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = "⏳ Sedang Menyimpan...";
+            btnSubmit.disabled = true;
+
+            const dataBorang = {
+                tajuk_projek: document.getElementById('tajukProjek').value,
+                nama_penyelidik: document.getElementById('namaPenyelidik').value,
+                institusi: document.getElementById('institusi').value,
+                semak_1a: document.getElementById('semak1a').value,
+                semak_1b: document.getElementById('semak1b').value,
+                semak_1ci: document.getElementById('semak1ci').value,
+                semak_1cii: document.getElementById('semak1cii').value,
+                semak_1ciii: document.getElementById('semak1ciii').value,
+                semak_2ai: document.getElementById('semak2ai').value,
+                semak_2aii: document.getElementById('semak2aii').value,
+                semak_2b: document.getElementById('semak2b').value
+            };
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(dataBorang)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "BERJAYA") {
+                    alert("✅ " + data.mesej);
+                    document.getElementById('borangKPI18').reset();
+                } else {
+                    alert("❌ Gagal disimpan: " + data.mesej);
+                }
+            })
+            .catch(error => {
+                alert("❌ Berlaku ralat sambungan: " + error);
+            })
+            .finally(() => {
+                btnSubmit.innerHTML = originalText;
+                btnSubmit.disabled = false;
+            });
+        }
+
+        // --- 3. LOGIK TAB 2: TAMBAH KPI MANUAL ---
+        function tambahKPIManual(e) {
+            e.preventDefault();
+            
+            const btnSubmit = document.getElementById('btnSubmitManual');
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = "⏳ Sedang Menyimpan...";
+
+            const payload = {
+                action: "tambahKPIManual",
+                data: {
+                    tajuk: document.getElementById('kpi_tajuk').value,
+                    penyelidik: document.getElementById('kpi_penyelidik').value,
+                    institusi: document.getElementById('kpi_institusi').value,
+                    kategori: document.getElementById('kpi_kategori').value,
+                    tahun: document.getElementById('kpi_tahun').value,
+                    status: document.getElementById('kpi_status').value
+                }
+            };
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(response => {
+                if(response.status === "BERJAYA") {
+                    document.getElementById("mesejKejayaan").innerHTML = `Rekod KPI bagi projek <b>${payload.data.tajuk}</b> berjaya dimasukkan ke dalam pangkalan data secara manual <span class='font-bold text-green-600'>(DISAHKAN)</span>.`;
+                    document.getElementById('bahagianBorang').classList.add('hidden');
+                    document.getElementById('bahagianBulkCSV').classList.add('hidden');
+                    document.getElementById('bahagianBerjaya').classList.remove('hidden');
+                } else {
+                    paparStatus("❌ Ralat Server: " + response.mesej, "bg-red-100 text-red-700");
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = "💾 Simpan Rekod";
+                }
+            })
+            .catch(err => {
+                paparStatus("⚠️ Gagal menghubungi pangkalan data. Sila semak internet anda.", "bg-red-100 text-red-700");
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = "💾 Simpan Rekod";
+            });
+        }
+
+        // --- 4. LOGIK TAB 2: UPLOAD CSV ---
+        function uploadCSV() {
+            const fileInput = document.getElementById('fileCSV');
+            const btnUpload = document.getElementById('btnUpload');
+            const statusCSV = document.getElementById('statusCSV');
+            const bahagianBorang = document.getElementById('bahagianBorang');
+            const bahagianBerjaya = document.getElementById('bahagianBerjaya');
+
+            if (!fileInput.files.length) {
+                alert("Sila pilih fail CSV terlebih dahulu!");
+                return;
+            }
+
+            btnUpload.disabled = true;
+            btnUpload.innerHTML = '⏳ Memproses...';
+            statusCSV.innerHTML = "Sedang membaca fail...";
+            statusCSV.className = "mt-3 text-sm font-bold text-center text-blue-600";
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const rows = text.split("\n").filter(row => row.trim() !== "");
+                
+                if(rows.length < 2) {
+                    statusCSV.innerHTML = "⚠️ Fail CSV kosong atau tiada data sah.";
+                    statusCSV.className = "mt-3 text-sm font-bold text-center text-red-600";
+                    btnUpload.disabled = false;
+                    btnUpload.innerHTML = '🚀 Muat Naik';
+                    return;
+                }
+
+                // Keluarkan header dan parse data
+                const header = rows.shift(); 
+                const data = rows.map(row => row.split(",").map(cell => cell.trim().replace(/^"|"$/g, '')));
+
+                statusCSV.innerHTML = `Terjumpa ${data.length} rekod. Sedang menghantar ke server...`;
+
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: "tambahKPIBulk", rekodPukal: data })
+                })
+                .then(res => res.json())
+                .then(response => {
+                    if(response.status === "BERJAYA") {
+                        document.getElementById("mesejKejayaan").innerHTML = `<b>${data.length}</b> rekod KPI pukal berjaya dihantar dan telah dimasukkan ke dalam pangkalan data secara rasmi <span class='font-bold text-green-600'>(DISAHKAN)</span>.`;
+                        bahagianBorang.classList.add('hidden');
+                        document.getElementById('bahagianBulkCSV').classList.add('hidden');
+                        bahagianBerjaya.classList.remove('hidden');
+                    } else {
+                        statusCSV.innerHTML = "⚠️ Ralat Server: " + response.mesej;
+                        statusCSV.className = "mt-3 text-sm font-bold text-center text-red-600";
+                        btnUpload.disabled = false;
+                        btnUpload.innerHTML = '🚀 Muat Naik';
+                    }
+                })
+                .catch(err => {
+                    statusCSV.innerHTML = "⚠️ Gagal menghubungi pangkalan data. Sila semak internet anda.";
+                    statusCSV.className = "mt-3 text-sm font-bold text-center text-red-600";
+                    btnUpload.disabled = false;
+                    btnUpload.innerHTML = '🚀 Muat Naik';
+                });
+            };
+
+            reader.readAsText(file);
+        }
+
+        function paparStatus(mesej, classWarna) {
+            const sm = document.getElementById("statusMesej");
+            sm.innerHTML = mesej;
+            sm.className = `mb-4 p-4 rounded text-center text-sm font-semibold border ${classWarna} block`;
+            window.scrollTo(0,0);
+            setTimeout(() => { sm.classList.add("hidden"); sm.classList.remove("block"); }, 5000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengesahan KPI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        const userPeranan = sessionStorage.getItem("peranan") || "";
+        const perananUpper = userPeranan.toUpperCase();
+        
+        const isAuthorized = perananUpper.includes("INOVASI") || perananUpper === "KUPIK" || perananUpper === "ADMIN";
+
+        if (sessionStorage.getItem("userLulus") !== "YA" || !isAuthorized) {
+            alert("Akses Ditolak! Hanya Penyelaras Inovasi, KUPIK, dan ADMIN yang dibenarkan membuat pengesahan.");
+            window.location.href = "dashboard-kpi.html"; 
+        }
+    </script>
+</head>
+<body class="bg-gray-100 p-4 md:p-6 font-sans relative">
+
+    <div class="max-w-7xl mx-auto">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-200 gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">🔐 Pengesahan Rekod KPI</h1>
+                <p class="text-sm text-gray-500 mt-1">Sila semak maklumat dan klik pautan URL bukti sebelum membuat pengesahan.</p>
+            </div>
+            <div>
+                <a href="dashboard-kpi.html" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2.5 rounded-lg font-semibold transition shadow-md flex items-center gap-2">
+                    &larr; Kembali Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div id="statusMesej" class="hidden mb-4 p-4 rounded text-center text-sm font-semibold border shadow-sm"></div>
+
+        <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+            <div class="md:hidden text-xs text-purple-600 font-semibold p-2 bg-purple-50 flex items-center justify-center gap-1 animate-pulse border-b">
+                <span>👉</span> Geser jadual ke kiri/kanan untuk lihat penuh
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[1300px]">
+                    <thead>
+                        <tr class="bg-purple-600 text-white text-xs uppercase">
+                            <th class="p-3 border-b">BIL</th>
+                            <th class="p-3 border-b w-48">PRODUK</th>
+                            <th class="p-3 border-b">HUBUNGI KETUA</th>
+                            <th class="p-3 border-b">JABATAN</th>
+                            <th class="p-3 border-b">APLIKASI</th>
+                            <th class="p-3 border-b">JENIS</th>
+                            <th class="p-3 border-b">DAFTAR</th>
+                            <th class="p-3 border-b text-center">URL BUKTI</th>
+                            <th class="p-3 border-b text-center w-56">TINDAKAN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiJadual" class="text-gray-700 text-sm bg-white">
+                        <tr><td colspan="9" class="p-10 text-center font-semibold text-gray-500 animate-pulse">⏳ Memuatkan senarai...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalEdit" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 overflow-y-auto">
+        <div class="bg-white p-6 rounded-xl w-full max-w-2xl shadow-2xl relative my-8">
+            <button onclick="tutupModal()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 font-bold text-xl">&times;</button>
+            
+            <h2 class="text-xl font-bold mb-4 text-blue-700 border-b pb-2">✏️ Kemaskini / Betulkan Rekod</h2>
+            <input type="hidden" id="editIdBil">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700">Nama Produk</label>
+                    <input type="text" id="editNama" class="w-full border p-2 rounded-lg mt-1 focus:ring-2 focus:ring-blue-400 uppercase">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700">Ketua Projek</label>
+                    <input type="text" id="editKetua" class="w-full border p-2 rounded-lg mt-1 focus:ring-2 focus:ring-blue-400 uppercase">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700">Jabatan</label>
+                    <input type="text" id="editJabatan" class="w-full border p-2 rounded-lg mt-1 focus:ring-2 focus:ring-blue-400 uppercase">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700">No Telefon</label>
+                    <input type="text" id="editTelefon" class="w-full border p-2 rounded-lg mt-1 focus:ring-2 focus:ring-blue-400">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700">Email</label>
+                    <input type="email" id="editEmail" class="w-full border p-2 rounded-lg mt-1 focus:ring-2 focus:ring-blue-400">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700">Aplikasi</label>
+                    <input type="text" id="editAplikasi" class="w-full border p-2 rounded-lg mt-1 focus:ring-2 focus:ring-blue-400 uppercase">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700">Jenis Harta Intelek</label>
+                    <input type="text" id="editJenis" class="w-full border p-2 rounded-lg mt-1 focus:ring-2 focus:ring-blue-400 uppercase">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700">No Pendaftaran</label>
+                    <input type="text" id="editPendaftaran" class="w-full border p-2 rounded-lg mt-1 focus:ring-2 focus:ring-blue-400 uppercase">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700">Pautan URL Bukti</label>
+                    <input type="text" id="editUrl" class="w-full border p-2 rounded-lg mt-1 focus:ring-2 focus:ring-blue-400">
+                </div>
+            </div>
+            
+            <div class="flex justify-end mt-6 gap-3 pt-4 border-t">
+                <button onclick="tutupModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded-lg">Batal</button>
+                <button id="btnSimpanEdit" onclick="simpanKemaskini()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-lg shadow-md flex items-center gap-2">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // ⚠️ MASUKKAN URL WEB APP ANDA DI SINI
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec"; 
+
+        let senaraiDataPending = []; // Simpan data untuk paparan modal
+
+        function ambilDataPending() {
+            const tbody = document.getElementById('isiJadual');
+            tbody.innerHTML = `<tr><td colspan="9" class="p-10 text-center font-semibold text-purple-500 animate-pulse">⏳ Menyemak pangkalan data...</td></tr>`;
+
+            const fetchUrl = SCRIPT_URL.includes('?') ? `${SCRIPT_URL}&action=ambilKPIPending` : `${SCRIPT_URL}?action=ambilKPIPending`;
+
+            fetch(fetchUrl).then(res => res.json()).then(data => {
+                if(data.status === "BERJAYA") {
+                    senaraiDataPending = data.data; // Simpan untuk rujukan modal edit
+                    paparkanJadual(senaraiDataPending);
+                }
+                else tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-red-600 font-bold">Ralat: ${data.mesej}</td></tr>`;
+            }).catch(err => {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-red-600 font-bold">⚠️ Gagal menghubungi server.</td></tr>`;
+            });
+        }
+
+        function paparkanJadual(senarai) {
+            const tbody = document.getElementById('isiJadual');
+            tbody.innerHTML = "";
+            if (senarai.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-10 text-center text-gray-500 font-medium">✨ Tiada KPI baru yang menunggu pengesahan.</td></tr>`;
+                return;
+            }
+            senarai.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-purple-50 transition text-xs";
+                
+                let pautanUrl = "<span class='text-gray-400'>Tiada</span>";
+                if (row.url && row.url.length > 5) {
+                    let linkValid = row.url.startsWith("http") ? row.url : "https://" + row.url;
+                    pautanUrl = `<a href="${linkValid}" target="_blank" class="bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-300 px-3 py-1.5 rounded-full font-bold inline-flex items-center gap-1 shadow-sm transition">🔗 Buka</a>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-bold text-gray-700">${row.bil}</td>
+                    <td class="p-3 font-bold text-gray-800">${row.namaProduk}</td>
+                    <td class="p-3 text-gray-700">
+                        <div class="font-bold">${row.ketua}</div>
+                        <div class="text-blue-600">📞 ${row.telefon || '-'}</div>
+                        <div class="text-orange-600">✉️ ${row.email || '-'}</div>
+                    </td>
+                    <td class="p-3 font-bold text-purple-700">${row.jabatan}</td>
+                    <td class="p-3 text-gray-600">${row.aplikasi}</td>
+                    <td class="p-3 text-gray-600">${row.jenis}</td>
+                    <td class="p-3 font-mono text-gray-600">${row.pendaftaran || '-'}</td>
+                    <td class="p-3 text-center">${pautanUrl}</td>
+                    <td class="p-3 text-center">
+                        <div class="flex justify-center gap-1">
+                            <button onclick="bukaModalEdit('${row.bil}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded font-bold shadow-sm transition">✏ Edit</button>
+                            <button onclick="prosesPengesahan('${row.bil}', 'sahkanKPI')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded font-bold shadow-sm transition">✔ Sah</button>
+                            <button onclick="prosesPengesahan('${row.bil}', 'tolakKPI')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded font-bold shadow-sm transition">✖ Tolak</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ==========================================
+        // FUNGSI KEMASKINI / EDIT (BARU)
+        // ==========================================
+        function bukaModalEdit(bil) {
+            // Cari data asal berdasarkan bil
+            const rekod = senaraiDataPending.find(r => String(r.bil) === String(bil));
+            if (!rekod) return alert("Ralat: Data tidak dijumpai.");
+
+            // Masukkan data ke dalam borang popup
+            document.getElementById('editIdBil').value = rekod.bil;
+            document.getElementById('editNama').value = rekod.namaProduk || "";
+            document.getElementById('editKetua').value = rekod.ketua || "";
+            document.getElementById('editJabatan').value = rekod.jabatan || "";
+            document.getElementById('editTelefon').value = rekod.telefon || "";
+            document.getElementById('editEmail').value = rekod.email || "";
+            document.getElementById('editAplikasi').value = rekod.aplikasi || "";
+            document.getElementById('editJenis').value = rekod.jenis || "";
+            document.getElementById('editPendaftaran').value = rekod.pendaftaran || "";
+            document.getElementById('editUrl').value = rekod.url || "";
+
+            // Buka Modal
+            document.getElementById('modalEdit').classList.remove('hidden');
+        }
+
+        function tutupModal() {
+            document.getElementById('modalEdit').classList.add('hidden');
+        }
+
+        function simpanKemaskini() {
+            const btnSimpan = document.getElementById('btnSimpanEdit');
+            btnSimpan.disabled = true;
+            btnSimpan.innerHTML = "Menyimpan... ⏳";
+
+            // Kumpul data dari form
+            const payloadData = {
+                action: "kemaskiniKPI", // Menggunakan fungsi sedia ada dalam Code.gs
+                id: document.getElementById('editIdBil').value,
+                namaProduk: document.getElementById('editNama').value.toUpperCase(),
+                ketua: document.getElementById('editKetua').value.toUpperCase(),
+                jabatan: document.getElementById('editJabatan').value.toUpperCase(),
+                telefon: document.getElementById('editTelefon').value,
+                email: document.getElementById('editEmail').value,
+                aplikasi: document.getElementById('editAplikasi').value.toUpperCase(),
+                jenis: document.getElementById('editJenis').value.toUpperCase(),
+                pendaftaran: document.getElementById('editPendaftaran').value.toUpperCase(),
+                url: document.getElementById('editUrl').value
+            };
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payloadData)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "BERJAYA") {
+                    alert("✅ Rekod berjaya dikemaskini.");
+                    tutupModal();
+                    ambilDataPending(); // Muat semula jadual supaya papar data baru
+                } else {
+                    alert("❌ Ralat: " + data.mesej);
+                }
+            })
+            .catch(err => {
+                alert("⚠️ Ralat Rangkaian: Gagal berhubung dengan pelayan.");
+            })
+            .finally(() => {
+                btnSimpan.disabled = false;
+                btnSimpan.innerHTML = "Simpan Perubahan";
+            });
+        }
+
+        // ==========================================
+        // FUNGSI PENGESAHAN (SAH / TOLAK)
+        // ==========================================
+        function prosesPengesahan(bil, actionType) {
+            let alasanPenolakan = "";
+            if (actionType === 'tolakKPI') {
+                alasanPenolakan = prompt("⚠️ PERHATIAN: Sila masukkan alasan penolakan untuk dihantar kepada staf:");
+                if (alasanPenolakan === null) return; 
+                if (alasanPenolakan.trim() === "") {
+                    alert("Gagal: Anda WAJIB memasukkan alasan mengapa rekod ini ditolak!");
+                    return;
+                }
+            } else {
+                if(!confirm("Anda pasti mahu meluluskan KPI ini?")) return;
+            }
+
+            const statusMesej = document.getElementById('statusMesej');
+            statusMesej.className = 'mb-4 p-4 rounded text-center text-sm font-semibold bg-blue-100 text-blue-800 border border-blue-200 shadow-sm';
+            statusMesej.innerText = "⏳ Memproses permohonan...";
+            statusMesej.classList.remove('hidden');
+
+            const payload = { action: actionType, BIL: bil };
+            if (actionType === 'tolakKPI') payload.ALASAN = alasanPenolakan;
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            }).then(res => res.json()).then(data => {
+                if(data.status === "BERJAYA") {
+                    statusMesej.className = 'mb-4 p-4 rounded text-center text-sm font-semibold bg-green-100 text-green-800 border border-green-200 shadow-sm';
+                    statusMesej.innerText = "✅ " + data.mesej;
+                    ambilDataPending(); 
+                } else {
+                    statusMesej.className = 'mb-4 p-4 rounded text-center text-sm font-semibold bg-red-100 text-red-800 border border-red-200 shadow-sm';
+                    statusMesej.innerText = "❌ Ralat: " + data.mesej;
+                }
+                setTimeout(() => statusMesej.classList.add('hidden'), 5000);
+            }).catch(err => {
+                statusMesej.className = 'mb-4 p-4 rounded text-center text-sm font-semibold bg-red-100 text-red-800 border border-red-200 shadow-sm';
+                statusMesej.innerText = "⚠️ Ralat Rangkaian: Gagal berhubung dengan pelayan.";
+            });
+        }
+        
+        window.onload = ambilDataPending;
+    </script>
+</body>
+</html>

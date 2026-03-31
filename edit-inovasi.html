@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kemaskini Rekod Inovasi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // HALANG AKSES JIKA BELUM LOGIN
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Akses ditolak! Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-gray-100 p-6 font-sans">
+
+    <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md border border-gray-200">
+        
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <h1 class="text-2xl font-bold text-gray-800">✏️ Kemaskini Rekod Inovasi</h1>
+            <button onclick="kembali()" class="text-gray-500 hover:text-gray-800 font-semibold text-sm flex items-center gap-1 transition">
+                ⬅️ Kembali
+            </button>
+        </div>
+
+        <div id="loadingStatus" class="p-6 text-center text-blue-600 font-bold animate-pulse">
+            ⏳ Sedang memuatkan data rekod...
+        </div>
+
+        <form id="formEdit" class="hidden space-y-4" onsubmit="hantarKemaskini(event)">
+            
+            <div class="bg-gray-50 p-3 rounded-lg border">
+                <label class="block text-xs font-bold text-gray-500 uppercase">ID Rekod (BIL)</label>
+                <input type="text" id="bil" name="bil" readonly class="mt-1 block w-full bg-transparent font-bold text-gray-700 outline-none cursor-not-allowed">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700">Nama Innovator</label>
+                    <input type="text" id="innovator" name="innovator" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700">Jabatan</label>
+                    <input type="text" id="jabatan" name="jabatan" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Ahli Kumpulan</label>
+                <textarea id="ahli" name="ahli" rows="2" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                <p class="text-xs text-gray-500 mt-1">Pisahkan nama dengan koma (,)</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Produk Inovasi</label>
+                <input type="text" id="produk" name="produk" required class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700">Nama Pertandingan</label>
+                    <input type="text" id="pertandingan" name="pertandingan" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700">Tarikh & Tempat</label>
+                    <input type="text" id="tarikh_tempat" name="tarikh_tempat" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700">Pingat / Pencapaian</label>
+                    <select id="pingat" name="pingat" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        <option value="">Pilih Pingat...</option>
+                        <option value="Emas">🥇 Emas</option>
+                        <option value="Perak">🥈 Perak</option>
+                        <option value="Gangsa">🥉 Gangsa</option>
+                        <option value="Sijil">📜 Sijil Penyertaan</option>
+                        <option value="Lain-lain">Lain-lain</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700">Tahun</label>
+                    <input type="number" id="tahun" name="tahun" required min="2000" max="2100" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+
+            <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg mt-4 shadow-sm">
+                <label class="block text-sm font-bold text-gray-800 mb-2">Status Pengesahan Rekod</label>
+                <select id="status" name="status" class="block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white font-bold disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed">
+                    <option value="MENUNGGU PENGESAHAN">🟡 MENUNGGU PENGESAHAN</option>
+                    <option value="DISAHKAN">🟢 DISAHKAN</option>
+                    <option value="DITOLAK">🔴 DITOLAK</option>
+                </select>
+                <p id="notaStatus" class="text-xs text-red-500 mt-2 hidden">*Hanya pihak Pengurusan/Penyelaras dibenarkan mengubah status ini.</p>
+            </div>
+            <div class="pt-4 flex justify-end gap-3 border-t">
+                <button type="button" onclick="kembali()" class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition">Batal</button>
+                <button type="submit" id="btnSimpan" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-md transition flex items-center gap-2">
+                    💾 Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // ⚠️ JANGAN LUPA: TAMPAL URL WEB APP ANDA DI BAWAH INI
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+        // AMBIL PARAMETER ID DARI URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const rekodId = urlParams.get('id');
+
+        window.onload = async () => {
+            if (!rekodId) {
+                alert("Ralat: ID Rekod tidak dijumpai.");
+                kembali();
+                return;
+            }
+
+            document.getElementById('bil').value = rekodId;
+            
+            // 🌟 LOGIK PERANAN: Kunci dropdown status jika pengguna BUKAN admin/penyelaras
+            semakAksesStatus();
+
+            await tarikDataSemasa();
+        };
+
+        // 🌟 FUNGSI BARU: MENYEMAK SIAPA YANG LOG MASUK
+        function semakAksesStatus() {
+            // Nota: Pastikan key 'peranan' ini sama dengan cara anda simpan data masa login
+            const perananPengguna = sessionStorage.getItem("peranan") || ""; 
+            const perananDibenarkan = ["ADMIN", "KUPIK", "PENYELARAS INOVASI", "PENYELARAS PENYELIDIKAN"];
+            
+            // Jika peranan user sekarang TIDAK wujud dalam senarai di atas (cth: dia STAF)
+            if (!perananDibenarkan.includes(perananPengguna.toUpperCase())) {
+                document.getElementById('status').disabled = true;
+                document.getElementById('notaStatus').classList.remove('hidden');
+            }
+        }
+
+        async function tarikDataSemasa() {
+            try {
+                const fetchUrl = scriptURL.includes('?') ? `${scriptURL}&action=ambilData` : `${scriptURL}?action=ambilData`;
+                const response = await fetch(fetchUrl);
+                
+                if (!response.ok) throw new Error("Ralat rangkaian");
+                
+                const rawText = await response.text();
+                const result = JSON.parse(rawText);
+                
+                let dataDariSheet = [];
+                if (Array.isArray(result) && result.length > 0 && typeof result[0] === 'object' && !Array.isArray(result[0])) {
+                    dataDariSheet = result.map((r, i) => [
+                        r.BIL || (i+1), r.INNOVATOR || "", r.AHLI || "", r.JABATAN || "", 
+                        r.PRODUK || "", r.NAMAPERTANDINGAN || "", r.TARIKHTEMPATPERTANDINGAN || "", 
+                        r.PINGAT || "", r.TAHUN || "", r.STATUS || "MENUNGGU PENGESAHAN" // 🌟 Tambah parameter status
+                    ]);
+                } else if (Array.isArray(result) && Array.isArray(result[0])) {
+                    dataDariSheet = result;
+                } else if (result.status === "BERJAYA" || result.status === "berjaya") {
+                    dataDariSheet = result.data || [];
+                }
+
+                const rekodJumpa = dataDariSheet.find(row => String(row[0]) === String(rekodId));
+
+                if (rekodJumpa) {
+                    document.getElementById('innovator').value = rekodJumpa[1] || '';
+                    document.getElementById('ahli').value = rekodJumpa[2] || '';
+                    document.getElementById('jabatan').value = rekodJumpa[3] || '';
+                    document.getElementById('produk').value = rekodJumpa[4] || '';
+                    document.getElementById('pertandingan').value = rekodJumpa[5] || '';
+                    document.getElementById('tarikh_tempat').value = rekodJumpa[6] || '';
+                    document.getElementById('tahun').value = rekodJumpa[8] || '';
+
+                    let pingatValue = String(rekodJumpa[7] || '').trim();
+                    let pingatSelect = document.getElementById('pingat');
+                    let foundPingat = false;
+                    for (let i = 0; i < pingatSelect.options.length; i++) {
+                        if (pingatSelect.options[i].value.toLowerCase() === pingatValue.toLowerCase()) {
+                            pingatSelect.selectedIndex = i;
+                            foundPingat = true;
+                            break;
+                        }
+                    }
+                    if (!foundPingat && pingatValue) pingatSelect.value = "Lain-lain";
+
+                    // 🌟 SET NILAI STATUS DARI SHEET KE BORANG
+                    let statusValue = String(rekodJumpa[9] || 'MENUNGGU PENGESAHAN').trim().toUpperCase();
+                    let statusSelect = document.getElementById('status');
+                    let foundStatus = false;
+                    
+                    for (let i = 0; i < statusSelect.options.length; i++) {
+                        if (statusSelect.options[i].value === statusValue) {
+                            statusSelect.selectedIndex = i;
+                            foundStatus = true;
+                            break;
+                        }
+                    }
+                    if (!foundStatus) statusSelect.value = "MENUNGGU PENGESAHAN"; // Default Fallback
+
+                    document.getElementById('loadingStatus').classList.add('hidden');
+                    document.getElementById('formEdit').classList.remove('hidden');
+
+                } else {
+                    alert("Rekod tidak dijumpai dalam pangkalan data.");
+                    kembali();
+                }
+
+            } catch (error) {
+                console.error("Ralat memuatkan rekod:", error);
+                document.getElementById('loadingStatus').innerHTML = `❌ Ralat memuatkan data: ${error.message}`;
+                document.getElementById('loadingStatus').classList.replace('text-blue-600', 'text-red-600');
+            }
+        }
+
+        async function hantarKemaskini(event) {
+            event.preventDefault(); 
+            
+            const btnSimpan = document.getElementById('btnSimpan');
+            btnSimpan.disabled = true;
+            btnSimpan.innerHTML = "⏳ Menyimpan...";
+            btnSimpan.classList.add('opacity-70', 'cursor-not-allowed');
+
+            const formData = new FormData(document.getElementById('formEdit'));
+            formData.append("action", "kemaskiniData");
+
+            // Jika form status 'disabled', FormData tidak akan membawanya. 
+            // Namun, skrip kemaskiniData anda telah diprogramkan untuk mengekalkan status lama jika tiada nilai baru dihantar.
+            
+            try {
+                const response = await fetch(scriptURL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === "BERJAYA" || result.status === "berjaya" || result.result === "success") {
+                    alert("✅ Rekod berjaya dikemaskini!");
+                    kembali(); 
+                } else {
+                    throw new Error(result.mesej || "Sistem memulangkan ralat yang tidak diketahui.");
+                }
+
+            } catch (error) {
+                console.error("Ralat kemaskini:", error);
+                alert(`❌ Gagal mengemaskini rekod.\n\nDetail: ${error.message}`);
+                
+                btnSimpan.disabled = false;
+                btnSimpan.innerHTML = "💾 Simpan Perubahan";
+                btnSimpan.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+        }
+
+        function kembali() {
+            window.location.href = "dashboard.html"; 
+        }
+    </script>
+</body>
+</html>

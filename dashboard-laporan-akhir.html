@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Laporan Akhir</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        const userLulus = sessionStorage.getItem("userLulus");
+        if (userLulus !== "YA") {
+            alert("Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-rose-700 text-white shadow-md">
+        <div class="max-w-[95rem] mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl md:text-4xl">📊</span>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-wide">Dashboard Laporan Akhir</h1>
+                    <p class="text-rose-200 mt-1 text-xs md:text-sm">Pemantauan & Pengesahan Laporan Akhir R&D</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <a href="laporan-akhir.html" class="bg-amber-500 text-white px-4 py-2.5 rounded-lg font-bold shadow hover:bg-amber-600 transition text-sm flex items-center gap-2">
+                    ➕ Hantar Laporan Akhir
+                </a>
+                <a href="e-daftar.html" class="bg-white text-rose-800 hover:bg-rose-50 px-4 py-2.5 rounded-lg font-bold shadow transition text-sm flex items-center gap-2">
+                    &larr; E-Daftar
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[95rem] mx-auto px-4 py-8 flex-grow w-full">
+
+        <div id="statusMesejUI" class="hidden mb-6 p-4 rounded-xl text-center text-sm font-bold shadow-sm border"></div>
+
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm flex items-center gap-4">
+                <div class="text-3xl bg-orange-100 p-4 rounded-full">⏳</div>
+                <div>
+                    <p class="text-xs font-bold text-gray-500 uppercase">Menunggu Semakan</p>
+                    <h3 id="statMenunggu" class="text-3xl font-black text-orange-600">0</h3>
+                </div>
+            </div>
+            <div class="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm flex items-center gap-4">
+                <div class="text-3xl bg-emerald-100 p-4 rounded-full">✅</div>
+                <div>
+                    <p class="text-xs font-bold text-gray-500 uppercase">Selesai Disemak</p>
+                    <h3 id="statSelesai" class="text-3xl font-black text-emerald-600">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="bg-rose-50 p-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                <h2 class="text-md font-bold text-rose-800 flex items-center gap-2">📑 Senarai Laporan Akhir</h2>
+                
+                <div class="flex flex-wrap items-center gap-2">
+                    <select id="filterJabatan" onchange="renderJadual()" class="px-3 py-2 border border-rose-300 rounded-lg text-sm font-bold focus:ring-rose-500 outline-none text-gray-700">
+                        <option value="SEMUA">Semua Jabatan</option>
+                    </select>
+                    <button onclick="muatDataLaporan()" class="bg-rose-600 text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-rose-700 transition shadow-sm">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm whitespace-nowrap">
+                    <thead>
+                        <tr class="bg-rose-600 text-white uppercase tracking-wide text-xs">
+                            <th class="p-3 text-center">ID</th>
+                            <th class="p-3 text-center">TARIKH</th>
+                            <th class="p-3 text-center">JABATAN</th>
+                            <th class="p-3 min-w-[250px]">MAKLUMAT PROJEK</th>
+                            <th class="p-3 text-center">DOKUMEN</th>
+                            <th class="p-3 text-center">STATUS</th>
+                            <th id="thTindakan" class="p-3 text-center hidden">TINDAKAN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiJadualLaporan" class="text-gray-700 bg-white">
+                        <tr><td colspan="7" class="p-10 text-center font-bold text-rose-500 animate-pulse">⏳ Memuat turun senarai laporan akhir...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="modalStatus" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div class="bg-rose-600 p-4 text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg">✏️ Kemaskini Status</h3>
+                <button onclick="tutupModal()" class="text-white hover:text-rose-200 text-2xl font-bold leading-none">&times;</button>
+            </div>
+            <form onsubmit="hantarStatusBaru(event)" class="p-6">
+                <input type="hidden" id="edit_id">
+                <p class="text-xs text-gray-500 mb-4 text-center">Ubah status semakan bagi laporan <span id="papar_id" class="font-bold text-gray-800"></span></p>
+                
+                <select id="in_status" required class="w-full px-4 py-3 border-2 border-rose-300 rounded-xl focus:ring-2 focus:ring-rose-500 font-bold text-gray-700 outline-none mb-6">
+                    <option value="MENUNGGU SEMAKAN">MENUNGGU SEMAKAN</option>
+                    <option value="DISEMAK">✅ DISEMAK / SELESAI</option>
+                    <option value="PERLU PEMBAIKAN">⚠️ PERLU PEMBAIKAN</option>
+                </select>
+
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="tutupModal()" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition w-full">Batal</button>
+                    <button type="submit" id="btnSimpanStatus" class="px-5 py-2 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-700 transition shadow-md w-full">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+        const userJabatan = sessionStorage.getItem("jabatan") || "";
+        const userPeranan = (sessionStorage.getItem("peranan") || "").toUpperCase();
+        const isApprover = ["PENYELARAS INOVASI", "PENYELARAS PENYELIDIKAN", "KUPIK", "ADMIN"].includes(userPeranan);
+
+        let dataGlobal = [];
+
+        window.onload = () => {
+            if (isApprover) document.getElementById('thTindakan').classList.remove('hidden');
+            muatDropdownJabatan();
+            muatDataLaporan();
+        };
+
+        function muatDropdownJabatan() {
+            fetch(`${SCRIPT_URL}?action=ambilTetapanSenarai`)
+            .then(res => res.json()).then(data => {
+                if(data.status === "BERJAYA") {
+                    const sel = document.getElementById('filterJabatan');
+                    sel.innerHTML = '<option value="SEMUA">Semua Jabatan</option>';
+                    data.JABATAN.forEach(j => sel.innerHTML += `<option value="${j}">${j}</option>`);
+
+                    if (!isApprover) {
+                        sel.value = userJabatan;
+                        sel.disabled = true;
+                        sel.classList.add("bg-gray-200");
+                    }
+                }
+            });
+        }
+
+        function muatDataLaporan() {
+            const tbody = document.getElementById('isiJadualLaporan');
+            tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center font-bold text-rose-500 animate-pulse">⏳ Memuat turun...</td></tr>`;
+
+            fetch(`${SCRIPT_URL}?action=ambilLaporanAkhir`)
+            .then(res => res.json())
+            .then(result => {
+                if (result.status === "BERJAYA") {
+                    dataGlobal = result.data || [];
+                    renderJadual();
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-600 font-bold">❌ Mesej: ${result.mesej}</td></tr>`;
+                }
+            }).catch(err => {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-600 font-bold">⚠️ Ralat pelayan.</td></tr>`;
+            });
+        }
+
+        function renderJadual() {
+            const tbody = document.getElementById('isiJadualLaporan');
+            const fJabatan = document.getElementById('filterJabatan').value;
+
+            let cMenunggu = 0, cSelesai = 0;
+
+            let dataTapis = dataGlobal.filter(row => {
+                let matchJab = (fJabatan === "SEMUA" || row.jabatan === fJabatan);
+                return matchJab;
+            });
+
+            tbody.innerHTML = "";
+
+            if (dataTapis.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-gray-500 font-medium">Tiada rekod laporan dijumpai.</td></tr>`;
+                document.getElementById('statMenunggu').innerText = 0;
+                document.getElementById('statSelesai').innerText = 0;
+                return;
+            }
+
+            dataTapis.reverse().forEach((row) => {
+                let status = row.status.toUpperCase();
+                let badgeStatus = "";
+
+                if(status === "DISEMAK" || status === "SELESAI") {
+                    badgeStatus = `<span class="bg-green-100 text-green-800 border border-green-300 px-3 py-1 rounded-full text-[10px] font-bold">✅ DISEMAK</span>`;
+                    cSelesai++;
+                } else if(status.includes("PEMBAIKAN")) {
+                    badgeStatus = `<span class="bg-red-100 text-red-800 border border-red-300 px-3 py-1 rounded-full text-[10px] font-bold">⚠️ PEMBAIKAN</span>`;
+                    cMenunggu++;
+                } else {
+                    badgeStatus = `<span class="bg-orange-100 text-orange-800 border border-orange-300 px-3 py-1 rounded-full text-[10px] font-bold">⏳ MENUNGGU</span>`;
+                    cMenunggu++;
+                }
+
+                let linkDoc = (row.url !== "") 
+                    ? `<a href="${row.url}" target="_blank" class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1 rounded font-bold text-xs inline-flex items-center gap-1 shadow-sm">📂 Buka Pautan</a>`
+                    : `<span class="text-gray-400 text-xs italic">Tiada Pautan</span>`;
+
+                let actionBtn = "";
+                if(isApprover) {
+                    actionBtn = `<button onclick="bukaModalStatus('${row.id}', '${status}')" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow transition w-full">Ubah Status</button>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-rose-50 transition duration-150";
+                let tdContent = `
+                    <td class="p-3 text-center font-bold text-gray-500 text-xs">${row.id}</td>
+                    <td class="p-3 text-center font-semibold text-gray-700 text-xs">${row.tarikh}</td>
+                    <td class="p-3 text-center font-bold text-rose-800 text-xs">${row.jabatan}</td>
+                    <td class="p-3">
+                        <div class="font-bold text-gray-800 text-xs whitespace-normal uppercase">${row.tajuk}</div>
+                        <div class="text-[10px] text-gray-500 mt-1 flex gap-2">
+                            <span class="uppercase">👤 ${row.namaKetua}</span> | <span>📞 ${row.telefon}</span>
+                        </div>
+                    </td>
+                    <td class="p-3 text-center">${linkDoc}</td>
+                    <td class="p-3 text-center">${badgeStatus}</td>
+                `;
+
+                if(isApprover) tdContent += `<td class="p-3 text-center w-32">${actionBtn}</td>`;
+                tr.innerHTML = tdContent; tbody.appendChild(tr);
+            });
+
+            document.getElementById('statMenunggu').innerText = cMenunggu;
+            document.getElementById('statSelesai').innerText = cSelesai;
+        }
+
+        // KAWALAN MODAL
+        function bukaModalStatus(id, currStatus) {
+            document.getElementById('edit_id').value = id;
+            document.getElementById('papar_id').innerText = id;
+            document.getElementById('in_status').value = currStatus;
+            document.getElementById('modalStatus').classList.remove('hidden');
+        }
+
+        function tutupModal() { document.getElementById('modalStatus').classList.add('hidden'); }
+
+        function hantarStatusBaru(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSimpanStatus');
+            btn.disabled = true; btn.innerText = "⏳ Menyimpan...";
+
+            fetch(SCRIPT_URL, {
+                method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ 
+                    action: "kemaskiniStatusLaporanAkhir", 
+                    ID: document.getElementById('edit_id').value,
+                    STATUS: document.getElementById('in_status').value
+                })
+            }).then(res => res.json()).then(data => {
+                paparUI(data.status === "BERJAYA" ? "✅ " + data.mesej : "❌ " + data.mesej, data.status === "BERJAYA" ? "bg-green-100 text-green-800 border-green-300" : "bg-red-100 text-red-800 border-red-300");
+                if(data.status === "BERJAYA") { tutupModal(); muatDataLaporan(); }
+            }).finally(() => { btn.disabled = false; btn.innerText = "Simpan"; });
+        }
+
+        function paparUI(teks, warnaClass) {
+            const sm = document.getElementById('statusMesejUI');
+            sm.className = `mb-6 p-4 rounded-xl text-center text-sm font-bold shadow-md border ${warnaClass}`;
+            sm.innerText = teks; sm.classList.remove('hidden');
+            window.scrollTo(0, 0); setTimeout(() => sm.classList.add('hidden'), 5000);
+        }
+    </script>
+</body>
+</html>

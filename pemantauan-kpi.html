@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Pemantauan KPI C-RIE 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .input-focus:focus { border-color: #1e40af; ring: 2px; ring-color: #1e40af; }
+    </style>
+</head>
+<body class="p-4 md:p-10 bg-gray-100 min-h-screen">
+
+    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
+        <div class="bg-blue-900 text-white p-8 text-center shadow-md">
+            <h1 class="text-3xl font-extrabold tracking-tight">Dashboard Pemantauan KPI C-RIE</h1>
+            <p class="text-blue-200 mt-2 font-medium">Pusat Kecemerlangan Penyelidikan dan Inovasi (C-RIE) | Politeknik Ungku Omar</p>
+        </div>
+
+        <form id="kpiForm" class="p-6 md:p-10 space-y-10" onsubmit="hantarData(event)">
+
+            <div class="flex flex-col md:flex-row items-center justify-between bg-gray-50 p-6 rounded-xl border border-gray-200 gap-4">
+                <h2 class="text-xl font-bold text-gray-700">Tahun Penilaian KPI:</h2>
+                <input type="number" id="tahunKpi" class="w-full md:w-40 px-4 py-3 border-2 border-blue-200 rounded-lg font-bold text-center text-xl focus:border-blue-600 outline-none" value="2026" required>
+            </div>
+
+            <div class="bg-blue-50 rounded-xl p-6 border-l-8 border-blue-600 shadow-sm">
+                <h2 class="text-xl font-bold text-blue-900 mb-6 flex items-center gap-2">
+                    <span class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">1</span>
+                    KPI 18: PROJEK PENYELIDIKAN
+                </h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+                    <div class="col-span-2 md:col-span-4">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Jenis Platform</label>
+                        <select id="platformPenyelidikan" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-400 outline-none transition-all">
+                            <option value="">-- Sedang memuatkan data... --</option>
+                        </select>
+                    </div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase text-center">Q1</label><input type="number" id="penyQ1" class="w-full px-4 py-2 border rounded-lg text-center" value="0"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase text-center">Q2</label><input type="number" id="penyQ2" class="w-full px-4 py-2 border rounded-lg text-center" value="0"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase text-center">Q3</label><input type="number" id="penyQ3" class="w-full px-4 py-2 border rounded-lg text-center" value="0"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase text-center">Q4</label><input type="number" id="penyQ4" class="w-full px-4 py-2 border rounded-lg text-center" value="0"></div>
+                </div>
+            </div>
+
+            <div class="bg-green-50 rounded-xl p-6 border-l-8 border-green-600 shadow-sm">
+                <h2 class="text-xl font-bold text-green-900 mb-6 flex items-center gap-2">
+                    <span class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">2</span>
+                    KPI 18: PROJEK INOVASI
+                </h2>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Nama Produk Inovasi</label>
+                        <input type="text" id="namaProduk" class="w-full px-4 py-3 border border-gray-300 rounded-lg uppercase focus:ring-2 focus:ring-green-400 outline-none" placeholder="Masukkan nama produk...">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-gray-600 italic">Status Dokumentasi:</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="block text-xs font-bold text-gray-500">Harta Intelek</label>
+                                    <select id="statusIntelek" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-400 outline-none"><option value="Tiada">Tiada</option><option value="Ada">Ada</option></select>
+                                </div>
+                                <div><label class="block text-xs font-bold text-gray-500">Hak Milik</label>
+                                    <select id="statusHakMilik" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-400 outline-none"><option value="Tiada">Tiada</option><option value="Ada">Ada</option></select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-gray-600 italic">Status Pelaksanaan:</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="block text-xs font-bold text-gray-500">Aplikasi (Surat)</label>
+                                    <select id="statusAplikasi" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-400 outline-none"><option value="Tiada">Tiada</option><option value="Ada">Ada</option></select>
+                                </div>
+                                <div><label class="block text-xs font-bold text-gray-500">Keberkesanan</label>
+                                    <select id="statusKeberkesanan" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-400 outline-none"><option value="Tiada">Tiada</option><option value="Ada">Ada</option></select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-yellow-50 rounded-xl p-6 border-l-8 border-yellow-500 shadow-sm">
+                <h2 class="text-xl font-bold text-yellow-900 mb-2 flex items-center gap-2">
+                    <span class="bg-yellow-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">3</span>
+                    KPI MARTABAT BAHASA MELAYU
+                </h2>
+                
+                <div class="mb-6 p-4 bg-yellow-100 rounded-lg text-yellow-800 text-sm">
+                    <p class="font-bold">Peratus Pencapaian Pelan Tindakan Memartabatkan Bahasa Melayu Teras 3:</p>
+                    <p class="font-medium mt-1">Bilangan penerbitan buku / bahan ilmiah / buku umum / karya kreatif dalam bahasa melayu: (2)</p>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+                    <div class="col-span-2 md:col-span-4">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Jenis Penerbitan / Platform</label>
+                        <select id="jenisPenerbitan" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-yellow-400 outline-none transition-all">
+                            <option value="">-- Sedang memuatkan data... --</option>
+                        </select>
+                    </div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase text-center">Q1</label><input type="number" id="bmQ1" class="w-full px-4 py-2 border rounded-lg text-center" value="0"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase text-center">Q2</label><input type="number" id="bmQ2" class="w-full px-4 py-2 border rounded-lg text-center" value="0"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase text-center">Q3</label><input type="number" id="bmQ3" class="w-full px-4 py-2 border rounded-lg text-center" value="0"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase text-center">Q4</label><input type="number" id="bmQ4" class="w-full px-4 py-2 border rounded-lg text-center" value="0"></div>
+                </div>
+            </div>
+
+            <div class="bg-purple-50 rounded-xl p-6 border-l-8 border-purple-600 shadow-sm">
+                <h2 class="text-xl font-bold text-purple-900 mb-2 flex items-center gap-2">
+                    <span class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">4</span>
+                    KPI MARTABAT BAHASA MELAYU
+                </h2>
+
+                <div class="mb-6 p-4 bg-purple-100 rounded-lg text-purple-800 text-sm">
+                    <p class="font-bold">Bilangan Pencapaian Pelan Tindakan Memartabatkan Bahasa Melayu Teras 6:</p>
+                    <p class="font-medium mt-1">Bilangan Abstrak lanjutan / Ringkasan Eksekutif / Laporan Penyelidikan dalam Bahasa Melayu: (7)</p>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+                    <div class="col-span-2 md:col-span-4">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Jenis Platform</label>
+                        <select id="platformTambahan" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-400 outline-none transition-all">
+                            <option value="">-- Sedang memuatkan data... --</option>
+                        </select>
+                    </div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase text-center">Q1</label><input type="number" id="kpi4Q1" class="w-full px-4 py-2 border rounded-lg text-center" value="0"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase text-center">Q2</label><input type="number" id="kpi4Q2" class="w-full px-4 py-2 border rounded-lg text-center" value="0"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase text-center">Q3</label><input type="number" id="kpi4Q3" class="w-full px-4 py-2 border rounded-lg text-center" value="0"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase text-center">Q4</label><input type="number" id="kpi4Q4" class="w-full px-4 py-2 border rounded-lg text-center" value="0"></div>
+                </div>
+            </div>
+
+            <div id="statusMesej" class="hidden p-5 rounded-lg font-bold text-center border-2"></div>
+
+            <div class="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-gray-200 gap-4">
+                
+                <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                    <button type="button" 
+                            onclick="window.location.href='dashboard-prestasi.html'" 
+                            class="w-full md:w-auto px-8 py-3 bg-orange-600 hover:bg-orange-800 text-white font-bold rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center gap-2">
+                        📈 Dashboard Prestasi
+                    </button>
+                    
+                    <button type="button" 
+                            onclick="window.location.href='pengurusan-kpi.html'" 
+                            class="w-full md:w-auto px-8 py-3 bg-gray-600 hover:bg-gray-800 text-white font-bold rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center gap-2">
+                        ⚙️ Pengurusan Data KPI
+                    </button>
+                </div>
+
+                <button type="submit" id="btnSimpan" class="w-full md:w-auto px-10 py-4 bg-blue-700 hover:bg-blue-900 text-white font-black text-lg rounded-xl shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2">
+                    💾 SIMPAN MAKLUMAT KPI
+                </button>
+            </div>
+        </form>
+    </div>
+
+<script>
+    // =========================================================================
+    // WAJIB: GANTIKAN URL DI BAWAH DENGAN WEB APP URL ANDA (PENTING!)
+    // =========================================================================
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+    
+    // FUNGSI UMUM UNTUK POPULATE DROPDOWN
+    function setDropdownPilihan(senarai) {
+        var platformSelect = document.getElementById("platformPenyelidikan");
+        var penerbitanSelect = document.getElementById("jenisPenerbitan");
+        var platformTambahanSelect = document.getElementById("platformTambahan"); // Tambahan untuk Seksyen 4
+        
+        var options = '<option value="">-- Sila Pilih --</option>';
+        if (senarai && senarai.length > 0 && !String(senarai[0]).includes("RALAT")) {
+            senarai.forEach(function(item) {
+                options += '<option value="' + item + '">' + item + '</option>';
+            });
+        } else {
+            options = '<option value="">' + (senarai ? senarai[0] : "Tiada Data") + '</option>';
+        }
+        
+        platformSelect.innerHTML = options;
+        penerbitanSelect.innerHTML = options;
+        platformTambahanSelect.innerHTML = options; // Masukkan pilihan ke dropdown ke-4
+    }
+
+    // 1. SEMASA PAGE LOADING - TARIK DATA DARI GOOGLE SHEET
+    document.addEventListener("DOMContentLoaded", function() {
+        console.log("Memulakan proses tarik data sebenar dari Sheet...");
+        
+        fetch(WEB_APP_URL + "?action=dapatkanSenaraiPlatform")
+            .then(response => response.json())
+            .then(data => {
+                console.log("Data berjaya ditarik: ", data);
+                setDropdownPilihan(data);
+            })
+            .catch(error => {
+                console.error("Ralat Fetch:", error);
+                setDropdownPilihan(["Gagal sambung ke Google Sheet. Semak Web App URL."]);
+            });
+    });
+
+    // 2. FUNGSI UNTUK SIMPAN DATA KE GOOGLE SHEET
+    function hantarData(event) {
+        event.preventDefault();
+        const btn = document.getElementById('btnSimpan');
+        const statusBox = document.getElementById('statusMesej');
+        
+        btn.innerHTML = "⏳ Menyimpan...";
+        btn.disabled = true;
+
+        const dataForm = {
+            tahunKpi: document.getElementById('tahunKpi').value,
+            
+            // Seksyen 1
+            platformPenyelidikan: document.getElementById('platformPenyelidikan').value,
+            penyQ1: document.getElementById('penyQ1').value,
+            penyQ2: document.getElementById('penyQ2').value,
+            penyQ3: document.getElementById('penyQ3').value,
+            penyQ4: document.getElementById('penyQ4').value,
+            
+            // Seksyen 2
+            namaProduk: document.getElementById('namaProduk').value.toUpperCase(),
+            statusIntelek: document.getElementById('statusIntelek').value,
+            statusHakMilik: document.getElementById('statusHakMilik').value,
+            statusAplikasi: document.getElementById('statusAplikasi').value,
+            statusKeberkesanan: document.getElementById('statusKeberkesanan').value,
+            
+            // Seksyen 3
+            jenisPenerbitan: document.getElementById('jenisPenerbitan').value,
+            bmQ1: document.getElementById('bmQ1').value,
+            bmQ2: document.getElementById('bmQ2').value,
+            bmQ3: document.getElementById('bmQ3').value,
+            bmQ4: document.getElementById('bmQ4').value,
+
+            // Seksyen 4
+            platformTambahan: document.getElementById('platformTambahan').value,
+            kpi4Q1: document.getElementById('kpi4Q1').value,
+            kpi4Q2: document.getElementById('kpi4Q2').value,
+            kpi4Q3: document.getElementById('kpi4Q3').value,
+            kpi4Q4: document.getElementById('kpi4Q4').value
+        };
+
+        // Hantar data melalui POST request
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "simpanDataKPI", payload: dataForm })
+        })
+        .then(response => response.json())
+        .then(res => {
+            btn.innerHTML = "💾 SIMPAN MAKLUMAT KPI";
+            btn.disabled = false;
+            statusBox.classList.remove("hidden");
+            
+            if(res.status === "Berjaya") {
+                statusBox.className = "p-5 bg-green-100 text-green-800 rounded-lg border-2 border-green-500";
+                statusBox.innerHTML = "✅ " + res.mesej;
+                document.getElementById('kpiForm').reset();
+                document.getElementById('tahunKpi').value = "2026"; 
+            } else {
+                statusBox.className = "p-5 bg-red-100 text-red-800 rounded-lg border-2 border-red-500";
+                statusBox.innerHTML = "❌ Ralat: " + res.mesej;
+            }
+        })
+        .catch(error => {
+            btn.innerHTML = "💾 SIMPAN MAKLUMAT KPI";
+            btn.disabled = false;
+            statusBox.classList.remove("hidden");
+            statusBox.className = "p-5 bg-yellow-100 text-yellow-800 rounded-lg border-2 border-yellow-500";
+            statusBox.innerHTML = "⚠️ Data mungkin telah disimpan, tetapi Google mengenakan sekatan CORS untuk local file. Sila semak Google Sheet anda.";
+            console.error("CORS / Fetch Error:", error);
+        });
+    }
+</script>
+</body>
+</html>

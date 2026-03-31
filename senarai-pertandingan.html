@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Senarai Pertandingan Inovasi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script>
+        const userLulus = sessionStorage.getItem("userLulus");
+        if (userLulus !== "YA") {
+            alert("Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html";
+        }
+    </script>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800 min-h-screen flex flex-col">
+
+    <header class="bg-pink-700 text-white shadow-md">
+        <div class="max-w-[95rem] mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">🏆</span>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold tracking-wide">Senarai Pertandingan</h1>
+                    <p class="text-pink-200 mt-1 text-sm">Pangkalan Data & Hebahan Pertandingan Inovasi</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button id="btnTambahManual" onclick="bukaModalBorang()" class="hidden bg-white text-pink-700 px-4 py-2 rounded-lg font-bold shadow hover:bg-pink-50 transition text-sm items-center gap-2">
+                    ➕ Tambah Rekod Baru
+                </button>
+
+                <a href="utama.html" class="bg-gray-800 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-gray-900 transition text-sm ml-2 flex items-center">
+                    &larr; Utama
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[95rem] mx-auto px-4 py-8 flex-grow w-full">
+        
+        <div id="paparMesejUI" class="hidden mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm border text-white"></div>
+
+        <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="p-4 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center bg-gray-50 gap-3">
+                <h3 class="font-bold text-gray-600 text-sm uppercase">SENARAI PERTANDINGAN TERKINI</h3>
+                
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded border shadow-sm">
+                        <label for="filterTahun" class="text-xs font-bold text-gray-500 uppercase">Tahun:</label>
+                        <select id="filterTahun" onchange="applyFilter()" class="text-xs font-bold text-pink-700 bg-transparent outline-none cursor-pointer">
+                            <option value="SEMUA">Semua Tahun</option>
+                        </select>
+                    </div>
+
+                    <button onclick="muatTurunDataTerkini()" class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded font-bold hover:bg-emerald-200 shadow-sm transition flex items-center gap-1">
+                        ⬇️ Muat Turun
+                    </button>
+
+                    <button onclick="muatDataPertandingan()" class="text-xs bg-pink-100 text-pink-700 px-3 py-1.5 rounded font-bold hover:bg-pink-200 shadow-sm transition flex items-center gap-1">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-pink-50 text-pink-900 uppercase tracking-wide text-[11px] border-b-2 border-pink-200">
+                            <th class="p-3 text-center">ID</th>
+                            <th class="p-3 min-w-[250px]">NAMA PERTANDINGAN</th>
+                            <th class="p-3 text-center">TAHUN</th>
+                            <th class="p-3">TARIKH</th>
+                            <th class="p-3">TEMPAT</th>
+                            <th class="p-3 text-center">KAEDAH</th>
+                            <th class="p-3 text-center">PERINGKAT</th>
+                            <th class="p-3 text-center">PAUTAN (URL)</th>
+                            <th class="p-3 text-center">TINDAKAN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiJadual" class="text-gray-700 bg-white">
+                        <tr><td colspan="9" class="p-10 text-center font-bold text-pink-500 animate-pulse">⏳ Memuat turun data pertandingan...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="modalBorang" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-screen">
+            <div class="bg-pink-700 p-4 text-white flex justify-between items-center">
+                <h3 id="tajukModal" class="font-bold text-lg">📝 Pengurusan Rekod Pertandingan</h3>
+                <button onclick="tutupModal()" class="text-white hover:text-pink-200 text-2xl font-bold leading-none">&times;</button>
+            </div>
+            
+            <div id="tabNavigasi" class="flex border-b bg-gray-50">
+                <button id="btnTabManual" onclick="tukarTab('manual')" class="flex-1 py-3 text-sm font-bold border-b-2 border-pink-700 text-pink-700 transition">✍️ Isi Manual</button>
+                <button id="btnTabCSV" onclick="tukarTab('csv')" class="flex-1 py-3 text-sm font-bold text-gray-500 border-b-2 border-transparent hover:text-pink-600 transition">📥 Upload Pukal (CSV)</button>
+            </div>
+
+            <div id="kandunganManual" class="overflow-y-auto">
+                <form id="borangPertandingan" onsubmit="hantarBorang(event)" class="p-6">
+                    <input type="hidden" id="edit_id"> 
+
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Nama Pertandingan</label>
+                        <input type="text" id="in_nama" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 uppercase bg-gray-50">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Tahun</label>
+                            <input type="number" id="in_tahun" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 bg-gray-50">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Tarikh</label>
+                            <input type="text" id="in_tarikh" placeholder="Cth: 12 - 15 Ogos 2025" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 bg-gray-50">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Kaedah</label>
+                            <select id="in_kaedah" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 font-bold text-gray-700">
+                                <option value="BERSEMUKA">BERSEMUKA</option>
+                                <option value="ATAS TALIAN">ATAS TALIAN</option>
+                                <option value="HIBRID">HIBRID</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Tempat</label>
+                            <input type="text" id="in_tempat" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 uppercase bg-gray-50">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Peringkat</label>
+                            <select id="in_peringkat" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 font-bold text-gray-700">
+                                <option value="ANTARABANGSA">ANTARABANGSA</option>
+                                <option value="KEBANGSAAN">KEBANGSAAN</option>
+                                <option value="NEGERI">NEGERI</option>
+                                <option value="INSTITUSI">INSTITUSI</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-xs font-bold text-gray-700 mb-1 uppercase">Pautan URL (Laman Web / Syarat)</label>
+                        <input type="url" id="in_url" placeholder="https://..." class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 text-blue-600 bg-gray-50">
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-4 border-t">
+                        <button type="button" onclick="tutupModal()" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition">Batal</button>
+                        <button type="submit" id="btnSimpan" class="px-6 py-2 bg-pink-700 text-white rounded-lg font-bold hover:bg-pink-800 transition shadow-md">Simpan Rekod</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="kandunganCSV" class="hidden p-6 overflow-y-auto">
+                <div class="text-center mb-6">
+                    <p class="text-sm text-gray-600 mb-3">Untuk memuat naik rekod secara pukal, sila gunakan template rasmi CSV kami. Pastikan format <i>header</i> (tajuk lajur) tidak diubah.</p>
+                    <button onclick="muatTurunTemplate()" class="bg-emerald-600 text-white px-4 py-2 rounded font-bold shadow hover:bg-emerald-700 transition text-sm items-center gap-2 inline-flex">
+                        📄 Muat Turun Template CSV
+                    </button>
+                </div>
+
+                <div class="border-2 border-dashed border-pink-300 p-8 rounded-xl bg-pink-50 flex flex-col items-center">
+                    <input type="file" id="failCSVModal" accept=".csv" class="block w-full max-w-sm text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-bold file:bg-pink-700 file:text-white hover:file:bg-pink-800 cursor-pointer">
+                    <button id="btnProsesCSV" onclick="importCSV()" class="mt-6 w-full max-w-sm bg-orange-500 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-orange-600 transition">🚀 Mula Proses Upload CSV</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+        let dataGlobal = [];
+        let dataTapis = []; // Data yang sedang ditapis untuk jadual & muat turun
+        
+        const userPeranan = (sessionStorage.getItem("peranan") || "").toUpperCase();
+        const isApprover = ["PENYELARAS INOVASI", "ADMIN", "KUPIK"].includes(userPeranan);
+
+        window.onload = () => { 
+            if (isApprover) {
+                const btnTambah = document.getElementById('btnTambahManual');
+                if (btnTambah) { btnTambah.classList.remove('hidden'); btnTambah.classList.add('flex'); }
+            }
+            muatDataPertandingan(); 
+        };
+
+        // ================= PAPARAN & FILTER JADUAL =================
+        function muatDataPertandingan() {
+            const tbody = document.getElementById('isiJadual');
+            tbody.innerHTML = `<tr><td colspan="9" class="p-10 text-center font-bold text-pink-500 animate-pulse">⏳ Menyedut data pangkalan data...</td></tr>`;
+
+            fetch(`${SCRIPT_URL}?action=ambilPertandingan`)
+            .then(res => res.json())
+            .then(result => {
+                if (result.status === "BERJAYA") {
+                    dataGlobal = result.data || [];
+                    dataTapis = [...dataGlobal]; // Salin ke dataTapis
+                    kemaskiniDropdownTahun(); // Set dropdown
+                    renderJadual();
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-red-600 font-bold">❌ Mesej: ${result.mesej}</td></tr>`;
+                }
+            }).catch(err => {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-red-600 font-bold">⚠️ Ralat menyambung ke pelayan.</td></tr>`;
+            });
+        }
+
+        function kemaskiniDropdownTahun() {
+            const selectTahun = document.getElementById('filterTahun');
+            // Dapatkan tahun unik dari dataGlobal, abaikan yang tiada tahun
+            const unikTahun = [...new Set(dataGlobal.map(item => item.tahun).filter(t => t))];
+            unikTahun.sort((a, b) => b - a); // Susun tahun terkini di atas
+
+            let optionsHTML = `<option value="SEMUA">Semua Tahun</option>`;
+            unikTahun.forEach(tahun => {
+                optionsHTML += `<option value="${tahun}">${tahun}</option>`;
+            });
+            selectTahun.innerHTML = optionsHTML;
+        }
+
+        function applyFilter() {
+            const tahunDipilih = document.getElementById('filterTahun').value;
+            if (tahunDipilih === "SEMUA") {
+                dataTapis = [...dataGlobal];
+            } else {
+                dataTapis = dataGlobal.filter(row => String(row.tahun) === tahunDipilih);
+            }
+            renderJadual();
+        }
+
+        function renderJadual() {
+            const tbody = document.getElementById('isiJadual');
+            tbody.innerHTML = "";
+
+            if (dataTapis.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-10 text-center text-gray-500 font-medium">Tiada rekod pertandingan dijumpai untuk carian ini.</td></tr>`;
+                return;
+            }
+
+            dataTapis.forEach((row) => {
+                let badgeKaedah = row.kaedah === "BERSEMUKA" ? "bg-emerald-100 text-emerald-800" : (row.kaedah === "ATAS TALIAN" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800");
+                let badgePeringkat = "bg-orange-100 text-orange-800";
+                
+                let linkURL = (row.url !== "" && row.url !== "-") 
+                    ? `<a href="${row.url}" target="_blank" class="text-blue-600 hover:text-blue-800 underline text-[10px] font-bold">Buka Pautan</a>` 
+                    : `<span class="text-gray-400 text-[10px]">Tiada</span>`;
+
+                let btnEdit = `<button onclick="bukaModalEdit('${row.id}')" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded shadow text-xs font-bold w-full mb-1">Edit</button>`;
+                let btnPadam = `<button onclick="padamRekod('${row.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded shadow text-xs font-bold w-full">Padam</button>`;
+                
+                let aksiBtn = isApprover ? `<div class="flex flex-col">${btnEdit}${btnPadam}</div>` : `<span class="text-xs text-gray-400 font-semibold">-</span>`;
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-pink-50 transition duration-150 text-xs";
+                tr.innerHTML = `
+                    <td class="p-3 text-center font-bold text-gray-500">${row.id}</td>
+                    <td class="p-3 font-bold text-pink-900 uppercase whitespace-normal">${row.nama}</td>
+                    <td class="p-3 text-center font-bold">${row.tahun}</td>
+                    <td class="p-3 font-semibold">${row.tarikh}</td>
+                    <td class="p-3 uppercase text-gray-600">${row.tempat}</td>
+                    <td class="p-3 text-center"><span class="px-2 py-1 rounded text-[10px] font-bold ${badgeKaedah}">${row.kaedah}</span></td>
+                    <td class="p-3 text-center"><span class="px-2 py-1 rounded text-[10px] font-bold ${badgePeringkat}">${row.peringkat}</span></td>
+                    <td class="p-3 text-center">${linkURL}</td>
+                    <td class="p-3 text-center w-24">
+                        ${aksiBtn}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ================= MUAT TURUN DATA JADUAL =================
+        function muatTurunDataTerkini() {
+            if (dataTapis.length === 0) {
+                paparToast("❌ Tiada data untuk dimuat turun.", "red");
+                return;
+            }
+
+            // Map dataTapis kepada format header yang kemas
+            const dataDownload = dataTapis.map(row => ({
+                "ID": row.id,
+                "NAMA PERTANDINGAN": row.nama,
+                "TAHUN": row.tahun,
+                "TARIKH": row.tarikh,
+                "TEMPAT": row.tempat,
+                "KAEDAH": row.kaedah,
+                "PERINGKAT": row.peringkat,
+                "URL": row.url // <-- DITUKAR DARI "PAUTAN URL" KEPADA "URL"
+            }));
+
+            // Menggunakan PapaParse untuk unparse (generate CSV selamat)
+            const csv = Papa.unparse(dataDownload);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            
+            const tahunDipilih = document.getElementById('filterTahun').value;
+            const namaFail = `Senarai_Pertandingan_${tahunDipilih === 'SEMUA' ? 'Semua_Tahun' : tahunDipilih}.csv`;
+
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", namaFail);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // ================= PENGURUSAN BORANG & TAB MODAL =================
+        function tukarTab(jenis) {
+            const btnManual = document.getElementById('btnTabManual');
+            const btnCSV = document.getElementById('btnTabCSV');
+            const kManual = document.getElementById('kandunganManual');
+            const kCSV = document.getElementById('kandunganCSV');
+
+            if (jenis === 'manual') {
+                btnManual.className = "flex-1 py-3 text-sm font-bold border-b-2 border-pink-700 text-pink-700 transition";
+                btnCSV.className = "flex-1 py-3 text-sm font-bold text-gray-500 border-b-2 border-transparent hover:text-pink-600 transition";
+                kManual.classList.remove('hidden');
+                kCSV.classList.add('hidden');
+            } else {
+                btnCSV.className = "flex-1 py-3 text-sm font-bold border-b-2 border-pink-700 text-pink-700 transition";
+                btnManual.className = "flex-1 py-3 text-sm font-bold text-gray-500 border-b-2 border-transparent hover:text-pink-600 transition";
+                kCSV.classList.remove('hidden');
+                kManual.classList.add('hidden');
+            }
+        }
+
+        function bukaModalBorang() {
+            if (!isApprover) return; 
+            document.getElementById('borangPertandingan').reset();
+            document.getElementById('edit_id').value = ""; 
+            
+            document.getElementById('tabNavigasi').classList.remove('hidden');
+            tukarTab('manual'); 
+
+            document.getElementById('modalBorang').classList.remove('hidden');
+        }
+
+        function bukaModalEdit(id) {
+            if (!isApprover) return; 
+            const r = dataGlobal.find(item => item.id === id);
+            if(!r) return;
+
+            document.getElementById('edit_id').value = r.id;
+            
+            document.getElementById('tabNavigasi').classList.add('hidden');
+            tukarTab('manual'); 
+            
+            document.getElementById('in_nama').value = r.nama;
+            document.getElementById('in_tahun').value = r.tahun;
+            document.getElementById('in_tarikh').value = r.tarikh;
+            document.getElementById('in_tempat').value = r.tempat;
+            document.getElementById('in_kaedah').value = r.kaedah;
+            document.getElementById('in_peringkat').value = r.peringkat;
+            document.getElementById('in_url').value = r.url;
+            
+            document.getElementById('modalBorang').classList.remove('hidden');
+        }
+
+        function tutupModal() { 
+            document.getElementById('modalBorang').classList.add('hidden'); 
+            document.getElementById('failCSVModal').value = ""; 
+        }
+
+        function hantarBorang(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSimpan');
+            btn.disabled = true; btn.innerText = "⏳ Menyimpan...";
+
+            const payload = {
+                action: "simpanPertandingan",
+                ID: document.getElementById('edit_id').value,
+                NAMA: document.getElementById('in_nama').value,
+                TAHUN: document.getElementById('in_tahun').value,
+                TARIKH: document.getElementById('in_tarikh').value,
+                TEMPAT: document.getElementById('in_tempat').value,
+                KAEDAH: document.getElementById('in_kaedah').value,
+                PERINGKAT: document.getElementById('in_peringkat').value,
+                URL: document.getElementById('in_url').value
+            };
+
+            fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+            .then(res => res.json()).then(data => {
+                paparToast(data.status === "BERJAYA" ? `✅ ${data.mesej}` : `❌ ${data.mesej}`, data.status === "BERJAYA" ? "green" : "red");
+                if(data.status === "BERJAYA") { tutupModal(); muatDataPertandingan(); }
+            }).finally(() => { btn.disabled = false; btn.innerText = "Simpan Rekod"; });
+        }
+
+        function padamRekod(id) {
+            if (!isApprover) return; 
+            if(!confirm(`Pasti mahu memadam rekod pertandingan ${id}?`)) return;
+            fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "padamPertandingan", ID: id }) })
+            .then(res => res.json()).then(data => {
+                paparToast("✅ Rekod dipadam!", "green"); muatDataPertandingan();
+            });
+        }
+
+        // ================= PENGURUSAN UPLOAD CSV =================
+        function muatTurunTemplate() {
+            const headers = "NAMA PERTANDINGAN,TAHUN,TARIKH,TEMPAT,KAEDAH,PERINGKAT,URL\n";
+            const contohData = "Inovasi Hebat,2025,12 Ogos 2025,Kuala Lumpur,BERSEMUKA,KEBANGSAAN,https://contoh.com\n";
+            
+            const csvContent = "data:text/csv;charset=utf-8," + headers + contohData;
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Template_Pertandingan_Inovasi.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function importCSV() {
+            if (!isApprover) return; 
+            
+            const input = document.getElementById('failCSVModal');
+            const file = input.files[0];
+            const btn = document.getElementById('btnProsesCSV');
+
+            if (!file) {
+                paparToast("❌ Sila pilih fail CSV terlebih dahulu.", "red");
+                return;
+            }
+
+            paparToast("⏳ Sedang membaca fail CSV...", "blue");
+            btn.disabled = true; btn.innerText = "⏳ Memproses...";
+
+            Papa.parse(file, {
+                header: true, 
+                skipEmptyLines: true,
+                // 👇 TAMBAHAN KOD INI SANGAT PENTING 👇
+                transformHeader: function(h) {
+                    return h.trim(); // Buang sebarang space atau enter tersembunyi (\r) pada tajuk hujung (URL)
+                },
+                complete: function(results) {
+                    if(results.data.length === 0) { 
+                        paparToast("❌ Fail CSV kosong atau tidak sah.", "red"); 
+                        btn.disabled = false; btn.innerText = "🚀 Mula Proses Upload CSV";
+                        return; 
+                    }
+                    
+                    paparToast(`⏳ Memuat naik ${results.data.length} rekod ke server...`, "blue");
+                    
+                    fetch(SCRIPT_URL, { 
+                        method: 'POST', 
+                        body: JSON.stringify({ action: "importPertandinganCSV", dataCSV: results.data }) 
+                    })
+                    .then(res => res.json()).then(data => {
+                        paparToast(`✅ ${data.mesej}`, "green");
+                        tutupModal();
+                        muatDataPertandingan();
+                    }).catch(err => {
+                        paparToast("❌ Ralat import berlaku.", "red");
+                    }).finally(() => {
+                        btn.disabled = false; btn.innerText = "🚀 Mula Proses Upload CSV";
+                    });
+                }
+            });
+        }
+
+        // ================= SISTEM MESEJ / TOAST =================
+        function paparToast(teks, warna) {
+            const msgBox = document.getElementById('paparMesejUI');
+            msgBox.className = `mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-md text-white fixed top-5 right-5 z-[100] transition-opacity ` + 
+                               (warna === 'green' ? 'bg-emerald-500' : (warna === 'blue' ? 'bg-blue-500' : 'bg-red-500'));
+            msgBox.innerText = teks;
+            msgBox.classList.remove('hidden');
+            setTimeout(() => msgBox.classList.add('hidden'), 4000);
+        }
+    </script>
+</body>
+</html>

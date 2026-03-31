@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surat Lantikan Penyelidik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-teal-700 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-wide">✉️ Surat Lantikan Penyelidik</h1>
+                <p class="text-teal-200 mt-1 text-sm">Pusat Muat Turun Surat Lantikan Rasmi (Hanya Projek Disahkan)</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <a href="e-daftar.html" class="bg-white text-teal-800 px-5 py-2.5 rounded-full font-bold shadow hover:bg-teal-50 transition flex items-center gap-2 text-sm">
+                    &larr; Kembali ke e-Daftar
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+        
+        <div class="mb-8">
+            <h2 class="text-lg font-bold text-gray-700 mb-3 border-b-2 border-teal-500 inline-block pb-1">Statistik Projek Disahkan Mengikut Jabatan</h2>
+            <div id="paparStatistik" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mt-3">
+                <div class="text-center p-4 bg-white rounded-xl shadow-sm border border-gray-200 animate-pulse text-sm">Memuatkan data...</div>
+            </div>
+        </div>
+
+        <div id="statusMesejUI" class="hidden mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm"></div>
+
+        <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+            
+            <div class="bg-teal-50 p-5 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                <h2 class="text-lg font-bold text-teal-800 flex items-center gap-2">✅ Senarai Projek Yang Telah Disahkan</h2>
+                
+                <div class="flex items-center gap-3">
+                    <label class="text-sm font-bold text-gray-600">Tapisan Jabatan:</label>
+                    <select id="filterJabatan" onchange="terapkanTapisan()" class="px-3 py-1.5 border border-teal-300 rounded-lg text-sm focus:ring-teal-500 outline-none">
+                        <option value="">Semua Jabatan</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-teal-600 text-white uppercase tracking-wide text-xs">
+                            <th class="p-3 border-b text-center w-12">BIL</th>
+                            <th class="p-3 border-b w-1/4">TAJUK PROJEK</th>
+                            <th class="p-3 border-b">NAMA KETUA PROJEK</th>
+                            <th class="p-3 border-b text-center">JABATAN</th>
+                            <th class="p-3 border-b text-center">STATUS</th>
+                            <th class="p-3 border-b text-center">SURAT LANTIKAN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiJadual" class="text-gray-700 bg-white">
+                        <tr><td colspan="6" class="p-10 text-center font-bold text-teal-500 animate-pulse">⏳ Memuat turun senarai...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="modalUploadSurat" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="bg-teal-700 p-4 text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg">⬆️ Upload Surat Lantikan</h3>
+                <button onclick="tutupModalSurat()" class="text-white hover:text-teal-200 text-2xl font-bold leading-none">&times;</button>
+            </div>
+            
+            <form onsubmit="hantarSuratLantikan(event)" class="p-6 space-y-4">
+                <input type="hidden" id="upload_bil_surat">
+                <input type="hidden" id="tab_aktif" value="fail">
+                
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Tahun Lantikan <span class="text-red-500">*</span></label>
+                    <select id="pilih_tahun" required class="w-full px-4 py-2 border border-teal-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm font-bold text-gray-700 bg-teal-50">
+                        </select>
+                </div>
+
+                <div class="flex border-b mb-2 mt-2">
+                    <button type="button" id="btnTabFail" onclick="tukarTab('fail')" class="flex-1 py-2 text-sm font-bold border-b-2 border-teal-600 text-teal-700 transition">Upload Fail (PC)</button>
+                    <button type="button" id="btnTabUrl" onclick="tukarTab('url')" class="flex-1 py-2 text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition">Pautan (URL)</button>
+                </div>
+
+                <div id="kandunganFail" class="block space-y-2">
+                    <div class="bg-teal-50 border border-teal-200 p-3 rounded-lg text-xs text-teal-800 mb-2">
+                        Sila pilih fail <b>PDF</b> dari komputer anda. Sistem akan memuat naik terus ke Google Drive.
+                    </div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Pilih Fail (PDF) <span class="text-red-500">*</span></label>
+                    <input type="file" id="in_fail_surat" accept="application/pdf" class="w-full px-3 py-2 border border-teal-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-teal-500 outline-none">
+                </div>
+
+                <div id="kandunganUrl" class="hidden space-y-2">
+                    <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg text-xs text-blue-800 mb-2">
+                        Pilih fungsi ini jika fail surat sudah berada di dalam Google Drive / Cloud dan anda hanya ingin memautkan URL nya.
+                    </div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">URL Surat Lantikan <span class="text-red-500">*</span></label>
+                    <input type="url" id="in_url_surat" placeholder="https://drive.google.com/..." class="w-full px-4 py-2 border border-teal-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none text-sm text-blue-700">
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3 border-t mt-4">
+                    <button type="button" onclick="tutupModalSurat()" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition text-sm">Batal</button>
+                    <button type="submit" id="btnSimpanSurat" class="px-5 py-2 bg-teal-600 text-white rounded-lg font-bold hover:bg-teal-700 transition shadow text-sm">💾 Simpan Surat</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ MASUKKAN URL APP SCRIPT ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+        const userJabatan = sessionStorage.getItem("jabatan") || "";
+        const userPeranan = (sessionStorage.getItem("peranan") || "").toUpperCase();
+        
+        const isApprover = ["PENYELARAS INOVASI", "PENYELARAS PENYELIDIKAN", "KUPIK", "ADMIN"].includes(userPeranan);
+        let dataDisahkan = [];
+
+        window.onload = () => {
+            muatDropdownJabatan();
+            muatData();
+            janaTahunSemasa();
+        };
+
+        // --- FUNGSI TAB & TAHUN ---
+        function janaTahunSemasa() {
+            const selectTahun = document.getElementById("pilih_tahun");
+            const tahunIni = new Date().getFullYear();
+            
+            // Masukkan pilihan tahun (Tahun lepas, tahun semasa, dan tahun depan)
+            for(let i = tahunIni - 1; i <= tahunIni + 1; i++) {
+                let selected = (i === tahunIni) ? "selected" : "";
+                selectTahun.innerHTML += `<option value="${i}" ${selected}>${i}</option>`;
+            }
+        }
+
+        function tukarTab(tab) {
+            document.getElementById("tab_aktif").value = tab;
+            const btnFail = document.getElementById("btnTabFail");
+            const btnUrl = document.getElementById("btnTabUrl");
+            const divFail = document.getElementById("kandunganFail");
+            const divUrl = document.getElementById("kandunganUrl");
+
+            if(tab === "fail") {
+                divFail.classList.remove("hidden");
+                divUrl.classList.add("hidden");
+                
+                btnFail.classList.replace("border-transparent", "border-teal-600");
+                btnFail.classList.replace("text-gray-500", "text-teal-700");
+                btnUrl.classList.replace("border-teal-600", "border-transparent");
+                btnUrl.classList.replace("text-teal-700", "text-gray-500");
+            } else {
+                divUrl.classList.remove("hidden");
+                divFail.classList.add("hidden");
+
+                btnUrl.classList.replace("border-transparent", "border-teal-600");
+                btnUrl.classList.replace("text-gray-500", "text-teal-700");
+                btnFail.classList.replace("border-teal-600", "border-transparent");
+                btnFail.classList.replace("text-teal-700", "text-gray-500");
+            }
+        }
+
+        // MUAT TURUN SENARAI JABATAN
+        function muatDropdownJabatan() {
+            fetch(`${SCRIPT_URL}?action=ambilTetapanSenarai`)
+            .then(res => res.json())
+            .then(data => {
+                const fJabatan = document.getElementById('filterJabatan');
+                fJabatan.innerHTML = '<option value="">Semua Jabatan</option>';
+                if(data.status === "BERJAYA" && data.JABATAN) {
+                    data.JABATAN.forEach(jab => { fJabatan.innerHTML += `<option value="${jab}">${jab}</option>`; });
+                }
+
+                if (!isApprover && userPeranan !== "PENYELARAS JABATAN") {
+                    fJabatan.value = userJabatan;
+                    fJabatan.disabled = true;
+                    fJabatan.classList.add("bg-gray-200");
+                }
+            });
+        }
+
+        // AMBIL DATA DARI SERVER
+        function muatData() {
+            fetch(`${SCRIPT_URL}?action=ambilPendaftaranProjek`)
+            .then(res => res.json())
+            .then(result => {
+                if (result.status === "BERJAYA") {
+                    dataDisahkan = (result.data || []).filter(p => p.status.toUpperCase() === "DISAHKAN");
+                    janaStatistik(dataDisahkan);
+                    terapkanTapisan();
+                } else {
+                    document.getElementById('isiJadual').innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-600 font-bold">❌ Mesej: ${result.mesej}</td></tr>`;
+                }
+            })
+            .catch(err => {
+                document.getElementById('isiJadual').innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-600 font-bold">⚠️ Ralat menyambung ke pangkalan data.</td></tr>`;
+            });
+        }
+
+ 
+
+		function janaStatistik(data) {
+            const wadahStat = document.getElementById('paparStatistik');
+            
+            // 1. Ekstrak nama jabatan yang unik terus dari data (Lajur L)
+            // .toUpperCase() memastikan tiada isu huruf besar/kecil (cth: "JTMK" dan "jtmk" dikira sama)
+            const senaraiJabatan = [...new Set(data.map(p => p.jabatan.toUpperCase()))].filter(jab => jab !== "");
+            
+            let htmlStat = "";
+
+            // Jika tiada data
+            if (senaraiJabatan.length === 0) {
+                wadahStat.innerHTML = '<div class="col-span-full text-center p-4 text-gray-500 text-sm">Tiada statistik untuk dipaparkan.</div>';
+                return;
+            }
+
+            // 2. Susun ikut abjad dan jana kotak statistik
+            senaraiJabatan.sort().forEach(jab => {
+                const jumlah = data.filter(p => p.jabatan.toUpperCase() === jab).length;
+                htmlStat += `
+                    <div class="bg-white p-3 rounded-xl shadow-sm border border-teal-100 text-center flex flex-col justify-center transform transition hover:scale-105">
+                        <span class="text-xs font-bold text-gray-500 uppercase">${jab}</span>
+                        <span class="text-2xl font-extrabold text-teal-600">${jumlah}</span>
+                    </div>
+                `;
+            });
+            
+            wadahStat.innerHTML = htmlStat;
+        }
+
+
+
+
+
+        function terapkanTapisan() {
+            const valJab = document.getElementById('filterJabatan').value;
+            const tbody = document.getElementById('isiJadual');
+            tbody.innerHTML = "";
+
+            let dataTapis = dataDisahkan.filter(row => valJab === "" || row.jabatan === valJab);
+
+            if (dataTapis.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-gray-500 font-medium">Tiada projek disahkan dijumpai.</td></tr>`;
+                return;
+            }
+
+            dataTapis.forEach((row, index) => {
+                let tindakanSurat = "";
+                // Andaikan link surat disimpan di row.suratLantikan (Pastikan Apps Script menghantar atribut ini)
+                let linkSurat = row.suratLantikan || ""; 
+
+                if (linkSurat !== "") {
+                    tindakanSurat += `<a href="${linkSurat}" target="_blank" class="bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 px-3 py-1.5 rounded-lg shadow-sm font-bold text-xs flex items-center justify-center gap-1 transition mx-auto w-32 mb-1">📄 Download PDF</a>`;
+                } else {
+                    tindakanSurat += `<span class="text-[10px] text-orange-500 font-bold mb-1 block">⏳ Menunggu Upload</span>`;
+                }
+
+                if (isApprover) {
+                    tindakanSurat += `<button onclick="bukaModalSurat('${row.bil}', '${linkSurat}')" class="w-32 mx-auto bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 px-2 py-1 rounded font-bold text-[10px] transition shadow-sm flex justify-center items-center gap-1">⬆️ Upload Surat</button>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-teal-50 transition";
+                tr.innerHTML = `
+                    <td class="p-3 text-center font-bold text-gray-600">${index + 1}</td>
+                    <td class="p-3 font-bold text-teal-800 uppercase text-xs">${row.tajuk}</td>
+                    <td class="p-3 font-semibold text-gray-700 text-xs uppercase">👤 ${row.ketua}</td>
+                    <td class="p-3 text-center font-bold text-gray-600 text-xs uppercase">${row.jabatan}</td>
+                    <td class="p-3 text-center"><span class="bg-green-100 text-green-800 border border-green-300 px-2 py-1 rounded text-[10px] font-bold shadow-sm">✅ DISAHKAN</span></td>
+                    <td class="p-3 text-center">${tindakanSurat}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // KAWALAN MODAL
+        function bukaModalSurat(bil, urlSemasa) {
+            document.getElementById('upload_bil_surat').value = bil;
+            document.getElementById('in_url_surat').value = urlSemasa !== "undefined" ? urlSemasa : "";
+            
+            // Reset input file setiap kali modal dibuka
+            document.getElementById('in_fail_surat').value = ""; 
+            
+            document.getElementById('modalUploadSurat').classList.remove('hidden');
+        }
+
+        function tutupModalSurat() {
+            document.getElementById('modalUploadSurat').classList.add('hidden');
+        }
+
+        // PENGHANTARAN KE BACKEND
+        function hantarSuratLantikan(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSimpanSurat');
+            const tabAktif = document.getElementById('tab_aktif').value;
+            const bil = document.getElementById('upload_bil_surat').value;
+            const tahun = document.getElementById('pilih_tahun').value;
+
+            // Rangka Objek Data Utama
+            let payloadData = {
+                action: "simpanSuratLantikan", 
+                BIL: bil,
+                TAHUN: tahun,
+                JENIS_UPLOAD: tabAktif // Untuk bagitahu backend adakah fail base64 atau url biasa
+            };
+
+            btn.disabled = true; 
+            btn.innerText = "⏳ Menyimpan...";
+
+            // Jika pilih Tab URL
+            if(tabAktif === "url") {
+                const urlInput = document.getElementById('in_url_surat').value;
+                if(!urlInput) {
+                    alert("Sila isi pautan (URL) surat terlebih dahulu.");
+                    btn.disabled = false; btn.innerText = "💾 Simpan Surat";
+                    return;
+                }
+                payloadData.URL_SURAT = urlInput;
+                prosesHantarServer(payloadData, btn);
+            } 
+            // Jika pilih Tab Fail (Base64)
+            else {
+                const failInput = document.getElementById('in_fail_surat');
+                if(failInput.files.length === 0) {
+                    alert("Sila pilih fail PDF dari komputer anda terlebih dahulu.");
+                    btn.disabled = false; btn.innerText = "💾 Simpan Surat";
+                    return;
+                }
+                
+                const fail = failInput.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(e_read) {
+                    const base64Data = e_read.target.result.split(',')[1];
+                    payloadData.FAIL_SURAT = {
+                        dataBase64: base64Data,
+                        mimeType: fail.type,
+                        namaFail: fail.name
+                    };
+                    prosesHantarServer(payloadData, btn);
+                };
+                reader.readAsDataURL(fail);
+            }
+        }
+
+        // FUNGSI EXECUTE KE APPS SCRIPT
+        function prosesHantarServer(payload, btn) {
+            fetch(SCRIPT_URL, {
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "BERJAYA") { 
+                    paparUI("✅ " + data.mesej, 'bg-green-100 text-green-800 border-green-200'); 
+                    tutupModalSurat();
+                    muatData(); // Refresh jadual 
+                } 
+                else {
+                    paparUI("❌ Ralat: " + data.mesej, 'bg-red-100 text-red-800 border-red-200');
+                }
+            })
+            .catch(err => paparUI("⚠️ Gagal menghubungi server. Sila semak sambungan internet anda.", 'bg-red-100 text-red-800 border-red-200'))
+            .finally(() => { 
+                btn.disabled = false; 
+                btn.innerText = "💾 Simpan Surat"; 
+            });
+        }
+
+        function paparUI(teks, warnaClass) {
+            const sm = document.getElementById('statusMesejUI');
+            sm.className = `mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm border ${warnaClass}`;
+            sm.innerText = teks; sm.classList.remove('hidden');
+            window.scrollTo(0, 0); setTimeout(() => sm.classList.add('hidden'), 5000);
+        }
+    </script>
+</body>
+</html>

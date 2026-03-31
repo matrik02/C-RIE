@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Inovasi Politeknik (Secure)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Akses ditolak! Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-gray-100 p-6 font-sans">
+
+    <div class="max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">📊 Dashboard Data Inovasi</h1>
+                <p class="text-sm text-gray-500 mt-1">Selamat datang, <span id="namaPenggunaPaparan" class="font-bold text-blue-600">Pengguna</span></p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="tarikDataDARI_DB()" class="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 border border-blue-300 rounded shadow-sm text-sm font-semibold transition">
+                    🔄 Muat Semula Data
+                </button>
+
+                <a href="tambah-inovasi.html" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded shadow text-sm font-semibold transition">
+                    + Tambah Rekod
+                </a>
+                <button onclick="logKeluar()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded shadow text-sm font-semibold transition">
+                    Log Keluar
+                </button>
+            </div>
+        </div>
+
+        <div id="statusMesej" class="bg-blue-100 text-blue-800 p-4 rounded-lg mb-6 text-center font-semibold border border-blue-200 shadow-sm">
+            ⏳ Sedang menyambung ke pangkalan data selamat. Sila tunggu...
+        </div>
+
+        <div id="kandunganDashboard" style="display: none;">
+            
+            <div class="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex gap-4 w-full md:w-auto">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Tahun</label>
+                        <select id="filterTahun" class="mt-1 p-2 border rounded border-gray-300 w-full md:w-auto">
+                            <option value="Semua">Semua Tahun</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Jabatan</label>
+                        <select id="filterJabatan" class="mt-1 p-2 border rounded border-gray-300 w-full md:w-auto">
+                            <option value="Semua">Semua Jabatan</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 px-6 py-2 rounded-lg border border-blue-200 text-center w-full md:w-auto shadow-sm">
+                    <span class="block text-sm text-blue-700 font-semibold uppercase tracking-wide">Jumlah Rekod</span>
+                    <span id="jumlahRekodLabel" class="block text-3xl font-bold text-blue-900 leading-none mt-1">0</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white p-4 rounded-lg shadow flex flex-col items-center justify-center">
+                    <h2 class="text-xl font-semibold mb-4 text-center">Taburan Pingat</h2>
+                    <canvas id="pingatChart" class="max-h-64"></canvas>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow flex flex-col">
+                    <h2 class="text-xl font-semibold mb-4 text-center">Jumlah Inovasi Mengikut Jabatan</h2>
+                    <canvas id="jabatanChart" class="max-h-64"></canvas>
+                    
+                    <div id="ringkasanJabatan" class="mt-6 flex flex-wrap justify-center gap-2"></div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+                <div class="p-4 border-b">
+                    <h2 class="text-xl font-semibold text-center">Senarai Terperinci Inovasi</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full table-auto border-collapse border-b border-gray-300 text-sm" id="dataTable">
+                        <thead class="bg-gray-200" id="tableHead"></thead>
+                        <tbody class="divide-y divide-gray-200 bg-white" id="tableBody"></tbody>
+                    </table>
+                </div>
+                <div id="paginationControls" class="p-4 bg-gray-50 border-t border-gray-200"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const nama = sessionStorage.getItem("namaPengguna") || "Pengguna";
+        document.getElementById('namaPenggunaPaparan').innerText = nama;
+
+        function logKeluar() {
+            if(confirm("Adakah anda pasti mahu log keluar?")) {
+                sessionStorage.clear(); 
+                window.location.href = "login.html"; 
+            }
+        }
+
+        const apiUrl = 'https://script.google.com/macros/s/AKfycbz4J64Wx0guSdnH5b6bvywk82FbdWQ9TGaMa6-FF3a9YbVL9n5jWUXUuPD8kjLtP1ab/exec'; 
+        
+        let rawData = [];
+        let pingatChartInstance = null;
+        let jabatanChartInstance = null;
+
+        let currentFilteredData = []; 
+        let currentPage = 1;
+        const rowsPerPage = 10; 
+
+        const statusMesej = document.getElementById('statusMesej');
+        const kandunganDashboard = document.getElementById('kandunganDashboard');
+
+        // LOGIK MEMUAT TURUN & CACHE DATA
+        document.addEventListener("DOMContentLoaded", () => {
+            const dataDisimpan = sessionStorage.getItem("cacheInovasi");
+            
+            if (dataDisimpan) {
+                // Jika data sudah ada dalam memori, guna terus (SANGAT LAJU)
+                rawData = JSON.parse(dataDisimpan);
+                statusMesej.style.display = 'none';
+                kandunganDashboard.style.display = 'block';
+                populateFilters();
+                updateDashboard();
+            } else {
+                // Jika tiada, baru tarik dari Google Sheets
+                tarikDataDARI_DB();
+            }
+        });
+
+        // FUNGSI TARIK DATA DARI GOOGLE SHEETS
+        function tarikDataDARI_DB() {
+            statusMesej.style.display = 'block';
+            kandunganDashboard.style.display = 'none';
+            statusMesej.className = "bg-blue-100 text-blue-800 p-4 rounded-lg mb-6 text-center font-semibold border border-blue-200 shadow-sm";
+            statusMesej.innerText = "⏳ Sedang memuat turun data terkini. Sila tunggu sebentar...";
+
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        rawData = data;
+                        // Simpan data ke dalam Cache (sessionStorage)
+                        sessionStorage.setItem("cacheInovasi", JSON.stringify(data));
+                        
+                        statusMesej.style.display = 'none';
+                        kandunganDashboard.style.display = 'block';
+                        
+                        // Set semula filter ke asal
+                        document.getElementById('filterTahun').innerHTML = '<option value="Semua">Semua Tahun</option>';
+                        document.getElementById('filterJabatan').innerHTML = '<option value="Semua">Semua Jabatan</option>';
+                        
+                        populateFilters();
+                        updateDashboard();
+                    } else {
+                        throw new Error("Data kosong.");
+                    }
+                })
+                .catch(error => {
+                    statusMesej.className = "bg-red-100 text-red-800 p-4 rounded-lg mb-6 text-center font-semibold border border-red-200";
+                    statusMesej.innerText = "⚠️ Gagal membaca data. Sila pastikan URL Web App adalah betul.";
+                });
+        }
+
+        function populateFilters() {
+            const tahunSet = new Set();
+            const jabatanSet = new Set();
+
+            rawData.forEach(row => {
+                if(row.TAHUN) tahunSet.add(String(row.TAHUN).trim());
+                if(row.JABATAN) jabatanSet.add(String(row.JABATAN).trim());
+            });
+
+            const filterTahun = document.getElementById('filterTahun');
+            const filterJabatan = document.getElementById('filterJabatan');
+
+            Array.from(tahunSet).sort().forEach(tahun => filterTahun.add(new Option(tahun, tahun)));
+            Array.from(jabatanSet).sort().forEach(jabatan => filterJabatan.add(new Option(jabatan, jabatan)));
+
+            filterTahun.addEventListener('change', updateDashboard);
+            filterJabatan.addEventListener('change', updateDashboard);
+        }
+
+        function updateDashboard() {
+            const selectedTahun = document.getElementById('filterTahun').value;
+            const selectedJabatan = document.getElementById('filterJabatan').value;
+
+            currentFilteredData = rawData.filter(row => {
+                const matchTahun = selectedTahun === 'Semua' || (row.TAHUN && String(row.TAHUN).trim() === selectedTahun);
+                const matchJabatan = selectedJabatan === 'Semua' || (row.JABATAN && String(row.JABATAN).trim() === selectedJabatan);
+                return matchTahun && matchJabatan;
+            });
+
+            document.getElementById('jumlahRekodLabel').innerText = currentFilteredData.length;
+            currentPage = 1; 
+
+            drawPingatChart(currentFilteredData);
+            drawJabatanChart(currentFilteredData);
+            drawTable(); 
+        }
+
+        function drawTable() {
+            const thead = document.getElementById('tableHead');
+            const tbody = document.getElementById('tableBody');
+            const paginationControls = document.getElementById('paginationControls');
+            
+            thead.innerHTML = ''; 
+            tbody.innerHTML = '';
+            paginationControls.innerHTML = '';
+
+            if (currentFilteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-gray-500">Tiada rekod dijumpai.</td></tr>';
+                return;
+            }
+
+            const semuaHeaders = Object.keys(currentFilteredData[0]);
+            const headers = semuaHeaders.filter(h => h.toUpperCase() !== 'BIL'); 
+
+            const trHead = document.createElement('tr');
+            headers.forEach(headerText => {
+                const th = document.createElement('th');
+                th.className = "px-4 py-3 border-r text-left font-bold text-gray-700 uppercase tracking-wider";
+                th.innerText = headerText;
+                trHead.appendChild(th);
+            });
+            thead.appendChild(trHead);
+
+            const totalItems = currentFilteredData.length;
+            const totalPages = Math.ceil(totalItems / rowsPerPage);
+            
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const paginatedData = currentFilteredData.slice(startIndex, endIndex);
+
+            paginatedData.forEach(row => {
+                const trData = document.createElement('tr');
+                trData.className = "hover:bg-gray-100 transition duration-150";
+                headers.forEach(headerText => {
+                    const td = document.createElement('td');
+                    td.className = "px-4 py-2 border-r border-t text-gray-700 align-top";
+                    td.innerText = row[headerText] !== undefined ? row[headerText] : '';
+                    trData.appendChild(td);
+                });
+                tbody.appendChild(trData);
+            });
+
+            if (totalPages > 1) {
+                let prevButtonClass = currentPage === 1 
+                    ? "px-4 py-2 bg-gray-300 text-gray-500 rounded cursor-not-allowed" 
+                    : "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition";
+                
+                let nextButtonClass = currentPage === totalPages 
+                    ? "px-4 py-2 bg-gray-300 text-gray-500 rounded cursor-not-allowed" 
+                    : "px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition";
+
+                paginationControls.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between items-center">
+                        <span class="text-sm text-gray-600 mb-4 sm:mb-0">
+                            Memaparkan ${startIndex + 1} hingga ${Math.min(endIndex, totalItems)} daripada ${totalItems} rekod
+                        </span>
+                        <div class="flex space-x-2">
+                            <button onclick="tukarHalaman(-1)" class="${prevButtonClass}" ${currentPage === 1 ? 'disabled' : ''}>
+                                &laquo; Sebelumnya
+                            </button>
+                            <span class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border rounded">
+                                Halaman ${currentPage} / ${totalPages}
+                            </span>
+                            <button onclick="tukarHalaman(1)" class="${nextButtonClass}" ${currentPage === totalPages ? 'disabled' : ''}>
+                                Seterusnya &raquo;
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                paginationControls.innerHTML = `
+                    <div class="text-sm text-gray-600 text-center">
+                        Memaparkan kesemua ${totalItems} rekod.
+                    </div>
+                `;
+            }
+        }
+
+        function tukarHalaman(arah) {
+            currentPage += arah;
+            drawTable(); 
+        }
+
+        function drawPingatChart(data) {
+            const pingatCounts = {};
+            data.forEach(row => {
+                const pingat = row.PINGAT ? String(row.PINGAT).trim().toUpperCase() : '';
+                if (pingat) pingatCounts[pingat] = (pingatCounts[pingat] || 0) + 1;
+            });
+
+            const labels = Object.keys(pingatCounts);
+            const values = Object.values(pingatCounts);
+            const bgColors = labels.map(label => {
+                if(label === 'EMAS') return '#FFD700';
+                if(label === 'PERAK') return '#C0C0C0';
+                if(label === 'GANGSA') return '#CD7F32';
+                return '#4BC0C0';
+            });
+
+            const ctx = document.getElementById('pingatChart').getContext('2d');
+            if(pingatChartInstance) pingatChartInstance.destroy();
+
+            pingatChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: { labels: labels, datasets: [{ data: values, backgroundColor: bgColors }] },
+                options: { maintainAspectRatio: false }
+            });
+        }
+
+        function drawJabatanChart(data) {
+            const jabatanCounts = {};
+
+            data.forEach(row => {
+                const jabatan = row.JABATAN ? String(row.JABATAN).trim() : 'Tiada Maklumat';
+                if(jabatan) {
+                    jabatanCounts[jabatan] = (jabatanCounts[jabatan] || 0) + 1;
+                }
+            });
+
+            const labels = Object.keys(jabatanCounts);
+            const values = Object.values(jabatanCounts);
+
+            const senaraiWarna = [
+                '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', 
+                '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e'
+            ];
+            const warnaBar = labels.map((label, index) => senaraiWarna[index % senaraiWarna.length]);
+
+            const ctx = document.getElementById('jabatanChart').getContext('2d');
+            if(jabatanChartInstance) jabatanChartInstance.destroy();
+
+            jabatanChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{ 
+                        label: 'Jumlah Inovasi', 
+                        data: values, 
+                        backgroundColor: warnaBar,
+                        borderRadius: 4 
+                    }]
+                },
+                options: { 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } 
+                }
+            });
+
+            const ringkasanDiv = document.getElementById('ringkasanJabatan');
+            ringkasanDiv.innerHTML = ''; 
+
+            for (const [jabatan, jumlah] of Object.entries(jabatanCounts)) {
+                ringkasanDiv.innerHTML += `
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                        ${jabatan}: <span class="ml-1 font-bold">${jumlah}</span>
+                    </span>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendaftaran & Pengurusan Pengguna</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col relative">
+
+    <header class="bg-indigo-800 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-wide">👨‍🏫 Pengurusan Pengguna</h1>
+                <p class="text-indigo-200 mt-1 text-sm">Pendaftaran, Pengesahan & Kemaskini Profil</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex gap-3">
+                <a href="utama.html" class="bg-white text-indigo-800 px-5 py-2.5 rounded-full font-bold shadow hover:bg-indigo-50 transition flex items-center gap-2 text-sm">
+                    &larr; Laman Utama
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[90rem] mx-auto px-4 py-8 flex-grow w-full grid grid-cols-1 lg:grid-cols-4 gap-8">
+        
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden sticky top-8">
+                <div class="bg-indigo-50 p-5 border-b border-gray-200">
+                    <h2 class="text-lg font-bold text-indigo-800 flex items-center gap-2">📝 Daftar Pengguna</h2>
+                </div>
+                <div class="p-6">
+                    <div id="mesejBorang" class="hidden mb-4 p-3 rounded-xl text-center text-sm font-bold border"></div>
+                    
+                    <form id="borangDaftar" onsubmit="hantarPendaftaran(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Nama Penuh</label>
+                            <input type="text" id="nama" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none uppercase" placeholder="NAMA PENUH">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">No. Kad Pengenalan</label>
+                            <input type="text" id="noIC" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Contoh: 801231081234">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Kata Laluan</label>
+                            <input type="password" id="katalaluan" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Sahkan Kata Laluan</label>
+                            <input type="password" id="katalaluan_sah" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Jabatan</label>
+                            <select id="jabatan" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none uppercase">
+                                <option value="">⏳ Memuat turun...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Bahagian / Unit (Pilihan)</label>
+                            <select id="bahagian" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none uppercase">
+                                <option value="">⏳ Memuat turun...</option>
+                            </select>
+                        </div>
+                        
+                        <input type="hidden" id="peranan" value="PENYELARAS JABATAN">
+                        <button type="submit" id="btnHantar" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-md transition mt-4">
+                            Hantar Pendaftaran
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-3">
+            <div id="mesejDashboard" class="hidden mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm border"></div>
+
+            <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+                <div class="bg-indigo-50 p-5 border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <h2 class="text-lg font-bold text-indigo-800 flex items-center gap-2">📊 Senarai Penuh Pengguna Sistem</h2>
+                    
+                    <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                        <select id="filterJabatan" onchange="terapkanTapisan()" class="px-3 py-1.5 border border-indigo-300 rounded-lg text-sm font-bold focus:ring-indigo-500 outline-none text-gray-700 w-full md:w-auto">
+                            <option value="">Semua Jabatan</option>
+                        </select>
+                        <button onclick="muatTurunCSV()" class="bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-emerald-700 transition shadow-sm flex-1 md:flex-none">
+                            📥 CSV
+                        </button>
+                        <button onclick="muatSenaraiPenyelaras()" class="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-indigo-700 transition shadow-sm flex-1 md:flex-none">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-indigo-600 text-white uppercase tracking-wide text-xs">
+                                <th class="p-3 border-b text-center w-12">BIL</th>
+                                <th class="p-3 border-b w-1/4">NAMA</th>
+                                <th class="p-3 border-b text-center">JABATAN</th>
+                                <th class="p-3 border-b text-center">PERANAN</th>
+                                <th class="p-3 border-b text-center">BAHAGIAN</th>
+                                <th class="p-3 border-b text-center">STATUS</th>
+                                <th id="thTindakan" class="p-3 border-b text-center hidden w-28">TINDAKAN</th>
+                            </tr>
+                        </thead>
+                        <tbody id="isiJadual" class="text-gray-700 bg-white">
+                            <tr><td colspan="7" class="p-10 text-center font-bold text-indigo-500 animate-pulse">⏳ Memuat turun senarai...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="modalKemaskini" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center backdrop-blur-sm transition-opacity p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+            <div class="bg-amber-500 p-4 text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg flex items-center gap-2">✏️ Kemaskini Profil</h3>
+                <button onclick="tutupModal()" class="text-white hover:text-amber-200 text-2xl font-bold leading-none">&times;</button>
+            </div>
+            
+            <form id="formKemaskini" onsubmit="simpanKemaskini(event)" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                <input type="hidden" id="editIC_Lama"> 
+                <input type="hidden" id="editStatus">
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Nama Pengguna <span class="text-red-500">*</span></label>
+                    <input type="text" id="editNama" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none uppercase">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">No. Kad Pengenalan (IC) <span class="text-red-500">*</span></label>
+                    <input type="text" id="editIC_Baru" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Jabatan</label>
+                    <select id="editJabatan" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none uppercase bg-amber-50">
+                        <option value="">⏳ Memuat turun...</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Bahagian / Unit</label>
+                    <select id="editBahagian" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none uppercase bg-amber-50">
+                        <option value="">⏳ Memuat turun...</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Peranan Sistem</label>
+                    <select id="editPeranan" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none uppercase bg-amber-50">
+                        <option value="">⏳ Memuat turun...</option>
+                    </select>
+                </div>
+
+                <div class="pt-5 flex justify-end gap-3 border-t mt-6">
+                    <button type="button" onclick="tutupModal()" class="px-5 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition">Batal</button>
+                    <button type="submit" id="btnSimpanKemaskini" class="px-5 py-2.5 bg-amber-500 text-white rounded-lg font-bold hover:bg-amber-600 transition shadow-md">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ MASUKKAN URL WEB APP ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+        const userPeranan = (sessionStorage.getItem("peranan") || "").toUpperCase();
+        const rawIC = sessionStorage.getItem("ic") || sessionStorage.getItem("noIC") || sessionStorage.getItem("NO_IC") || sessionStorage.getItem("no_ic") || ""; 
+        const userICSemasa = String(rawIC).trim();
+
+        const isApprover = ["PENYELARAS INOVASI", "PENYELARAS PENYELIDIKAN", "KUPIK", "ADMIN"].includes(userPeranan);
+
+        let dataPenggunaGlobal = []; 
+
+        window.onload = () => {
+            if (isApprover) { document.getElementById('thTindakan').classList.remove('hidden'); }
+            muatTetapanDropdown(); 
+            muatSenaraiPenyelaras();
+        };
+
+        function muatTetapanDropdown() {
+            fetch(`${SCRIPT_URL}?action=ambilTetapanSenarai`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "BERJAYA") {
+                    let htmlJabatan = '<option value="">-- Pilih Jabatan --</option>';
+                    data.JABATAN.forEach(j => htmlJabatan += `<option value="${j}">${j}</option>`);
+                    document.getElementById('jabatan').innerHTML = htmlJabatan;
+                    document.getElementById('editJabatan').innerHTML = htmlJabatan;
+                    
+                    let htmlFilterJab = '<option value="">Semua Jabatan</option>';
+                    data.JABATAN.forEach(j => htmlFilterJab += `<option value="${j}">${j}</option>`);
+                    document.getElementById('filterJabatan').innerHTML = htmlFilterJab;
+
+                    let htmlBahagian = '<option value="">-- Pilih Bahagian (Pilihan) --</option>';
+                    data.BAHAGIAN.forEach(b => htmlBahagian += `<option value="${b}">${b}</option>`);
+                    document.getElementById('bahagian').innerHTML = htmlBahagian;
+                    document.getElementById('editBahagian').innerHTML = htmlBahagian;
+
+                    let htmlPeranan = '<option value="">-- Pilih Peranan --</option>';
+                    data.PERANAN.forEach(p => htmlPeranan += `<option value="${p}">${p}</option>`);
+                    document.getElementById('editPeranan').innerHTML = htmlPeranan;
+                }
+            })
+            .catch(err => console.log("Gagal memuat turun tetapan dropdown."));
+        }
+
+        function hantarPendaftaran(e) {
+            e.preventDefault();
+            
+            const pass1 = document.getElementById('katalaluan').value;
+            const pass2 = document.getElementById('katalaluan_sah').value;
+            if (pass1 !== pass2) {
+                alert("❌ Kata laluan tidak sepadan! Sila pastikan pengesahan kata laluan adalah tepat.");
+                document.getElementById('katalaluan_sah').focus();
+                return;
+            }
+
+            const btn = document.getElementById('btnHantar');
+            const mesej = document.getElementById('mesejBorang');
+            btn.disabled = true; btn.innerHTML = '⏳ Menghantar...'; mesej.classList.add('hidden');
+
+            const payload = {
+                action: "tambahPengguna",
+                NAMA: document.getElementById('nama').value.toUpperCase(),
+                NO_IC: document.getElementById('noIC').value, 
+                KATA_LALUAN: pass1,
+                JABATAN: document.getElementById('jabatan').value.toUpperCase(),
+                BAHAGIAN: document.getElementById('bahagian').value.toUpperCase(), 
+                PERANAN: document.getElementById('peranan').value,
+                STATUS: "MENUNGGU PENGESAHAN" 
+            };
+
+            fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload) 
+            })
+            .then(res => res.json()).then(data => {
+                if (data.status === "BERJAYA") {
+                    mesej.className = 'mb-4 p-3 rounded-xl text-center text-sm font-bold bg-green-100 text-green-800 border-green-200';
+                    mesej.innerText = "✅ Pendaftaran berjaya! Sila tunggu pengesahan.";
+                    document.getElementById('borangDaftar').reset();
+                    muatSenaraiPenyelaras(); 
+                } else {
+                    mesej.className = 'mb-4 p-3 rounded-xl text-center text-sm font-bold bg-red-100 text-red-800 border-red-200';
+                    mesej.innerText = "❌ Ralat: " + data.mesej;
+                }
+                mesej.classList.remove('hidden');
+            }).catch(err => {
+                mesej.className = 'mb-4 p-3 rounded-xl text-center text-sm font-bold bg-red-100 text-red-800 border-red-200';
+                mesej.innerText = "⚠️ Gagal menghubungi pangkalan data.";
+                mesej.classList.remove('hidden');
+            }).finally(() => { btn.disabled = false; btn.innerHTML = 'Hantar Pendaftaran'; });
+        }
+
+        function muatSenaraiPenyelaras() {
+            const tbody = document.getElementById('isiJadual');
+            tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center font-bold text-indigo-500 animate-pulse">⏳ Memuat turun...</td></tr>`;
+
+            fetch(`${SCRIPT_URL}?action=ambilPengguna`)
+            .then(res => res.json()).then(result => {
+                if (result.status === "BERJAYA") { 
+                    dataPenggunaGlobal = result.data || [];
+                    terapkanTapisan(); 
+                } 
+                else { tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-600 font-bold">❌ Mesej: ${result.mesej}</td></tr>`; }
+            }).catch(err => { tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-600 font-bold">⚠️ Ralat menyambung ke pangkalan data.</td></tr>`; });
+        }
+
+        function terapkanTapisan() {
+            const valJab = document.getElementById('filterJabatan').value;
+            let filteredData = dataPenggunaGlobal;
+            
+            if(valJab !== "") {
+                filteredData = dataPenggunaGlobal.filter(row => row.jabatan === valJab);
+            }
+            paparJadual(filteredData);
+        }
+
+        function paparJadual(data) {
+            const tbody = document.getElementById('isiJadual');
+            tbody.innerHTML = "";
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-gray-500 font-medium">Tiada pengguna dijumpai.</td></tr>`;
+                return;
+            }
+
+            data.reverse().forEach((row, index) => {
+                const statusCaps = (row.status || "MENUNGGU").toUpperCase();
+                let badgeStatus = `<span class="bg-orange-100 text-orange-800 border border-orange-300 px-2 py-1 rounded text-[11px] font-bold whitespace-nowrap">⏳ ${statusCaps}</span>`;
+                
+                if (statusCaps === "SAH" || statusCaps === "DISAHKAN" || statusCaps === "AKTIF") {
+                    badgeStatus = `<span class="bg-green-100 text-green-800 border border-green-300 px-2 py-1 rounded text-[11px] font-bold whitespace-nowrap">✅ AKTIF</span>`;
+                }
+
+                let strBahagian = row.bahagian || "-";
+                let safeBahagian = strBahagian.replace(/'/g, "\\'");
+                let safeNama = (row.nama || "").replace(/'/g, "\\'");
+                let barisIC = String(row.ic).trim(); 
+                
+                // Menganalisa Peranan baris ini
+                let roleBaris = String(row.peranan || "").toUpperCase().trim();
+
+                let btnTindakan = `<span class="text-gray-300">-</span>`;
+                if (isApprover) {
+                    let btnSahkan = "";
+                    if (statusCaps !== "SAH" && statusCaps !== "AKTIF" && statusCaps !== "DISAHKAN") {
+                        btnSahkan = `<button onclick="sahkanPengguna('${barisIC}', '${safeNama}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded font-bold shadow-sm transition text-xs w-full mb-1">Sahkan</button>`;
+                    }
+                    let btnEdit = `<button onclick="bukaModalKemaskini('${barisIC}', '${safeNama}', '${row.jabatan}', '${safeBahagian}', '${row.peranan}', '${row.status}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded font-bold shadow-sm transition text-xs w-full flex items-center justify-center gap-1 mb-1">✏️ Edit</button>`;
+                    
+                    // 🌟 KUNCI BUTANG PADAM UNTUK 2 KEADAAN:
+                    // 1. Akaun sendiri (userICSemasa === barisIC)
+                    // 2. Akaun dengan peranan ADMIN
+                    let isSelf = (userICSemasa !== "" && barisIC === userICSemasa);
+                    let isAdminRole = (roleBaris === "ADMIN");
+
+                    let btnPadam = "";
+                    if (isSelf || isAdminRole) {
+                        let tajukKunci = isSelf ? "Anda tidak boleh memadam akaun sendiri" : "Akaun ADMIN tidak boleh dipadam";
+                        btnPadam = `<button disabled class="bg-gray-200 text-gray-400 px-2 py-1 rounded font-bold shadow-sm text-xs w-full flex items-center justify-center gap-1 cursor-not-allowed" title="${tajukKunci}">🗑️ Padam</button>`;
+                    } else {
+                        btnPadam = `<button onclick="padamPengguna('${barisIC}', '${safeNama}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded font-bold shadow-sm transition text-xs w-full flex items-center justify-center gap-1">🗑️ Padam</button>`;
+                    }
+                    
+                    btnTindakan = `<div class="flex flex-col gap-1 w-full">${btnSahkan}${btnEdit}${btnPadam}</div>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-indigo-50 transition";
+                
+                let tdContent = `
+                    <td class="p-3 text-center font-bold text-gray-600">${index + 1}</td>
+                    <td class="p-3 font-bold text-gray-800 text-xs uppercase">${row.nama}</td>
+                    <td class="p-3 text-center font-bold text-indigo-700 text-xs uppercase">${row.jabatan}</td>
+                    <td class="p-3 text-center font-semibold text-gray-600 text-[11px] uppercase">${row.peranan}</td>
+                    <td class="p-3 text-center font-semibold text-gray-500 text-[11px] uppercase">${strBahagian}</td>
+                    <td class="p-3 text-center">${badgeStatus}</td>
+                `;
+                if (isApprover) tdContent += `<td class="p-3 text-center">${btnTindakan}</td>`;
+
+                tr.innerHTML = tdContent; tbody.appendChild(tr);
+            });
+        }
+
+        // MUAT TURUN CSV
+        function muatTurunCSV() {
+            if (dataPenggunaGlobal.length === 0) return alert("Tiada data untuk dimuat turun.");
+            
+            const valJab = document.getElementById('filterJabatan').value;
+            let dataExport = dataPenggunaGlobal;
+            if (valJab !== "") {
+                dataExport = dataPenggunaGlobal.filter(row => row.jabatan === valJab);
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "BIL,NAMA,NO_IC,JABATAN,PERANAN,BAHAGIAN,STATUS\n";
+            
+            dataExport.forEach((row, index) => {
+                let nama = `"${row.nama || ""}"`;
+                let ic = `="${row.ic || ""}"`; 
+                let jab = `"${row.jabatan || ""}"`;
+                let per = `"${row.peranan || ""}"`;
+                let bah = `"${row.bahagian || ""}"`;
+                let stat = `"${row.status || ""}"`;
+                csvContent += `${index+1},${nama},${ic},${jab},${per},${bah},${stat}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Data_Pengguna_Sistem.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // SAHKAN PENGGUNA
+        function sahkanPengguna(noIC, nama) {
+            if(!confirm(`Adakah anda pasti mahu SAHKAN pengguna ini?\n\nNama: ${nama}`)) return;
+            const msgBox = document.getElementById('mesejDashboard');
+            msgBox.className = 'mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm border bg-blue-100 text-blue-800 border-blue-200';
+            msgBox.innerText = '⏳ Sedang memproses pengesahan...'; msgBox.classList.remove('hidden');
+
+            fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: "sahkanPengguna", NO_IC: noIC }) 
+            })
+            .then(res => res.json()).then(data => {
+                if(data.status === "BERJAYA") {
+                    msgBox.className = 'mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm border bg-green-100 text-green-800 border-green-200';
+                    msgBox.innerText = "✅ Pengesahan berjaya! Status kini AKTIF."; muatSenaraiPenyelaras();
+                } else {
+                    msgBox.className = 'mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm border bg-red-100 text-red-800 border-red-200';
+                    msgBox.innerText = "❌ Ralat: " + data.mesej;
+                }
+                setTimeout(() => msgBox.classList.add('hidden'), 5000);
+            }).catch(err => {
+                msgBox.className = 'mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm border bg-red-100 text-red-800 border-red-200';
+                msgBox.innerText = "⚠️ Gagal menghubungi server."; msgBox.classList.remove('hidden');
+            });
+        }
+
+        // PADAM PENGGUNA
+        function padamPengguna(ic, nama) {
+            if(!confirm(`⚠️ Adakah anda pasti mahu memadam pengguna ini secara kekal?\n\nNama: ${nama}`)) return;
+            
+            const msgBox = document.getElementById('mesejDashboard');
+            msgBox.className = 'mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm border bg-blue-100 text-blue-800 border-blue-200';
+            msgBox.innerText = '⏳ Sedang memadam pengguna...'; msgBox.classList.remove('hidden');
+
+            fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: "padamPenggunaAdmin", NO_IC: ic }) 
+            })
+            .then(res => res.json()).then(data => {
+                if(data.status === "BERJAYA") {
+                    msgBox.className = 'mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm border bg-green-100 text-green-800 border-green-200';
+                    msgBox.innerText = "✅ " + data.mesej; 
+                    muatSenaraiPenyelaras();
+                } else {
+                    msgBox.className = 'mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm border bg-red-100 text-red-800 border-red-200';
+                    msgBox.innerText = "❌ Ralat: " + data.mesej;
+                }
+                setTimeout(() => msgBox.classList.add('hidden'), 5000);
+            }).catch(err => {
+                msgBox.className = 'mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm border bg-red-100 text-red-800 border-red-200';
+                msgBox.innerText = "⚠️ Gagal menghubungi server."; msgBox.classList.remove('hidden');
+            });
+        }
+
+        // MODAL KEMASKINI
+        function bukaModalKemaskini(ic, nama, jabatan, bahagian, peranan, status) {
+            document.getElementById('editIC_Lama').value = ic;
+            document.getElementById('editIC_Baru').value = ic;
+            document.getElementById('editNama').value = nama;
+            
+            document.getElementById('editJabatan').value = jabatan;
+            document.getElementById('editBahagian').value = (bahagian === "-") ? "" : bahagian; 
+            document.getElementById('editPeranan').value = peranan;
+            document.getElementById('editStatus').value = status;
+            document.getElementById('modalKemaskini').classList.remove('hidden');
+        }
+
+        function tutupModal() { document.getElementById('modalKemaskini').classList.add('hidden'); }
+
+        function simpanKemaskini(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSimpanKemaskini');
+            btn.disabled = true; btn.innerText = "⏳ Menyimpan...";
+
+            const payload = {
+                action: "kemaskiniPenggunaAdmin",
+                NO_IC: document.getElementById('editIC_Lama').value,
+                NO_IC_BARU: document.getElementById('editIC_Baru').value, 
+                NAMA: document.getElementById('editNama').value.toUpperCase(), 
+                JABATAN: document.getElementById('editJabatan').value, 
+                PERANAN: document.getElementById('editPeranan').value, 
+                BAHAGIAN: document.getElementById('editBahagian').value, 
+                STATUS: document.getElementById('editStatus').value 
+            };
+
+            fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+                body: JSON.stringify(payload) 
+            })
+            .then(res => res.json()).then(data => {
+                if(data.status === "BERJAYA") {
+                    alert("✅ Maklumat Profil berjaya dikemaskini!");
+                    tutupModal(); muatSenaraiPenyelaras(); 
+                } else { alert("❌ Ralat: " + data.mesej); }
+            }).catch(err => { alert("⚠️ Gagal menghubungi server."); })
+            .finally(() => { btn.disabled = false; btn.innerText = "Simpan"; });
+        }
+    </script>
+</body>
+</html>

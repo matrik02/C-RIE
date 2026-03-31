@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendaftaran Projek R&D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-teal-700 text-white shadow-md">
+        <div class="max-w-5xl mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-wide">📋 Pendaftaran Projek</h1>
+                <p class="text-teal-200 mt-1 text-sm">Borang Pendaftaran Maklumat Projek Penyelidikan & Inovasi</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <a href="e-daftar.html" class="bg-white text-teal-800 px-5 py-2.5 rounded-full font-bold shadow hover:bg-teal-50 transition flex items-center gap-2 text-sm">
+                    &larr; Kembali ke e-Daftar
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-8 w-full flex-grow">
+        
+        <div id="statusMesej" class="hidden mb-6 p-4 rounded-xl text-center text-sm font-bold shadow-sm border"></div>
+
+        <form id="borangProjek" class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-gray-200 space-y-6">
+            
+            <div class="border-b pb-4 mb-4">
+                <h2 class="text-xl font-bold text-teal-800">Maklumat Projek</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Tajuk Projek <span class="text-red-500">*</span></label>
+                    <input type="text" id="tajuk" required placeholder="Sila masukkan tajuk projek" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase transition bg-gray-50">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Jabatan <span class="text-red-500">*</span></label>
+                    <select id="jabatan" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase bg-gray-50 transition">
+                        <option value="">⏳ Memuat Turun...</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Tarikh Mula Projek <span class="text-red-500">*</span></label>
+                    <input type="date" id="tarikh_mula" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition bg-gray-50">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Tarikh Akhir Projek <span class="text-red-500">*</span></label>
+                    <input type="date" id="tarikh_akhir" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition bg-gray-50">
+                </div>
+            </div>
+
+            <div class="border-b pb-4 mt-8 mb-4">
+                <h2 class="text-xl font-bold text-teal-800">Maklumat Penyelidik</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Nama Ketua Projek <span class="text-red-500">*</span></label>
+                    <input type="text" id="ketua_projek" required placeholder="NAMA PENUH" class="w-full px-4 py-2.5 border border-teal-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase bg-teal-50 transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">No. Kad Pengenalan (Ketua Projek) <span class="text-red-500">*</span></label>
+                    <input type="text" id="ic_ketua" required pattern="[0-9]{12}" title="Sila masukkan 12 digit tanpa sempang" placeholder="Contoh: 880101025566" class="w-full px-4 py-2.5 border border-teal-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-teal-50 transition">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Nama Ahli 1</label><input type="text" id="ahli_1" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase transition bg-gray-50"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Nama Ahli 2</label><input type="text" id="ahli_2" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase transition bg-gray-50"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Nama Ahli 3</label><input type="text" id="ahli_3" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase transition bg-gray-50"></div>
+                <div><label class="block text-sm font-bold text-gray-700 mb-1">Nama Ahli 4</label><input type="text" id="ahli_4" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase transition bg-gray-50"></div>
+                <div class="md:col-span-2"><label class="block text-sm font-bold text-gray-700 mb-1">Nama Ahli 5</label><input type="text" id="ahli_5" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none uppercase transition bg-gray-50"></div>
+            </div>
+
+            <div class="border-b pb-4 mt-8 mb-4">
+                <h2 class="text-xl font-bold text-teal-800">Muat Naik Dokumen</h2>
+                <p class="text-sm text-gray-500">Sila muat naik fail dalam format PDF sahaja (Maksimum 5MB setiap fail).</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Muat Naik Borang Maklumat Penyelidikan (PDF) <span class="text-red-500">*</span></label>
+                    <input type="file" id="fail_maklumat" accept="application/pdf" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition bg-blue-50 text-blue-700">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Muat Naik Borang Proposal (PDF) <span class="text-red-500">*</span></label>
+                    <input type="file" id="fail_proposal" accept="application/pdf" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition bg-purple-50 text-purple-700">
+                </div>
+            </div>
+
+            <div class="pt-6 border-t border-gray-200 mt-8 flex justify-end gap-3">
+                <button type="reset" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg transition">Set Semula</button>
+                <button type="submit" id="btnSemak" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition transform hover:-translate-y-0.5">🚀 Semak & Hantar</button>
+            </div>
+
+        </form>
+    </main>
+
+    <div id="modalPreview" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center z-50 p-4 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="bg-teal-700 p-4 text-white font-bold text-lg flex justify-between items-center">
+                <span>🔍 Semakan Pendaftaran Projek</span>
+                <button onclick="tutupPreview()" class="text-white hover:text-teal-200 text-2xl leading-none">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-4 text-sm text-gray-800 flex-grow bg-slate-50">
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <p class="text-xs text-gray-400 font-bold uppercase mb-1">Tajuk Projek</p>
+                    <p id="prev_tajuk" class="font-bold text-teal-800 text-base uppercase leading-tight"></p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="text-xs text-gray-400 font-bold uppercase mb-1">Ketua Projek</p>
+                        <p id="prev_ketua" class="font-bold uppercase"></p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="text-xs text-gray-400 font-bold uppercase mb-1">No. IC Ketua</p>
+                        <p id="prev_ic" class="font-bold font-mono"></p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="text-xs text-gray-400 font-bold uppercase mb-1">Jabatan</p>
+                        <p id="prev_jabatan" class="font-bold uppercase"></p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="text-xs text-gray-400 font-bold uppercase mb-1">Tempoh Projek</p>
+                        <p id="prev_tarikh" class="font-medium"></p>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-sm">
+                    <p class="text-xs text-blue-500 font-bold uppercase mb-1">Dokumen Dilampirkan</p>
+                    <ul class="list-disc pl-4 text-blue-900 font-medium">
+                        <li id="prev_fail_maklumat"></li>
+                        <li id="prev_fail_proposal"></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="p-4 bg-white border-t border-gray-200 flex justify-end gap-3">
+                <button type="button" onclick="tutupPreview()" class="px-5 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition">Batal & Edit Semula</button>
+                <button type="button" id="btnSahkan" onclick="sahkanHantar()" class="px-6 py-2.5 bg-teal-600 text-white rounded-lg font-bold hover:bg-teal-700 transition shadow-md">✅ Sahkan & Hantar</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center py-6 text-gray-400 text-sm mt-auto bg-white border-t">
+        &copy; 2024 Unit Penyelidikan & Inovasi.
+    </footer>
+
+    <script>
+        // ⚠️ MASUKKAN URL APP SCRIPT ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+        
+        const perananSesi = (sessionStorage.getItem("peranan") || "").toUpperCase();
+        let payloadDataSemasa = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            muatDropdownJabatan();
+        });
+
+        function muatDropdownJabatan() {
+            fetch(`${SCRIPT_URL}?action=ambilTetapanSenarai`)
+            .then(res => res.json())
+            .then(data => {
+                const elJabatan = document.getElementById("jabatan");
+                elJabatan.innerHTML = '<option value="">-- Pilih Jabatan --</option>';
+                
+                if(data.status === "BERJAYA" && data.JABATAN) {
+                    data.JABATAN.forEach(jab => { elJabatan.innerHTML += `<option value="${jab}">${jab}</option>`; });
+                }
+
+                const userJabatan = sessionStorage.getItem("jabatan");
+                if (userJabatan) {
+                    elJabatan.value = userJabatan;
+                    if (perananSesi === "STAF" || perananSesi === "PENYELARAS JABATAN") {
+                        elJabatan.classList.add('bg-gray-200');
+                        elJabatan.style.pointerEvents = "none";
+                    }
+                }
+            }).catch(err => {
+                document.getElementById('jabatan').innerHTML = '<option value="">⚠️ Ralat memuatkan jabatan</option>';
+            });
+        }
+
+        // --- FUNGSI BARU UNTUK BACA FAIL SEBAGAI BASE64 ---
+        function bacaFail(file) {
+            return new Promise((resolve, reject) => {
+                if (!file) {
+                    resolve(null);
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = () => {
+                    resolve({
+                        namaFail: file.name,
+                        mimeType: file.type,
+                        // Buang header "data:application/pdf;base64,"
+                        dataBase64: reader.result.split(',')[1] 
+                    });
+                };
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // 2. TANGKAP SUBMIT BORANG & PAPAR PREVIEW
+        document.getElementById('borangProjek').addEventListener('submit', async function(e) {
+            e.preventDefault(); 
+
+            const btnSemak = document.getElementById('btnSemak');
+            const teksAsalBtn = btnSemak.innerHTML;
+            btnSemak.disabled = true;
+            btnSemak.innerHTML = '⏳ Menyediakan Fail... Sila tunggu';
+
+            try {
+                const statusDihantar = (perananSesi === "PENYELARAS INOVASI" || perananSesi === "PENYELARAS PENYELIDIKAN" || perananSesi === "ADMIN") 
+                                        ? "DISAHKAN" : "MENUNGGU PENGESAHAN";
+
+                // Dapatkan elemen fail
+                const failMaklumat = document.getElementById('fail_maklumat').files[0];
+                const failProposal = document.getElementById('fail_proposal').files[0];
+
+                // Tukar fail ke Base64 (Tunggu sehingga selesai)
+                const dataFailMaklumat = await bacaFail(failMaklumat);
+                const dataFailProposal = await bacaFail(failProposal);
+
+                payloadDataSemasa = {
+                    action: "tambahPendaftaranProjek",
+                    TAJUK: document.getElementById('tajuk').value.trim().toUpperCase(),
+                    JABATAN: document.getElementById('jabatan').value,
+                    TARIKH_MULA: document.getElementById('tarikh_mula').value,
+                    TARIKH_AKHIR: document.getElementById('tarikh_akhir').value,
+                    KETUA: document.getElementById('ketua_projek').value.trim().toUpperCase(),
+                    IC_KETUA: document.getElementById('ic_ketua').value.trim(), 
+                    AHLI_1: document.getElementById('ahli_1').value.trim().toUpperCase(),
+                    AHLI_2: document.getElementById('ahli_2').value.trim().toUpperCase(),
+                    AHLI_3: document.getElementById('ahli_3').value.trim().toUpperCase(),
+                    AHLI_4: document.getElementById('ahli_4').value.trim().toUpperCase(),
+                    AHLI_5: document.getElementById('ahli_5').value.trim().toUpperCase(),
+                    
+                    // Masukkan data fail ke dalam payload
+                    FAIL_MAKLUMAT: dataFailMaklumat,
+                    FAIL_PROPOSAL: dataFailProposal,
+                    STATUS: statusDihantar 
+                };
+
+                // Susun maklumat ke dalam Modal
+                document.getElementById('prev_tajuk').innerText = payloadDataSemasa.TAJUK;
+                document.getElementById('prev_ketua').innerText = payloadDataSemasa.KETUA;
+                document.getElementById('prev_ic').innerText = payloadDataSemasa.IC_KETUA;
+                document.getElementById('prev_jabatan').innerText = payloadDataSemasa.JABATAN;
+                document.getElementById('prev_tarikh').innerText = `${payloadDataSemasa.TARIKH_MULA} hingga ${payloadDataSemasa.TARIKH_AKHIR}`;
+                
+                document.getElementById('prev_fail_maklumat').innerText = dataFailMaklumat ? dataFailMaklumat.namaFail : "Tiada fail dimuat naik";
+                document.getElementById('prev_fail_proposal').innerText = dataFailProposal ? dataFailProposal.namaFail : "Tiada fail dimuat naik";
+
+                // Buka Modal
+                document.getElementById('modalPreview').classList.remove('hidden');
+
+            } catch (error) {
+                paparMesejUtama("⚠️ Ralat semasa memproses fail. Sila pastikan format betul.", "bg-red-100 text-red-800 border-red-200");
+                console.error(error);
+            } finally {
+                btnSemak.disabled = false;
+                btnSemak.innerHTML = teksAsalBtn;
+            }
+        });
+
+        function tutupPreview() {
+            document.getElementById('modalPreview').classList.add('hidden');
+        }
+
+        // 3. PENGHANTARAN SEBENAR KE SERVER
+        function sahkanHantar() {
+            const btnSahkan = document.getElementById('btnSahkan');
+            btnSahkan.disabled = true;
+            btnSahkan.innerHTML = '⏳ Sedang Memuat Naik & Menyimpan...';
+
+            // Kerana payload sekarang ada Base64 fail (saiz besar), pastikan fetch berjalan dengan baik
+            fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payloadDataSemasa) 
+            })
+            .then(res => res.json())
+            .then(data => {
+                tutupPreview();
+                if (data.status === 'BERJAYA') {
+                    paparMesejUtama(`✅ Berjaya! Maklumat projek dan fail telah dihantar. Status pendaftaran: ${payloadDataSemasa.STATUS}`, "bg-green-100 text-green-800 border-green-200");
+                    document.getElementById('borangProjek').reset();
+                    if(perananSesi === "STAF" || perananSesi === "PENYELARAS JABATAN"){
+                         document.getElementById('jabatan').value = sessionStorage.getItem("jabatan");
+                    }
+                } else {
+                    paparMesejUtama(`❌ Ralat: ${data.mesej}`, "bg-red-100 text-red-800 border-red-200");
+                }
+            }).catch(error => {
+                tutupPreview();
+                paparMesejUtama("⚠️ Gagal menghubungi pangkalan data. Pengecualian saiz fail mungkin melebihi had.", "bg-red-100 text-red-800 border-red-200");
+            }).finally(() => {
+                btnSahkan.disabled = false;
+                btnSahkan.innerHTML = '✅ Sahkan & Hantar';
+            });
+        }
+
+        function paparMesejUtama(teks, warnaClass) {
+            const msgBox = document.getElementById('statusMesej');
+            msgBox.className = `mb-6 p-4 rounded-xl text-center text-sm font-bold shadow-md border ${warnaClass}`;
+            msgBox.innerText = teks;
+            msgBox.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => { msgBox.classList.add('hidden'); }, 8000);
+        }
+    </script>
+</body>
+</html>

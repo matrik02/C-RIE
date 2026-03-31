@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jana Sijil Penyelaras</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; }
+    #adminPanel { display: none; } 
+  </style>
+</head>
+<body>
+
+<script>
+    const userRole = (sessionStorage.getItem("peranan") || "").toUpperCase();
+    if (sessionStorage.getItem("userLulus") !== "YA") {
+        alert("Sila log masuk terlebih dahulu.");
+        window.location.href = "utama.html";
+    }
+    const isAdminMode = ["PENYELARAS INOVASI", "ADMIN", "KUPIK"].includes(userRole);
+</script>
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Penjanaan <span class="text-primary">Sijil Penyelaras</span></h3>
+    <a href="dashboard.html" class="btn btn-secondary">⬅ Kembali</a>
+  </div>
+
+  <div id="adminPanel" class="card mb-4 border-primary shadow-sm">
+    <div class="card-header bg-primary text-white fw-bold">⚙️ Tetapan Templat Sijil (Admin Sahaja)</div>
+    <div class="card-body">
+      <label class="fw-bold">Muat Naik Templat Sijil (Format MS Word .docx):</label>
+      <div class="input-group mt-2 mb-2">
+        <input type="file" id="failTemplate" class="form-control" accept=".docx">
+        <button class="btn btn-success" id="btnUploadTemplate" onclick="uploadTemplate()">📤 Muat Naik & Simpan</button>
+      </div>
+      <small class="text-muted">Sediakan fail Word (.docx) yang mempunyai tag seperti <b>{{NAMA}}, {{NO_IC}}, {{JABATAN}}, {{TAHUN}}, {{PERANAN}}</b>. Sistem akan menguruskan formatnya secara automatik.</small>
+    </div>
+  </div>
+
+  <div class="row mb-3 bg-white p-3 rounded shadow-sm border">
+    <div class="col-md-6">
+      <label class="form-label fw-bold">Tapis Tahun:</label>
+      <select id="filterTahun" class="form-select" onchange="tapisData()">
+        <option value="SEMUA">Semua Tahun</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label fw-bold">Tapis Jabatan:</label>
+      <select id="filterJabatan" class="form-select" onchange="tapisData()">
+        <option value="SEMUA">Semua Jabatan</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="loader" style="display:none;" class="text-center text-primary fw-bold my-3">
+    Memuat turun data... Sila tunggu...
+  </div>
+
+  <div class="table-responsive bg-white p-3 rounded shadow-sm">
+    <table class="table table-bordered table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>Tahun</th>
+          <th>Jabatan</th>
+          <th>Nama</th>
+          <th>No IC</th>
+          <th>Peranan</th>
+          <th>Status Sijil</th>
+          <th>Tindakan</th>
+        </tr>
+      </thead>
+      <tbody id="bodyJadual">
+        </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec"; 
+  let dataAsal = [];
+
+  window.onload = function() {
+    if (isAdminMode) document.getElementById("adminPanel").style.display = "block";
+    loadData();
+  };
+
+  function loadData() {
+    document.getElementById("loader").style.display = "block";
+    fetch(SCRIPT_URL + "?action=ambilDataPenyelaras")
+      .then(res => res.json())
+      .then(res => {
+        document.getElementById("loader").style.display = "none";
+        if (res.status === "BERJAYA") {
+          dataAsal = res.data;
+          binaFilter();
+          tapisData();
+        } else {
+          alert("Gagal ambil data: " + res.mesej);
+        }
+      })
+      .catch(err => {
+        document.getElementById("loader").style.display = "none";
+        alert("Ralat menyambung ke pangkalan data. Sila pastikan anda membuat 'New Deployment' di Apps Script.");
+      });
+  }
+
+  function binaFilter() {
+    let setTahun = new Set();
+    let setJabatan = new Set();
+
+    dataAsal.forEach(r => {
+      if(r[0] && String(r[0]).trim() !== "") setTahun.add(String(r[0]).trim());
+      if(r[1] && String(r[1]).trim() !== "") setJabatan.add(String(r[1]).trim());
+    });
+
+    let selTahun = document.getElementById("filterTahun");
+    let selJab = document.getElementById("filterJabatan");
+    
+    let valTahunSemasa = selTahun.value;
+    let valJabatanSemasa = selJab.value;
+
+    selTahun.innerHTML = '<option value="SEMUA">Semua Tahun</option>';
+    selJab.innerHTML = '<option value="SEMUA">Semua Jabatan</option>';
+    
+    let arrTahun = Array.from(setTahun).sort((a, b) => b - a);
+    let arrJabatan = Array.from(setJabatan).sort();
+
+    arrTahun.forEach(t => selTahun.innerHTML += `<option value="${t}">${t}</option>`);
+    arrJabatan.forEach(j => selJab.innerHTML += `<option value="${j}">${j}</option>`);
+    
+    if (arrTahun.includes(valTahunSemasa)) selTahun.value = valTahunSemasa;
+    if (arrJabatan.includes(valJabatanSemasa)) selJab.value = valJabatanSemasa;
+  }
+
+  function tapisData() {
+    let fTahun = document.getElementById("filterTahun").value;
+    let fJab = document.getElementById("filterJabatan").value;
+
+    let dataDitapis = dataAsal.filter(r => {
+      let passTahun = (fTahun === "SEMUA" || String(r[0]).trim() === fTahun);
+      let passJab = (fJab === "SEMUA" || String(r[1]).trim() === fJab);
+      return passTahun && passJab;
+    });
+
+    binaJadual(dataDitapis);
+  }
+
+  function binaJadual(data) {
+    let tbody = document.getElementById("bodyJadual");
+    tbody.innerHTML = "";
+
+    if (data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted fw-bold">Tiada rekod KPI yang disahkan bagi tapisan ini.</td></tr>`;
+      return;
+    }
+
+    data.forEach((r, index) => {
+      let tahun = r[0]; let jabatan = r[1]; let nama = r[2]; 
+      let ic = r[3]; let peranan = r[4]; let urlSijil = r[5] || "";
+
+      let statusHTML = urlSijil ? `<span class="badge bg-success">Sudah Dijana</span>` : `<span class="badge bg-danger">Belum Dijana</span>`;
+      
+      let btnAction = urlSijil 
+        ? `<div class="d-flex gap-1">
+             <a href="${urlSijil}" target="_blank" class="btn btn-sm btn-outline-success">Lihat Sijil</a>
+             <button class="btn btn-sm btn-warning" onclick="janaSijil('${tahun}','${jabatan}','${nama}','${ic}','${peranan}', this)">Ganti Semula</button>
+           </div>`
+        : `<button class="btn btn-sm btn-primary" onclick="janaSijil('${tahun}','${jabatan}','${nama}','${ic}','${peranan}', this)">Jana Sijil</button>`;
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${tahun}</td>
+          <td>${jabatan}</td>
+          <td>${nama}</td>
+          <td>${ic}</td>
+          <td>${peranan}</td>
+          <td>${statusHTML}</td>
+          <td>${btnAction}</td>
+        </tr>
+      `;
+    });
+  }
+
+  function uploadTemplate() {
+    const fileInput = document.getElementById("failTemplate");
+    if (!fileInput.files.length) return alert("Sila pilih fail .docx terlebih dahulu!");
+    
+    const file = fileInput.files[0];
+    if (!file.name.endsWith(".docx")) return alert("Hanya fail Microsoft Word (.docx) dibenarkan!");
+
+    const btn = document.getElementById("btnUploadTemplate");
+    btn.innerText = "⏳ Sedang Memuat Naik...";
+    btn.disabled = true;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const base64Data = e.target.result.split(',')[1];
+      
+      const payload = {
+        action: "uploadTemplateDocx",
+        namaFail: file.name,
+        dataBase64: base64Data
+      };
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      }).then(res => res.json()).then(res => {
+        alert(res.mesej);
+        btn.innerText = "📤 Muat Naik & Simpan";
+        btn.disabled = false;
+        fileInput.value = "";
+      }).catch(err => {
+        alert("Ralat sistem ketika memuat naik.");
+        btn.innerText = "📤 Muat Naik & Simpan";
+        btn.disabled = false;
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function janaSijil(tahun, jabatan, nama, ic, peranan, btn) {
+    if(!confirm(`Jana sijil untuk Penyelaras ${jabatan} (${nama})?`)) return;
+
+    btn.innerText = "Sedang Menjana...";
+    btn.disabled = true;
+
+    let payload = {
+      action: "janaSijilAutomatik",
+      TAHUN: tahun, JABATAN: jabatan, NAMA: nama, NO_IC: ic, PERANAN: peranan
+    };
+
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }).then(res => res.json()).then(res => {
+      alert(res.mesej);
+      loadData(); 
+    }).catch(err => {
+      alert("Ralat sistem. Sila cuba lagi.");
+      btn.innerText = "Gagal. Cuba Lagi.";
+      btn.disabled = false;
+    });
+  }
+</script>
+</body>
+</html>

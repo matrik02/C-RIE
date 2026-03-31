@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>e-DAFTAR R&D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-teal-700 text-white shadow-md">
+        <div class="max-w-[90rem] mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-wide">📝 e-DAFTAR R&D</h1>
+                <p class="text-teal-200 mt-1 text-sm">Pusat Pendaftaran & Dokumen Penyelidikan</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex gap-3">
+                <a href="utama.html" class="bg-white text-teal-800 px-5 py-2.5 rounded-full font-bold shadow hover:bg-teal-50 transition flex items-center gap-2 text-sm">
+                    &larr; Laman Utama
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[90rem] mx-auto px-4 py-8 flex-grow w-full">
+        
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full mb-8">
+            <a href="pendaftaran-projek.html" class="bg-teal-600 hover:bg-teal-700 text-white p-4 rounded-2xl shadow-sm border border-teal-500 transition transform hover:-translate-y-1 flex flex-col items-center gap-2 text-center">
+                <span class="text-3xl">📋</span> <span class="font-bold text-xs md:text-sm">Pendaftaran Projek Baru</span>
+            </a>
+            <a href="surat-lantikan.html" class="bg-teal-600 hover:bg-teal-700 text-white p-4 rounded-2xl shadow-sm border border-teal-500 transition transform hover:-translate-y-1 flex flex-col items-center gap-2 text-center">
+                <span class="text-3xl">✉️</span> <span class="font-bold text-xs md:text-sm">Surat Lantikan Penyelidik</span>
+            </a>
+            <a href="laporan-kemajuan.html" class="bg-amber-500 hover:bg-amber-600 text-white p-4 rounded-2xl shadow-sm border border-amber-400 transition transform hover:-translate-y-1 flex flex-col items-center gap-2 text-center">
+                <span class="text-3xl">📈</span> <span class="font-bold text-xs md:text-sm">Laporan Kemajuan</span>
+            </a>
+            <a href="laporan-akhir.html" class="bg-rose-500 hover:bg-rose-600 text-white p-4 rounded-2xl shadow-sm border border-rose-400 transition transform hover:-translate-y-1 flex flex-col items-center gap-2 text-center">
+                <span class="text-3xl">🏁</span> <span class="font-bold text-xs md:text-sm">Laporan Akhir</span>
+            </a>
+            <a href="borang berkaitan.html" class="bg-teal-600 hover:bg-teal-700 text-white p-4 rounded-2xl shadow-sm border border-teal-500 transition transform hover:-translate-y-1 flex flex-col items-center gap-2 text-center col-span-2 md:col-span-1">
+                <span class="text-3xl">📂</span> <span class="font-bold text-xs md:text-sm">Borang Berkaitan</span>
+            </a>
+        </div>
+
+        <div id="statusMesejUI" class="hidden mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm"></div>
+
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-orange-50 border border-orange-200 p-5 rounded-2xl text-center shadow-sm flex flex-col justify-center items-center">
+                <h3 class="text-orange-800 font-bold text-sm md:text-base uppercase tracking-wide">Menunggu Pengesahan</h3>
+                <p class="text-4xl md:text-5xl font-extrabold text-orange-600 mt-2" id="statMenunggu">0</p>
+            </div>
+            <div class="bg-green-50 border border-green-200 p-5 rounded-2xl text-center shadow-sm flex flex-col justify-center items-center">
+                <h3 class="text-green-800 font-bold text-sm md:text-base uppercase tracking-wide">Projek Disahkan</h3>
+                <p class="text-4xl md:text-5xl font-extrabold text-green-600 mt-2" id="statDisahkan">0</p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+            
+            <div class="bg-teal-50 p-5 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                <h2 class="text-lg font-bold text-teal-800 flex items-center gap-2">📊 Senarai Pendaftaran Projek</h2>
+                
+                <div class="flex flex-wrap items-center gap-3">
+                    <select id="filterTahun" onchange="terapkanTapisan()" class="px-3 py-1.5 border border-teal-300 rounded-lg text-sm font-bold focus:ring-teal-500 outline-none text-gray-700">
+                        <option value="">Semua Tahun</option>
+                    </select>
+                    
+                    <select id="filterJabatan" onchange="terapkanTapisan()" class="px-3 py-1.5 border border-teal-300 rounded-lg text-sm font-bold focus:ring-teal-500 outline-none text-gray-700">
+                        <option value="">⏳ Muat Turun Jabatan...</option>
+                    </select>
+
+                    <button onclick="muatDataStatus()" class="bg-teal-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-teal-700 transition shadow-sm">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm whitespace-nowrap">
+                    <thead>
+                        <tr class="bg-teal-600 text-white uppercase tracking-wide text-[11px]">
+                            <th class="p-3 border-b text-center w-12">BIL</th>
+                            <th class="p-3 border-b w-1/4">MAKLUMAT PROJEK</th>
+                            <th class="p-3 border-b text-center">JABATAN</th>
+                            <th class="p-3 border-b text-center border-l border-teal-500">DOKUMEN DIUPLOAD OLEH STAF</th>
+                            <th class="p-3 border-b text-center border-l border-teal-500">DOKUMEN DISAHKAN OLEH ADMIN/KUPIK</th>
+                            <th class="p-3 border-b text-center border-l border-teal-500">STATUS</th>
+                            <th id="thTindakan" class="p-3 border-b text-center hidden">TINDAKAN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiJadualStatus" class="text-gray-700 bg-white">
+                        <tr><td colspan="7" class="p-10 text-center font-bold text-teal-500 animate-pulse">⏳ Memuat turun senarai pendaftaran...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="p-4 border-t border-gray-100 flex justify-between items-center bg-gray-50 text-sm">
+                <span class="text-gray-500 font-semibold" id="infoPaginasi">Papar 0 - 0 dari 0 rekod</span>
+                <div class="flex gap-2">
+                    <button onclick="ubahHalaman(-1)" id="btnPrev" class="px-4 py-1.5 bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50">Kiri</button>
+                    <button onclick="ubahHalaman(1)" id="btnNext" class="px-4 py-1.5 bg-white border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50">Kanan</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+   <div id="modalUpload" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div class="bg-teal-700 p-4 text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg">⬆️ Muat Naik Dokumen Disahkan</h3>
+                <button onclick="tutupModal()" class="text-white hover:text-teal-200 text-2xl font-bold leading-none">&times;</button>
+            </div>
+            <form id="borangUpload" onsubmit="hantarDokumenSah(event)" class="p-6">
+                <input type="hidden" id="upload_bil">
+                <p class="text-sm text-gray-600 mb-4 bg-blue-50 p-3 rounded-lg border border-blue-200">Sila muat naik dokumen pendaftaran projek yang telah <span class="font-bold text-blue-800">disemak, dicop & disahkan</span> (Format PDF digalakkan).</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Muat Naik Maklumat Penyelidikan (Disahkan) <span class="text-red-500">*</span></label>
+                        <input type="file" id="file_maklumat_sah" accept=".pdf,.doc,.docx" class="w-full px-3 py-2 border border-teal-300 rounded focus:ring-2 focus:ring-teal-500 outline-none text-sm text-blue-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Muat Naik Borang Proposal (Disahkan) <span class="text-red-500">*</span></label>
+                        <input type="file" id="file_proposal_sah" accept=".pdf,.doc,.docx" class="w-full px-3 py-2 border border-teal-300 rounded focus:ring-2 focus:ring-teal-500 outline-none text-sm text-purple-700">
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3 border-t pt-4">
+                    <button type="button" onclick="tutupModal()" class="px-5 py-2 bg-gray-200 text-gray-800 rounded font-bold hover:bg-gray-300 transition text-sm">Batal</button>
+                    <button type="submit" id="btnSimpanUpload" class="px-5 py-2 bg-teal-600 text-white rounded font-bold hover:bg-teal-700 transition shadow text-sm">💾 Muat Naik Dokumen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalKemaskini" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="bg-blue-700 p-4 text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg">✏️ Kemaskini Pendaftaran Projek</h3>
+                <button onclick="tutupModalKemaskini()" class="text-white hover:text-blue-200 text-2xl font-bold leading-none">&times;</button>
+            </div>
+            <form id="borangKemaskini" onsubmit="hantarKemaskini(event)" class="p-6 overflow-y-auto">
+                <input type="hidden" id="edit_bil">
+                
+                <div class="space-y-5">
+                    <div class="p-3 bg-gray-50 rounded-lg border">
+                        <h4 class="font-bold text-blue-800 text-sm mb-3 border-b pb-1">Maklumat Projek</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Tajuk Projek <span class="text-red-500">*</span></label>
+                                <textarea id="edit_tajuk" required class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm" rows="3"></textarea>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Jabatan</label>
+                                    <input type="text" id="edit_jabatan" required class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Status Projek</label>
+                                    <select id="edit_status" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm font-bold">
+                                        <option value="MENUNGGU">MENUNGGU PENGESAHAN</option>
+                                        <option value="DISAHKAN">DISAHKAN</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Tarikh Mula Projek</label>
+                                    <input type="date" id="edit_tarikh_mula" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Tarikh Akhir Projek</label>
+                                    <input type="date" id="edit_tarikh_akhir" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-gray-50 rounded-lg border">
+                        <h4 class="font-bold text-blue-800 text-sm mb-3 border-b pb-1">Keahlian Projek</h4>
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Nama Ketua Projek <span class="text-red-500">*</span></label>
+                                    <input type="text" id="edit_ketua" required class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">No. Kad Pengenalan (Ketua) <span class="text-red-500">*</span></label>
+                                    <input type="text" id="edit_kp_ketua" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Nama Ahli 1</label>
+                                    <input type="text" id="edit_ahli_1" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Nama Ahli 2</label>
+                                    <input type="text" id="edit_ahli_2" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Nama Ahli 3</label>
+                                    <input type="text" id="edit_ahli_3" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Nama Ahli 4</label>
+                                    <input type="text" id="edit_ahli_4" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">Nama Ahli 5</label>
+                                    <input type="text" id="edit_ahli_5" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-gray-50 rounded-lg border">
+                        <h4 class="font-bold text-blue-800 text-sm mb-3 border-b pb-1">Pautan Dokumen Pendaftaran</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Link Borang Maklumat Penyelidikan (Google Drive)</label>
+                                <input type="url" id="edit_url_maklumat" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm text-blue-700">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 mb-1">Link Borang Proposal (Google Drive)</label>
+                                <input type="url" id="edit_url_proposal" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm text-purple-700">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3 border-t pt-4 sticky bottom-0 bg-white">
+                    <button type="button" onclick="tutupModalKemaskini()" class="px-5 py-2 bg-gray-200 text-gray-800 rounded font-bold hover:bg-gray-300 transition text-sm">Batal</button>
+                    <button type="submit" id="btnSimpanKemaskini" class="px-5 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition shadow text-sm">💾 Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="text-center py-6 text-gray-400 text-sm mt-auto bg-white border-t">
+        &copy; 2024 Unit Penyelidikan & Inovasi.
+    </footer>
+
+    <script>
+        // ⚠️ MASUKKAN URL APP SCRIPT ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+        const userJabatan = sessionStorage.getItem("jabatan") || "";
+        const userPeranan = (sessionStorage.getItem("peranan") || "").toUpperCase();
+        
+        // Pihak yang boleh Approve, Upload, Edit, Delete
+        const isApprover = ["PENYELARAS INOVASI", "PENYELARAS PENYELIDIKAN", "KUPIK", "ADMIN"].includes(userPeranan);
+
+        let dataAsal = [];
+        let dataTapis = [];
+        let halamanSemasa = 1;
+        const rekodPerHalaman = 10;
+
+        window.onload = () => {
+            if (isApprover) {
+                document.getElementById('thTindakan').classList.remove('hidden');
+            }
+            muatDropdownJabatan();
+            muatDataStatus();
+        };
+
+        function muatDropdownJabatan() {
+            fetch(`${SCRIPT_URL}?action=ambilTetapanSenarai`)
+            .then(res => res.json())
+            .then(data => {
+                const fJabatan = document.getElementById('filterJabatan');
+                fJabatan.innerHTML = '<option value="">Semua Jabatan</option>';
+                if(data.status === "BERJAYA" && data.JABATAN) {
+                    data.JABATAN.forEach(jab => { fJabatan.innerHTML += `<option value="${jab}">${jab}</option>`; });
+                }
+
+                if (!isApprover && userPeranan !== "PENYELARAS JABATAN") {
+                    fJabatan.value = userJabatan;
+                    fJabatan.disabled = true;
+                    fJabatan.classList.add("bg-gray-200");
+                }
+            });
+        }
+
+        function muatDataStatus() {
+            const tbody = document.getElementById('isiJadualStatus');
+            tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center font-bold text-teal-500 animate-pulse">⏳ Memuat turun...</td></tr>`;
+
+            fetch(`${SCRIPT_URL}?action=ambilPendaftaranProjek`)
+            .then(res => res.json())
+            .then(result => {
+                if (result.status === "BERJAYA") {
+                    dataAsal = result.data || [];
+                    janaPilihanTahun(dataAsal);
+                    terapkanTapisan();
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-600 font-bold">❌ Mesej: ${result.mesej}</td></tr>`;
+                }
+            })
+            .catch(err => {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-600 font-bold">⚠️ Ralat pelayan.</td></tr>`;
+            });
+        }
+
+        function janaPilihanTahun(data) {
+            const selectTahun = document.getElementById('filterTahun');
+            let senaraiTahun = [];
+            data.forEach(p => {
+                if (p.tarikhMula) {
+                    let tahun = new Date(p.tarikhMula).getFullYear();
+                    if (!isNaN(tahun) && !senaraiTahun.includes(tahun)) senaraiTahun.push(tahun);
+                }
+            });
+            senaraiTahun.sort((a,b) => b - a); 
+            selectTahun.innerHTML = '<option value="">Semua Tahun</option>';
+            senaraiTahun.forEach(t => selectTahun.innerHTML += `<option value="${t}">${t}</option>`);
+        }
+
+        function terapkanTapisan() {
+            const valTahun = document.getElementById('filterTahun').value;
+            const valJab = document.getElementById('filterJabatan').value;
+
+            let cMenunggu = 0;
+            let cDisahkan = 0;
+
+            dataTapis = dataAsal.filter(row => {
+                let checkTahun = (valTahun === "" || (row.tarikhMula && new Date(row.tarikhMula).getFullYear().toString() === valTahun));
+                let checkJabatan = (valJab === "" || row.jabatan === valJab);
+
+                if (!isApprover && userPeranan !== "PENYELARAS JABATAN") checkJabatan = (row.jabatan === userJabatan);
+
+                let isSesuai = checkTahun && checkJabatan;
+                
+                if(isSesuai) {
+                    if(row.status.toUpperCase() === "DISAHKAN") cDisahkan++;
+                    else cMenunggu++;
+                }
+
+                return isSesuai;
+            });
+
+            document.getElementById('statMenunggu').innerText = cMenunggu;
+            document.getElementById('statDisahkan').innerText = cDisahkan;
+
+            dataTapis.reverse(); 
+            halamanSemasa = 1;
+            paparJadual();
+        }
+
+        function paparJadual() {
+            const tbody = document.getElementById('isiJadualStatus');
+            tbody.innerHTML = "";
+
+            if (dataTapis.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-gray-500 font-medium">Tiada pendaftaran projek dijumpai.</td></tr>`;
+                document.getElementById('infoPaginasi').innerText = `Papar 0 - 0 dari 0 rekod`;
+                document.getElementById('btnPrev').disabled = true;
+                document.getElementById('btnNext').disabled = true;
+                return;
+            }
+
+            const Mula = (halamanSemasa - 1) * rekodPerHalaman;
+            const Akhir = Mula + rekodPerHalaman;
+            const dataHalaman = dataTapis.slice(Mula, Akhir);
+
+            dataHalaman.forEach((row, index) => {
+                const sStatus = row.status.toUpperCase();
+                
+                const badgeStatus = sStatus === 'DISAHKAN' 
+                    ? `<span class="bg-green-100 text-green-800 border border-green-300 px-2 py-1 rounded-full text-[10px] font-bold shadow-sm">✅ DISAHKAN</span>` 
+                    : `<span class="bg-orange-100 text-orange-800 border border-orange-300 px-2 py-1 rounded-full text-[10px] font-bold shadow-sm">⏳ MENUNGGU</span>`;
+
+                let linksDiUpload = ``;
+                if(row.urlMaklumat) linksDiUpload += `<a href="${row.urlMaklumat}" target="_blank" class="text-blue-600 hover:text-blue-800 font-bold text-xs flex items-center justify-center gap-1 mb-1">🔗 Maklumat Penyelidikan</a>`;
+                if(row.urlProposal) linksDiUpload += `<a href="${row.urlProposal}" target="_blank" class="text-purple-600 hover:text-purple-800 font-bold text-xs flex items-center justify-center gap-1">🔗 Proposal</a>`;
+                if(!linksDiUpload) linksDiUpload = `<span class="text-[10px] text-gray-400 italic">Tiada Fail</span>`;
+
+                let linksDisahkan = ``;
+                
+                if (sStatus === 'DISAHKAN') {
+                    if (row.urlMaklumatSah || row.urlProposalSah) {
+                        if(row.urlMaklumatSah) linksDisahkan += `<a href="${row.urlMaklumatSah}" target="_blank" class="bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 px-2 py-1 rounded font-bold text-[10px] flex items-center justify-center gap-1 mb-1 transition shadow-sm">📥 Muat Turun Maklumat</a>`;
+                        if(row.urlProposalSah) linksDisahkan += `<a href="${row.urlProposalSah}" target="_blank" class="bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 px-2 py-1 rounded font-bold text-[10px] flex items-center justify-center gap-1 transition shadow-sm">📥 Muat Turun Proposal</a>`;
+                    } else {
+                        linksDisahkan = `<span class="text-[10px] text-orange-500 font-bold mb-1 block">⏳ Menunggu Dokumen Sah</span>`;
+                    }
+                    
+                    if (isApprover) {
+                        linksDisahkan += `<button onclick="bukaModalUpload('${row.bil}')" class="w-full mt-2 bg-teal-100 hover:bg-teal-200 border border-teal-300 text-teal-800 px-2 py-1.5 rounded font-bold text-[10px] transition shadow-sm flex justify-center items-center gap-1">⬆️ Upload Dokumen</button>`;
+                    }
+                } else {
+                    linksDisahkan = `<span class="text-[10px] font-bold text-gray-400 flex flex-col items-center justify-center gap-1"><span class="text-sm">🔒</span> Kunci</span>`;
+                }
+
+                // BUTANG TINDAKAN
+                let actionBtn = `<span class="text-gray-300">-</span>`;
+                if (isApprover) {
+                    let btnSahkan = '';
+                    if (sStatus !== 'DISAHKAN') {
+                        btnSahkan = `<button onclick="sahkanTindakan('${row.bil}', '${row.tajuk.replace(/'/g, "\\'")}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1.5 rounded font-bold shadow-sm transition text-[10px] w-full mb-1">✅ Sahkan</button>`;
+                    }
+                    actionBtn = `
+                        <div class="flex flex-col gap-1 w-full min-w-[80px]">
+                            ${btnSahkan}
+                            <button onclick="bukaModalKemaskini('${row.bil}')" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded font-bold shadow-sm transition text-[10px] w-full flex justify-center items-center gap-1">✏️ Edit</button>
+                            <button onclick="padamRekod('${row.bil}', '${row.tajuk.replace(/'/g, "\\'")}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded font-bold shadow-sm transition text-[10px] w-full flex justify-center items-center gap-1">🗑️ Padam</button>
+                        </div>
+                    `;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-teal-50 transition";
+                let tdContent = `
+                    <td class="p-3 text-center font-bold text-gray-600">${Mula + index + 1}</td>
+                    <td class="p-3 whitespace-normal min-w-[200px]">
+                        <div class="font-bold text-teal-800 text-xs uppercase leading-tight mb-1">${row.tajuk}</div>
+                        <div class="text-[10px] text-gray-600 font-semibold uppercase">👤 ${row.ketua}</div>
+                    </td>
+                    <td class="p-3 text-center font-bold text-gray-600 text-[11px] uppercase border-l border-teal-50">${row.jabatan}</td>
+                    <td class="p-3 text-center border-l border-teal-50">${linksDiUpload}</td>
+                    <td class="p-3 text-center border-l border-teal-50">${linksDisahkan}</td>
+                    <td class="p-3 text-center border-l border-teal-50">${badgeStatus}</td>
+                `;
+
+                if (isApprover) tdContent += `<td class="p-3 text-center border-l border-teal-50">${actionBtn}</td>`;
+                tr.innerHTML = tdContent; tbody.appendChild(tr);
+            });
+
+            document.getElementById('infoPaginasi').innerText = `Papar ${Mula + 1} - ${Math.min(Akhir, dataTapis.length)} dari ${dataTapis.length} rekod`;
+            document.getElementById('btnPrev').disabled = halamanSemasa === 1;
+            document.getElementById('btnNext').disabled = Akhir >= dataTapis.length;
+        }
+
+        function ubahHalaman(arah) { halamanSemasa += arah; paparJadual(); }
+
+        // ================= KAWALAN PENGESAHAN =================
+        function sahkanTindakan(bil, tajuk) {
+            if(!confirm(`Adakah anda pasti mahu SAHKAN pendaftaran projek ini?\n\nTajuk: ${tajuk}`)) return;
+            paparUI('⏳ Sedang memproses pengesahan...', 'bg-blue-100 text-blue-800 border-blue-200');
+            fetch(SCRIPT_URL, {
+                method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: "sahkanProjek", BIL: bil })
+            }).then(res => res.json()).then(data => {
+                if(data.status === "BERJAYA") { paparUI("✅ " + data.mesej, 'bg-green-100 text-green-800 border-green-200'); muatDataStatus(); } 
+                else paparUI("❌ Ralat: " + data.mesej, 'bg-red-100 text-red-800 border-red-200');
+            }).catch(err => paparUI("⚠️ Gagal menghubungi server.", 'bg-red-100 text-red-800 border-red-200'));
+        }
+
+        // ================= FUNGSI BANTUAN BASE64 =================
+        function bacaFailToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve({
+                    mimeType: file.type,
+                    namaFail: file.name,
+                    dataBase64: reader.result.split(',')[1] // Buang 'data:application/pdf;base64,'
+                });
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ================= KAWALAN MODAL UPLOAD =================
+        function bukaModalUpload(bil) {
+            document.getElementById('upload_bil').value = bil;
+            document.getElementById('file_maklumat_sah').value = ""; // Clear input file
+            document.getElementById('file_proposal_sah').value = ""; // Clear input file
+            document.getElementById('modalUpload').classList.remove('hidden');
+        }
+
+        function tutupModal() {
+            document.getElementById('modalUpload').classList.add('hidden');
+        }
+
+        async function hantarDokumenSah(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSimpanUpload');
+            btn.disabled = true; btn.innerText = "⏳ Sedang Memuat Naik...";
+
+            const failMaklumatInput = document.getElementById('file_maklumat_sah').files[0];
+            const failProposalInput = document.getElementById('file_proposal_sah').files[0];
+
+            // Jika admin tekan submit tapi tak pilih mana-mana fail
+            if(!failMaklumatInput && !failProposalInput) {
+                alert("Sila pilih sekurang-kurangnya satu dokumen untuk dimuat naik.");
+                btn.disabled = false; btn.innerText = "💾 Muat Naik Dokumen";
+                return;
+            }
+
+            try {
+                let failMaklumatBase64 = null;
+                let failProposalBase64 = null;
+
+                if (failMaklumatInput) {
+                    failMaklumatBase64 = await bacaFailToBase64(failMaklumatInput);
+                }
+                if (failProposalInput) {
+                    failProposalBase64 = await bacaFailToBase64(failProposalInput);
+                }
+
+                // Hantar data ke App Script
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ 
+                        action: "simpanDokumenDisahkan", 
+                        BIL: document.getElementById('upload_bil').value,
+                        FAIL_MAKLUMAT_SAH: failMaklumatBase64,
+                        FAIL_PROPOSAL_SAH: failProposalBase64
+                    })
+                });
+
+                const data = await response.json();
+                
+                if(data.status === "BERJAYA") { 
+                    paparUI("✅ " + data.mesej, 'bg-green-100 text-green-800 border-green-200'); 
+                    tutupModal();
+                    document.getElementById('borangUpload').reset();
+                    muatDataStatus(); 
+                } 
+                else {
+                    paparUI("❌ Ralat: " + data.mesej, 'bg-red-100 text-red-800 border-red-200');
+                }
+            } catch (err) {
+                console.error(err);
+                paparUI("⚠️ Gagal menghubungi server atau membaca fail.", 'bg-red-100 text-red-800 border-red-200');
+            } finally {
+                btn.disabled = false; 
+                btn.innerText = "💾 Muat Naik Dokumen"; 
+            }
+        }
+
+        // ================= KAWALAN MODAL KEMASKINI (EDIT) =================
+        
+        function formatTarikhInput(tarikhString) {
+            if (!tarikhString) return "";
+            const t = new Date(tarikhString);
+            if(isNaN(t)) return "";
+            return t.toISOString().split('T')[0];
+        }
+
+        function bukaModalKemaskini(bil) {
+            const row = dataAsal.find(r => r.bil == bil);
+            if(!row) return;
+
+            document.getElementById('edit_bil').value = row.bil || '';
+            document.getElementById('edit_tajuk').value = row.tajuk || '';
+            document.getElementById('edit_jabatan').value = row.jabatan || '';
+            document.getElementById('edit_status').value = row.status ? row.status.toUpperCase() : 'MENUNGGU';
+            
+            document.getElementById('edit_tarikh_mula').value = formatTarikhInput(row.tarikhMula);
+            document.getElementById('edit_tarikh_akhir').value = formatTarikhInput(row.tarikhAkhir);
+            
+            document.getElementById('edit_ketua').value = row.ketua || '';
+            document.getElementById('edit_kp_ketua').value = row.kpKetua || '';
+            
+            document.getElementById('edit_ahli_1').value = row.ahli1 || '';
+            document.getElementById('edit_ahli_2').value = row.ahli2 || '';
+            document.getElementById('edit_ahli_3').value = row.ahli3 || '';
+            document.getElementById('edit_ahli_4').value = row.ahli4 || '';
+            document.getElementById('edit_ahli_5').value = row.ahli5 || '';
+            
+            document.getElementById('edit_url_maklumat').value = row.urlMaklumat || '';
+            document.getElementById('edit_url_proposal').value = row.urlProposal || '';
+
+            document.getElementById('modalKemaskini').classList.remove('hidden');
+        }
+
+        function tutupModalKemaskini() {
+            document.getElementById('modalKemaskini').classList.add('hidden');
+        }
+
+        function hantarKemaskini(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSimpanKemaskini');
+            btn.disabled = true; btn.innerText = "⏳ Menyimpan...";
+
+            fetch(SCRIPT_URL, {
+                method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    action: "kemaskiniProjek",
+                    BIL: document.getElementById('edit_bil').value,
+                    TAJUK: document.getElementById('edit_tajuk').value,
+                    JABATAN: document.getElementById('edit_jabatan').value,
+                    STATUS: document.getElementById('edit_status').value,
+                    TARIKH_MULA: document.getElementById('edit_tarikh_mula').value,
+                    TARIKH_AKHIR: document.getElementById('edit_tarikh_akhir').value,
+                    KETUA: document.getElementById('edit_ketua').value,
+                    KP_KETUA: document.getElementById('edit_kp_ketua').value,
+                    AHLI_1: document.getElementById('edit_ahli_1').value,
+                    AHLI_2: document.getElementById('edit_ahli_2').value,
+                    AHLI_3: document.getElementById('edit_ahli_3').value,
+                    AHLI_4: document.getElementById('edit_ahli_4').value,
+                    AHLI_5: document.getElementById('edit_ahli_5').value,
+                    URL_MAKLUMAT: document.getElementById('edit_url_maklumat').value,
+                    URL_PROPOSAL: document.getElementById('edit_url_proposal').value
+                })
+            }).then(res => res.json()).then(data => {
+                if(data.status === "BERJAYA") { 
+                    paparUI("✅ " + data.mesej, 'bg-green-100 text-green-800 border-green-200'); 
+                    tutupModalKemaskini();
+                    muatDataStatus(); 
+                } else {
+                    paparUI("❌ Ralat: " + data.mesej, 'bg-red-100 text-red-800 border-red-200');
+                }
+            }).catch(err => paparUI("⚠️ Gagal menghubungi server.", 'bg-red-100 text-red-800 border-red-200'))
+            .finally(() => { btn.disabled = false; btn.innerText = "💾 Simpan Perubahan"; });
+        }
+
+        // ================= KAWALAN PADAM REKOD =================
+        function padamRekod(bil, tajuk) {
+            if(!confirm(`AMARAN: Anda pasti mahu memadam rekod ini secara kekal?\n\nTajuk: ${tajuk}\n\nNota: Segala fail (PDF/Maklumat/Proposal) yang diupload ke dalam Google Drive juga akan dibuang secara automatik.`)) return;
+            
+            paparUI('🗑️ Sedang memadam rekod dan fail...', 'bg-red-100 text-red-800 border-red-200');
+            
+            fetch(SCRIPT_URL, {
+                method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: "padamProjek", BIL: bil })
+            }).then(res => res.json()).then(data => {
+                if(data.status === "BERJAYA") { 
+                    paparUI("✅ " + data.mesej, 'bg-green-100 text-green-800 border-green-200'); 
+                    muatDataStatus(); 
+                } 
+                else paparUI("❌ Ralat: " + data.mesej, 'bg-red-100 text-red-800 border-red-200');
+            }).catch(err => paparUI("⚠️ Gagal menghubungi server.", 'bg-red-100 text-red-800 border-red-200'));
+        }
+
+        // ================= KAWALAN PAPARAN UI =================
+        function paparUI(teks, warnaClass) {
+            const sm = document.getElementById('statusMesejUI');
+            sm.className = `mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm border ${warnaClass}`;
+            sm.innerText = teks; sm.classList.remove('hidden');
+            window.scrollTo(0, 0); setTimeout(() => sm.classList.add('hidden'), 5000);
+        }
+    </script>
+</body>
+</html>

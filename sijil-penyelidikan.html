@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sijil Penyelidikan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        // Semak jika pengguna telah log masuk
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Akses ditolak! Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+    <style>
+        /* Gaya khas untuk sijil supaya nampak formal */
+        .sijil-container {
+            background-image: url('https://www.transparenttextures.com/patterns/white-diamond.png'); /* Corak latar belakang halus */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8 font-sans text-gray-800">
+
+    <div class="max-w-5xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-5 rounded-xl shadow-sm border border-gray-200 gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">🎓 Muat Turun Sijil Penyelidikan</h1>
+                <p class="text-sm text-gray-500 mt-1">Hanya penyelidikan bersatus <span class="text-green-600 font-bold">DISAHKAN</span> akan dipaparkan.</p>
+            </div>
+            <div>
+                <a href="dashboard-penyelidikan.html" class="bg-slate-600 hover:bg-slate-700 text-white px-5 py-2.5 rounded-lg font-semibold transition shadow-md flex items-center gap-2 text-sm">
+                    &larr; Kembali Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-white rounded-xl shadow-md border border-gray-100 p-6 h-fit">
+                <h2 class="text-lg font-bold text-amber-600 mb-4 border-b pb-2">1. Pilih Penyelidikan</h2>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Pilih Tajuk Penyelidikan:</label>
+                    <select id="pilihanKPI" onchange="kemaskiniSijil()" class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm">
+                        <option value="">⏳ Sedang memuatkan data...</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Nama Penerima Sijil:</label>
+                    <input type="text" id="namaPenerima" onkeyup="kemaskiniSijil()" class="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm uppercase" placeholder="Masukkan nama anda">
+                    <p class="text-xs text-gray-500 mt-1">Anda boleh menyunting nama di atas jika anda adalah salah seorang penulis bersama (co-author).</p>
+                </div>
+
+                <button onclick="muatTurunPDF()" id="btnDownload" disabled class="w-full bg-amber-500 hover:bg-amber-600 text-white px-4 py-3 rounded-lg font-bold transition shadow-md flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
+                    📥 Muat Turun Sijil (PDF)
+                </button>
+            </div>
+
+            <div class="lg:col-span-2 flex justify-center bg-gray-200 rounded-xl p-4 overflow-x-auto border border-gray-300 shadow-inner">
+                
+                <div id="templatSijil" class="sijil-container bg-white w-[800px] h-[565px] p-10 relative shadow-lg border-[12px] border-double border-amber-600 flex flex-col justify-center items-center text-center hidden">
+                    
+                    <div class="absolute top-8 left-1/2 transform -translate-x-1/2 flex items-center gap-4">
+                        <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-xs text-gray-500 border border-gray-300 font-bold">LOGO 1</div>
+                        <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-xs text-gray-500 border border-gray-300 font-bold">LOGO 2</div>
+                    </div>
+
+                    <div class="mt-16">
+                        <h1 class="text-4xl font-serif font-bold text-amber-700 uppercase tracking-widest mb-2">Sijil Penghargaan</h1>
+                        <h2 class="text-xl font-serif text-slate-700 tracking-wider">Pencapaian Penyelidikan & Inovasi</h2>
+                    </div>
+
+                    <div class="mt-10 w-full px-12">
+                        <p class="text-gray-600 font-medium mb-3">Dengan ini disahkan bahawa</p>
+                        <p id="sijilNama" class="text-3xl font-bold text-gray-900 border-b-2 border-gray-300 pb-2 mb-4 uppercase inline-block min-w-[300px]"></p>
+                        
+                        <p class="text-gray-600 font-medium mb-2">telah berjaya menerbitkan penyelidikan bertajuk:</p>
+                        <p id="sijilTajuk" class="text-xl font-bold text-blue-800 italic leading-snug px-8 mb-4"></p>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-2 gap-4 w-full px-16 text-sm">
+                        <div class="text-left bg-gray-50 p-3 rounded border border-gray-200">
+                            <p><span class="font-bold text-gray-700">Penerbit:</span> <span id="sijilPenerbit" class="text-gray-800"></span></p>
+                            <p><span class="font-bold text-gray-700">Tahap:</span> <span id="sijilTahap" class="text-gray-800 uppercase"></span></p>
+                        </div>
+                        <div class="text-left bg-gray-50 p-3 rounded border border-gray-200">
+                            <p><span class="font-bold text-gray-700">Status Indeks:</span> <span id="sijilIndeks" class="text-gray-800"></span></p>
+                            <p><span class="font-bold text-gray-700">Tarikh Terbit:</span> <span id="sijilTarikh" class="text-gray-800"></span></p>
+                        </div>
+                    </div>
+
+                    <div class="absolute bottom-10 right-16 text-center">
+                        <div class="border-b border-gray-800 w-48 mb-1 h-12 flex items-end justify-center">
+                            <span class="text-gray-300 text-xs italic">Tandatangan Digital</span>
+                        </div>
+                        <p class="font-bold text-sm text-gray-800">Pengarah</p>
+                        <p class="text-xs text-gray-600">Institusi Anda</p>
+                    </div>
+
+                    <div class="absolute bottom-10 left-16 text-left">
+                        <p class="text-xs text-gray-500 font-bold">Kod ID: <span id="sijilBil" class="font-mono"></span></p>
+                        <p class="text-xs text-gray-500">Jabatan: <span id="sijilJabatan" class="font-bold"></span></p>
+                    </div>
+
+                </div>
+                
+                <div id="placeholderSijil" class="flex flex-col items-center justify-center text-gray-400 h-[500px]">
+                    <span class="text-6xl mb-4">📜</span>
+                    <p class="font-semibold">Sila pilih tajuk penyelidikan untuk papar sijil.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec"; 
+
+        const userNama = sessionStorage.getItem("namaPengguna") || "";
+        const userPeranan = sessionStorage.getItem("peranan") || "STAF";
+        const userJabatan = sessionStorage.getItem("jabatan") || "";
+
+        let senaraiSah = []; // Simpan data yang telah disahkan
+
+        // Set nama default ke input
+        document.getElementById("namaPenerima").value = userNama;
+
+        window.onload = function() {
+            ambilDataDisahkan();
+        };
+
+        function ambilDataDisahkan() {
+            const dropdown = document.getElementById("pilihanKPI");
+            
+            // Bina URL fetch
+            const fetchUrl = SCRIPT_URL.includes('?') ? `${SCRIPT_URL}&action=ambilKPIPenyelidikan` : `${SCRIPT_URL}?action=ambilKPIPenyelidikan`;
+
+            fetch(fetchUrl)
+                .then(res => res.json())
+                .then(data => {
+                    if(data.status === "BERJAYA") {
+                        // Tapis data: Hanya yang DISAHKAN
+                        let dataDisahkan = data.data.filter(item => item.statusPengesahan.toUpperCase() === "DISAHKAN");
+                        
+                        // Jika Staf biasa, hanya tunjuk jabatan dia sahaja
+                        if (userPeranan.toUpperCase() === "STAF" && userJabatan) {
+                            dataDisahkan = dataDisahkan.filter(item => item.jabatan === userJabatan);
+                        }
+
+                        senaraiSah = dataDisahkan; // Simpan ke pembolehubah global
+
+                        dropdown.innerHTML = `<option value="">-- Sila Pilih Tajuk Penyelidikan --</option>`;
+                        
+                        if (senaraiSah.length === 0) {
+                            dropdown.innerHTML = `<option value="">Tiada penyelidikan yang telah disahkan.</option>`;
+                            return;
+                        }
+
+                        senaraiSah.forEach((item, index) => {
+                            let option = document.createElement("option");
+                            option.value = index; // Gunakan index array sebagai value
+                            option.text = item.tajuk;
+                            dropdown.appendChild(option);
+                        });
+
+                    } else {
+                        dropdown.innerHTML = `<option value="">Ralat memuatkan data.</option>`;
+                    }
+                })
+                .catch(err => {
+                    dropdown.innerHTML = `<option value="">Gagal menghubungi pangkalan data.</option>`;
+                });
+        }
+
+        function kemaskiniSijil() {
+            const dropdown = document.getElementById("pilihanKPI");
+            const indexPilihan = dropdown.value;
+            const namaPenerima = document.getElementById("namaPenerima").value;
+            const btnDownload = document.getElementById("btnDownload");
+            const templatSijil = document.getElementById("templatSijil");
+            const placeholder = document.getElementById("placeholderSijil");
+
+            if (indexPilihan === "" || !namaPenerima) {
+                // Sembunyikan sijil, disable butang
+                btnDownload.disabled = true;
+                btnDownload.classList.add("opacity-50", "cursor-not-allowed");
+                templatSijil.classList.add("hidden");
+                placeholder.classList.remove("hidden");
+                return;
+            }
+
+            const dataPilihan = senaraiSah[indexPilihan];
+
+            // Masukkan data ke dalam template HTML
+            document.getElementById("sijilNama").innerText = namaPenerima;
+            document.getElementById("sijilTajuk").innerText = dataPilihan.tajuk;
+            document.getElementById("sijilPenerbit").innerText = dataPilihan.publisher;
+            document.getElementById("sijilTahap").innerText = dataPilihan.tahapSebaran;
+            document.getElementById("sijilIndeks").innerText = dataPilihan.indexStatus;
+            document.getElementById("sijilTarikh").innerText = dataPilihan.tarikhTerbit;
+            document.getElementById("sijilBil").innerText = `RND-${dataPilihan.bil}`;
+            document.getElementById("sijilJabatan").innerText = dataPilihan.jabatan;
+
+            // Paparkan sijil, aktifkan butang
+            placeholder.classList.add("hidden");
+            templatSijil.classList.remove("hidden");
+            
+            btnDownload.disabled = false;
+            btnDownload.classList.remove("opacity-50", "cursor-not-allowed");
+        }
+
+        function muatTurunPDF() {
+            const elemenSijil = document.getElementById("templatSijil");
+            const namaPenerima = document.getElementById("namaPenerima").value.trim().replace(/ /g, "_");
+            const namaFail = `Sijil_Penyelidikan_${namaPenerima}.pdf`;
+
+            // Konfigurasi html2pdf
+            const opt = {
+                margin:       0,
+                filename:     namaFail,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 }, // Kualiti tinggi
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
+            };
+
+            // Mula muat turun
+            html2pdf().set(opt).from(elemenSijil).save();
+        }
+    </script>
+</body>
+</html>

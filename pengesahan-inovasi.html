@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pengesahan Inovasi</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; }
+    .table-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    #loader { display: none; text-align: center; margin: 20px 0; }
+  </style>
+</head>
+<body>
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Senarai Inovasi: <span class="text-warning">Menunggu Pengesahan</span></h3>
+    
+    <div>
+      <a href="utama.html" class="btn btn-secondary me-2">🏠 Utama</a>
+      <a href="dashboard.html" class="btn btn-primary">⬅ Kembali ke Dashboard</a>
+    </div>
+  </div>
+  
+  <div id="loader">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p>Sedang memuat turun data...</p>
+  </div>
+
+  <div class="table-container table-responsive">
+    <table class="table table-bordered table-hover mt-3" id="jadualInovasi">
+      <thead class="table-dark">
+        <tr>
+          <th>Bil</th>
+          <th>Innovator</th>
+          <th>Ahli</th>
+          <th>Jabatan</th>
+          <th>Produk</th>
+          <th>Nama Pertandingan</th>
+          <th>Tarikh</th>
+          <th>Pingat</th>
+          <th>Tahun</th>
+          <th>Tindakan</th>
+        </tr>
+      </thead>
+      <tbody id="bodyJadual">
+        </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="modalEdit" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Kemaskini Rekod Inovasi</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEdit">
+          <input type="hidden" id="editBil">
+          <input type="hidden" id="editStatus">
+          
+          <div class="row mb-2">
+            <div class="col-md-6">
+              <label>Innovator</label>
+              <input type="text" class="form-control" id="editInnovator" required>
+            </div>
+            <div class="col-md-6">
+              <label>Ahli Kumpulan</label>
+              <input type="text" class="form-control" id="editAhli">
+            </div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-md-6">
+              <label>Jabatan</label>
+              <input type="text" class="form-control" id="editJabatan" required>
+            </div>
+            <div class="col-md-6">
+              <label>Produk</label>
+              <input type="text" class="form-control" id="editProduk" required>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-md-12">
+              <label>Nama Pertandingan</label>
+              <input type="text" class="form-control" id="editNama" required>
+            </div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-md-4">
+              <label>Tarikh / Tempat</label>
+              <input type="text" class="form-control" id="editTarikh">
+            </div>
+            <div class="col-md-4">
+              <label>Pingat</label>
+              <input type="text" class="form-control" id="editPingat">
+            </div>
+            <div class="col-md-4">
+              <label>Tahun</label>
+              <input type="number" class="form-control" id="editTahun">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary mt-3 w-100" id="btnSimpanEdit">Simpan Kemaskini</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const userPeranan = sessionStorage.getItem("peranan") || "";
+    const perananUpper = userPeranan.toUpperCase();
+    
+    // Semak jika peranan ada perkataan INOVASI (cth: PENYELARAS INOVASI), atau KUPIK, atau ADMIN
+    const isAuthorized = perananUpper.includes("INOVASI") || perananUpper === "KUPIK" || perananUpper === "ADMIN";
+
+    if (sessionStorage.getItem("userLulus") !== "YA" || !isAuthorized) {
+        alert("Akses Ditolak! Hanya Penyelaras Inovasi, KUPIK, dan ADMIN yang dibenarkan membuat pengesahan.");
+        window.location.href = "dashboard-kpi.html"; 
+    }
+</script>
+
+<script>
+  // =========================================================
+  // 1. TETAPAN ASAS (JIKA LULUS AKSES)
+  // =========================================================
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec"; 
+  let dataInovasiSemasa = []; // Simpanan data sementara untuk rujukan butang
+
+  // =========================================================
+  // 2. LOAD DATA DARI GOOGLE SHEET
+  // =========================================================
+  window.onload = function() {
+    loadData();
+  };
+
+  function loadData() {
+    document.getElementById("loader").style.display = "block";
+    document.getElementById("bodyJadual").innerHTML = "";
+
+    fetch(SCRIPT_URL + "?action=ambilData")
+      .then(res => res.json())
+      .then(response => {
+        document.getElementById("loader").style.display = "none";
+        if (response.status === "BERJAYA") {
+          // Filter hanya yang "MENUNGGU PENGESAHAN"
+          dataInovasiSemasa = response.data.filter(rekod => rekod[9] === "MENUNGGU PENGESAHAN");
+          binaJadual(dataInovasiSemasa);
+        } else {
+          alert("Gagal mengambil data: " + response.mesej);
+        }
+      })
+      .catch(err => {
+        document.getElementById("loader").style.display = "none";
+        alert("Ralat server: " + err.message);
+      });
+  }
+
+  // =========================================================
+  // 3. BINA JADUAL HTML
+  // =========================================================
+  function binaJadual(data) {
+    let tbody = document.getElementById("bodyJadual");
+    if (data.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='10' class='text-center'>Tiada rekod yang menunggu pengesahan.</td></tr>";
+      return;
+    }
+
+    data.forEach((rekod, index) => {
+      let tr = document.createElement("tr");
+      
+      tr.innerHTML = `
+        <td>${rekod[0]}</td>
+        <td>${rekod[1]}</td>
+        <td>${rekod[2]}</td>
+        <td>${rekod[3]}</td>
+        <td>${rekod[4]}</td>
+        <td>${rekod[5]}</td>
+        <td>${rekod[6]}</td>
+        <td>${rekod[7]}</td>
+        <td>${rekod[8]}</td>
+        <td>
+          <div class="d-flex gap-1">
+            <button class="btn btn-success btn-sm" onclick="sahkanRekod(${index})">Sah</button>
+            <button class="btn btn-warning btn-sm" onclick="bukaModalEdit(${index})">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="padamRekod('${rekod[0]}')">Tolak</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // =========================================================
+  // 4. FUNGSI PENGESAHAN (SAH)
+  // =========================================================
+  function sahkanRekod(index) {
+    if(!confirm("Anda pasti mahu mengesahkan inovasi ini?")) return;
+    
+    let rekod = dataInovasiSemasa[index];
+    
+    let payload = {
+      action: "kemaskiniData",
+      bil: rekod[0],
+      innovator: rekod[1],
+      ahli: rekod[2],
+      jabatan: rekod[3],
+      produk: rekod[4],
+      pertandingan: rekod[5],
+      tarikh_tempat: rekod[6],
+      pingat: rekod[7],
+      tahun: rekod[8],
+      status: "DISAHKAN" 
+    };
+
+    hantarKeServer(payload, "Sedang mengesahkan rekod...");
+  }
+
+  // =========================================================
+  // 5. FUNGSI PADAM (TOLAK)
+  // =========================================================
+  function padamRekod(bilID) {
+    if(!confirm("Anda pasti mahu menolak dan memadam rekod ini secara kekal?")) return;
+    
+    let payload = {
+      action: "padamData",
+      bil: bilID
+    };
+
+    hantarKeServer(payload, "Sedang memadam rekod...");
+  }
+
+  // =========================================================
+  // 6. FUNGSI EDIT (BUKA MODAL & SIMPAN)
+  // =========================================================
+  const modalEditEl = new bootstrap.Modal(document.getElementById('modalEdit'));
+
+  function bukaModalEdit(index) {
+    let rekod = dataInovasiSemasa[index];
+    
+    document.getElementById("editBil").value = rekod[0];
+    document.getElementById("editInnovator").value = rekod[1];
+    document.getElementById("editAhli").value = rekod[2];
+    document.getElementById("editJabatan").value = rekod[3];
+    document.getElementById("editProduk").value = rekod[4];
+    document.getElementById("editNama").value = rekod[5];
+    document.getElementById("editTarikh").value = rekod[6];
+    document.getElementById("editPingat").value = rekod[7];
+    document.getElementById("editTahun").value = rekod[8];
+    document.getElementById("editStatus").value = rekod[9]; 
+    
+    modalEditEl.show();
+  }
+
+  document.getElementById("formEdit").addEventListener("submit", function(e) {
+    e.preventDefault();
+    document.getElementById("btnSimpanEdit").innerText = "Menyimpan...";
+    document.getElementById("btnSimpanEdit").disabled = true;
+
+    let payload = {
+      action: "kemaskiniData",
+      bil: document.getElementById("editBil").value,
+      innovator: document.getElementById("editInnovator").value,
+      ahli: document.getElementById("editAhli").value,
+      jabatan: document.getElementById("editJabatan").value,
+      produk: document.getElementById("editProduk").value,
+      pertandingan: document.getElementById("editNama").value,
+      tarikh_tempat: document.getElementById("editTarikh").value,
+      pingat: document.getElementById("editPingat").value,
+      tahun: document.getElementById("editTahun").value,
+      status: document.getElementById("editStatus").value 
+    };
+
+    hantarKeServer(payload, "Sedang mengemaskini rekod...", true);
+  });
+
+  // =========================================================
+  // 7. FUNGSI PENGHANTARAN POST KE SERVER (FETCH API)
+  // =========================================================
+  function hantarKeServer(payload, mesejLoading, dariModal = false) {
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      headers: { "Content-Type": "text/plain;charset=utf-8" }
+    })
+    .then(res => res.json())
+    .then(response => {
+      if (dariModal) {
+        document.getElementById("btnSimpanEdit").innerText = "Simpan Kemaskini";
+        document.getElementById("btnSimpanEdit").disabled = false;
+        modalEditEl.hide();
+      }
+      
+      if (response.status === "BERJAYA") {
+        alert("Tindakan Berjaya: " + response.mesej);
+        
+        // 🌟 KOD BARU: Redirect ke dashboard.html selepas berjaya
+        window.location.href = "dashboard.html";
+        
+      } else {
+        alert("Ralat: " + response.mesej);
+      }
+    })
+    .catch(err => {
+      alert("Ralat sambungan: " + err.message);
+      if(dariModal){
+         document.getElementById("btnSimpanEdit").innerText = "Simpan Kemaskini";
+         document.getElementById("btnSimpanEdit").disabled = false;
+      }
+    });
+  }
+
+</script>
+</body>
+</html>

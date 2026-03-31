@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Borang Pemantauan KPI C-RIE 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f3f4f6; }
+    </style>
+</head>
+<body class="p-6">
+
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="bg-blue-700 text-white p-6 text-center">
+            <h1 class="text-2xl font-bold">Borang Pemantauan KPI C-RIE 2026</h1>
+            <p class="text-sm mt-1 opacity-80">Pusat Kecemerlangan Penyelidikan dan Inovasi (C-RIE) | Politeknik Ungku Omar</p>
+        </div>
+
+        <form id="kpiForm" class="p-8 space-y-8" onsubmit="hantarData(event)">
+
+            <div class="border border-gray-200 rounded-lg p-6 bg-indigo-50">
+                <h2 class="text-lg font-bold text-indigo-800 border-b border-indigo-200 pb-2 mb-4">
+                    MAKLUMAT PEGAWAI / PENYELIDIK TERLIBAT
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Ketua Projek / Penyelidik Utama</label>
+                        <input type="text" id="ketuaProjek" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 uppercase" placeholder="Masukkan nama ketua" required>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Senarai Ahli Kumpulan (Pisahkan dengan koma jika lebih dari seorang)</label>
+                        <textarea id="ahliKumpulan" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 uppercase" placeholder="Cth: AHMAD BIN ALI, SITI BINTI ABU"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Jabatan / Unit</label>
+                        <input type="text" id="jabatan" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 uppercase" placeholder="Cth: JKM / JTMK / JKE" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Tahun Penilaian KPI</label>
+                        <input type="number" id="tahunKpi" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" value="2026" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg p-6 bg-blue-50">
+                <h2 class="text-lg font-bold text-blue-800 border-b border-blue-200 pb-2 mb-4">
+                    1. KPI 18: PROJEK PENYELIDIKAN
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Jenis Platform</label>
+                        <select id="platformPenyelidikan" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="">-- Sila Pilih --</option>
+                            <option value="Jurnal">Jurnal</option>
+                            <option value="Prosiding">Prosiding</option>
+                            <option value="Diges">Diges</option>
+                            <option value="Lain-lain">Lain-lain</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Bilangan Sukuan 1</label>
+                        <input type="number" min="0" id="penyQ1" class="w-full px-4 py-2 border border-gray-300 rounded-md" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Bilangan Sukuan 2</label>
+                        <input type="number" min="0" id="penyQ2" class="w-full px-4 py-2 border border-gray-300 rounded-md" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Bilangan Sukuan 3</label>
+                        <input type="number" min="0" id="penyQ3" class="w-full px-4 py-2 border border-gray-300 rounded-md" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Bilangan Sukuan 4</label>
+                        <input type="number" min="0" id="penyQ4" class="w-full px-4 py-2 border border-gray-300 rounded-md" placeholder="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg p-6 bg-green-50">
+                <h2 class="text-lg font-bold text-green-800 border-b border-green-200 pb-2 mb-4">
+                    2. KPI 18: PROJEK INOVASI
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Produk Inovasi</label>
+                        <input type="text" id="namaProduk" class="w-full px-4 py-2 border border-gray-300 rounded-md" placeholder="Cth: eDrone2Map">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Pendaftaran Harta Intelek</label>
+                            <select id="statusIntelek" class="w-full px-4 py-2 border border-gray-300 rounded-md">
+                                <option value="False">Belum Selesai (False)</option>
+                                <option value="True">Selesai (True)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Perlindungan Hak Milik</label>
+                            <select id="statusHakMilik" class="w-full px-4 py-2 border border-gray-300 rounded-md">
+                                <option value="False">Belum Selesai (False)</option>
+                                <option value="True">Selesai (True)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Aplikasi (Surat Pengesahan)</label>
+                            <select id="statusAplikasi" class="w-full px-4 py-2 border border-gray-300 rounded-md">
+                                <option value="False">Tiada (False)</option>
+                                <option value="True">Ada (True)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Keberkesanan</label>
+                            <select id="statusKeberkesanan" class="w-full px-4 py-2 border border-gray-300 rounded-md">
+                                <option value="False">Belum Dibuktikan (False)</option>
+                                <option value="True">Terbukti (True)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg p-6 bg-yellow-50">
+                <h2 class="text-lg font-bold text-yellow-800 border-b border-yellow-200 pb-2 mb-4">
+                    3. KPI PELAN TINDAKAN MARTABAT BAHASA MELAYU (Teras 3)
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Jenis Penerbitan</label>
+                        <select id="jenisPenerbitan" class="w-full px-4 py-2 border border-gray-300 rounded-md">
+                            <option value="">-- Sila Pilih --</option>
+                            <option value="Buku">Buku</option>
+                            <option value="Bahan Ilmiah">Bahan Ilmiah</option>
+                            <option value="Buku Umum">Buku Umum</option>
+                            <option value="Karya Kreatif">Karya Kreatif</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Bilangan Sukuan 1</label>
+                        <input type="number" min="0" id="bmQ1" class="w-full px-4 py-2 border border-gray-300 rounded-md" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Bilangan Sukuan 2</label>
+                        <input type="number" min="0" id="bmQ2" class="w-full px-4 py-2 border border-gray-300 rounded-md" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Bilangan Sukuan 3</label>
+                        <input type="number" min="0" id="bmQ3" class="w-full px-4 py-2 border border-gray-300 rounded-md" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Bilangan Sukuan 4</label>
+                        <input type="number" min="0" id="bmQ4" class="w-full px-4 py-2 border border-gray-300 rounded-md" placeholder="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end border-t border-gray-200 pt-6">
+                <button type="button" onclick="document.getElementById('kpiForm').reset()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 transition mr-4 font-semibold">
+                    Kosongkan Borang
+                </button>
+                <button type="submit" id="btnSubmit" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md shadow transition flex items-center gap-2">
+                    💾 Simpan Rekod KPI
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <script>
+        // Fungsi simulasi semasa butang simpan ditekan
+        function hantarData(event) {
+            event.preventDefault(); // Mengelakkan page dari ter-refresh
+            
+            // 1. Kutip semua data dari form ke dalam satu objek JSON
+            const dataPemanatauan = {
+                // Maklumat Pegawai
+                ketuaProjek: document.getElementById('ketuaProjek').value,
+                ahliKumpulan: document.getElementById('ahliKumpulan').value,
+                jabatan: document.getElementById('jabatan').value,
+                tahunKpi: document.getElementById('tahunKpi').value,
+                
+                // Maklumat Penyelidikan
+                platformPenyelidikan: document.getElementById('platformPenyelidikan').value,
+                penyQ1: document.getElementById('penyQ1').value || 0,
+                penyQ2: document.getElementById('penyQ2').value || 0,
+                penyQ3: document.getElementById('penyQ3').value || 0,
+                penyQ4: document.getElementById('penyQ4').value || 0,
+                
+                // Maklumat Inovasi
+                namaProduk: document.getElementById('namaProduk').value,
+                statusIntelek: document.getElementById('statusIntelek').value,
+                statusHakMilik: document.getElementById('statusHakMilik').value,
+                statusAplikasi: document.getElementById('statusAplikasi').value,
+                statusKeberkesanan: document.getElementById('statusKeberkesanan').value,
+                
+                // Maklumat Bahasa Melayu
+                jenisPenerbitan: document.getElementById('jenisPenerbitan').value,
+                bmQ1: document.getElementById('bmQ1').value || 0,
+                bmQ2: document.getElementById('bmQ2').value || 0,
+                bmQ3: document.getElementById('bmQ3').value || 0,
+                bmQ4: document.getElementById('bmQ4').value || 0
+            };
+
+            // Semak pada console browser untuk pastikan struktur data betul
+            console.log("Data untuk dihantar ke Sheet PEMANTAUAN_KPI:", dataPemanatauan);
+            
+            // Ubah butang supaya nampak sistem sedang memproses
+            let btn = document.getElementById('btnSubmit');
+            let teksAsal = btn.innerHTML;
+            btn.innerHTML = "⏳ Sedang Menyimpan...";
+            btn.disabled = true;
+
+            // Di sini nanti anda boleh sambungkan dengan backend Google Apps Script:
+            // Contoh kod sambungan ke backend:
+            /*
+            google.script.run
+                .withSuccessHandler(function(response) {
+                    alert("✅ Berjaya! Rekod telah disimpan ke dalam Sheet PEMANTAUAN_KPI.");
+                    document.getElementById('kpiForm').reset();
+                    btn.innerHTML = teksAsal;
+                    btn.disabled = false;
+                })
+                .withFailureHandler(function(error) {
+                    alert("❌ Ralat berlaku: " + error.message);
+                    btn.innerHTML = teksAsal;
+                    btn.disabled = false;
+                })
+                .simpanKePemantauanKPI(dataPemanatauan);
+            */
+
+            // Untuk sementara waktu: simulasi loading 1 saat
+            setTimeout(() => {
+                alert("Sedia! Data telah dikutip dengan jayanya dan sedia dipam ke Sheet PEMANTAUAN_KPI.");
+                btn.innerHTML = teksAsal;
+                btn.disabled = false;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

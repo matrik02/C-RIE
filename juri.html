@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pencalonan Juri</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script> <script>
+        const userLulus = sessionStorage.getItem("userLulus");
+        if (userLulus !== "YA") {
+            alert("Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html";
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-indigo-700 text-white shadow-md">
+        <div class="max-w-[95rem] mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">⚖️</span>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold tracking-wide">Pencalonan Juri</h1>
+                    <p class="text-indigo-200 mt-1 text-sm">Pengurusan Rekod dan Pangkalan Data Juri Penilai</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="bukaModalBorang()" class="bg-white text-indigo-700 px-4 py-2 rounded-lg font-bold shadow hover:bg-indigo-50 transition text-sm flex items-center gap-2">
+                    ➕ Tambah Manual
+                </button>
+                <button onclick="document.getElementById('csvFileInput').click()" class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-emerald-600 transition text-sm flex items-center gap-2">
+                    📤 Upload CSV
+                </button>
+                <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="importCSV(event)">
+                
+                <button onclick="downloadCSV()" class="bg-indigo-900 text-white px-4 py-2 border border-indigo-500 rounded-lg font-bold shadow hover:bg-indigo-800 transition text-sm flex items-center gap-2">
+                    📥 Download CSV
+                </button>
+
+                <a href="pencapaian_pelajar.html" class="bg-slate-700 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-slate-800 transition text-sm ml-2">
+                    &larr; Dashboard Projek Pelajar
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[95rem] mx-auto px-4 py-8 flex-grow w-full">
+        
+        <div id="paparMesejUI" class="hidden mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm border text-white"></div>
+
+        <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-gray-600 text-sm">SENARAI JURI KESELURUHAN</h3>
+                <button onclick="muatDataJuri()" class="text-xs bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded font-bold hover:bg-indigo-200">🔄 Refresh</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm whitespace-nowrap">
+                    <thead>
+                        <tr class="bg-indigo-50 text-indigo-900 uppercase tracking-wide text-[10px] border-b-2 border-indigo-200">
+                            <th class="p-3 text-center">BIL</th>
+                            <th class="p-3">NAMA JURI</th>
+                            <th class="p-3">NO. IC</th>
+                            <th class="p-3">INSTITUSI</th>
+                            <th class="p-3">TELEFON</th>
+                            <th class="p-3">EMAIL</th>
+                            <th class="p-3 text-center">JABATAN</th>
+                            <th class="p-3 text-center">TAHUN</th>
+                            <th class="p-3 text-center">STATUS</th>
+                            <th class="p-3 text-center">TINDAKAN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="isiJadual" class="text-gray-700 bg-white">
+                        <tr><td colspan=\"10\" class="p-10 text-center font-bold text-indigo-500 animate-pulse">⏳ Memuat turun data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="modalBorang" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden flex items-center justify-center backdrop-blur-sm transition-opacity p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
+            <div class="bg-indigo-600 p-4 text-white flex justify-between items-center">
+                <h3 id="tajukModal" class="font-bold text-lg">📝 Borang Juri</h3>
+                <button onclick="tutupModal()" class="text-white hover:text-indigo-200 text-2xl font-bold leading-none">&times;</button>
+            </div>
+            
+            <form id="borangJuri" onsubmit="hantarBorang(event)" class="p-6">
+                <input type="hidden" id="editBil"> 
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Nama Penuh</label>
+                        <input type="text" id="in_nama" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 uppercase outline-none bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">No. IC</label>
+                        <input type="text" id="in_ic" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-gray-50">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Institusi (Cth: JTMK PUO / UNIVERSITI MALAYA)</label>
+                    <input type="text" id="in_institusi" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 uppercase outline-none bg-gray-50">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">No. Telefon</label>
+                        <input type="text" id="in_telefon" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Email</label>
+                        <input type="email" id="in_email" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-gray-50">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 border-t pt-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Jabatan (Semasa)</label>
+                        <input type="text" id="in_jabatan" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 uppercase outline-none bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Tahun Bertugas</label>
+                        <input type="number" id="in_tahun" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Status</label>
+                        <select id="in_status" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-bold">
+                            <option value="AKTIF">AKTIF</option>
+                            <option value="TIDAK AKTIF">TIDAK AKTIF</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button type="button" onclick="tutupModal()" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition">Batal</button>
+                    <button type="submit" id="btnSimpan" class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition shadow-md">Simpan Rekod</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+        let dataJuriGlobal = [];
+        const userPeranan = (sessionStorage.getItem("peranan") || "").toUpperCase();
+        // Hanya pentadbir yang boleh padam. Staf biasa mungkin boleh tambah/edit sahaja.
+        const isPihakAtasan = ["PENYELARAS INOVASI", "PENYELARAS PENYELIDIKAN", "KUPIK", "ADMIN"].includes(userPeranan);
+
+        window.onload = () => { muatDataJuri(); };
+
+        // ================= PAPARAN JADUAL =================
+        function muatDataJuri() {
+            const tbody = document.getElementById('isiJadual');
+            tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center font-bold text-indigo-500 animate-pulse">⏳ Menyedut data pangkalan juri...</td></tr>`;
+
+            fetch(`${SCRIPT_URL}?action=ambilJuri`)
+            .then(res => res.json())
+            .then(result => {
+                if (result.status === "BERJAYA") {
+                    dataJuriGlobal = result.data || [];
+                    renderJadual();
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-red-600 font-bold">❌ Mesej: ${result.mesej}</td></tr>`;
+                }
+            }).catch(err => {
+                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-red-600 font-bold">⚠️ Ralat menyambung ke pelayan.</td></tr>`;
+            });
+        }
+
+        function renderJadual() {
+            const tbody = document.getElementById('isiJadual');
+            tbody.innerHTML = "";
+
+            if (dataJuriGlobal.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="p-10 text-center text-gray-500 font-medium">Tiada rekod juri dijumpai.</td></tr>`;
+                return;
+            }
+
+            dataJuriGlobal.forEach((row, index) => {
+                let badgeStatus = (row.statusJuri === "AKTIF") 
+                    ? `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-[10px] font-bold">AKTIF</span>`
+                    : `<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-[10px] font-bold">TIDAK AKTIF</span>`;
+
+                let btnEdit = `<button onclick="bukaModalEdit('${row.bil}')" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded shadow text-xs font-bold">Edit</button>`;
+                let btnPadam = isPihakAtasan ? `<button onclick="padamRekod('${row.bil}')" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded shadow text-xs font-bold">Padam</button>` : '';
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-indigo-50 transition duration-150 text-xs";
+                tr.innerHTML = `
+                    <td class="p-3 text-center font-bold text-gray-500">${index + 1}</td>
+                    <td class="p-3 font-bold text-gray-800 uppercase">${row.nama}</td>
+                    <td class="p-3 font-mono">${row.ic}</td>
+                    <td class="p-3 uppercase">${row.institusi}</td>
+                    <td class="p-3">${row.telefon}</td>
+                    <td class="p-3 text-blue-600">${row.email}</td>
+                    <td class="p-3 text-center uppercase font-semibold">${row.jabatan || "-"}</td>
+                    <td class="p-3 text-center font-bold">${row.tahun}</td>
+                    <td class="p-3 text-center">${badgeStatus}</td>
+                    <td class="p-3 text-center w-24">
+                        <div class="flex justify-center gap-1">${btnEdit}${btnPadam}</div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ================= PENGURUSAN BORANG (TAMBAH/KEMASKINI) =================
+        function bukaModalBorang() {
+            document.getElementById('borangJuri').reset();
+            document.getElementById('editBil').value = ""; 
+            document.getElementById('tajukModal').innerHTML = "➕ Tambah Calon Juri";
+            document.getElementById('modalBorang').classList.remove('hidden');
+        }
+
+        function bukaModalEdit(bil) {
+            const r = dataJuriGlobal.find(item => item.bil === bil);
+            if(!r) return;
+
+            document.getElementById('editBil').value = r.bil;
+            document.getElementById('tajukModal').innerHTML = "✏️ Kemaskini Juri";
+            
+            document.getElementById('in_nama').value = r.nama;
+            document.getElementById('in_ic').value = r.ic;
+            document.getElementById('in_institusi').value = r.institusi;
+            document.getElementById('in_telefon').value = r.telefon;
+            document.getElementById('in_email').value = r.email;
+            document.getElementById('in_jabatan').value = r.jabatan;
+            document.getElementById('in_tahun').value = r.tahun;
+            document.getElementById('in_status').value = r.statusJuri;
+            
+            document.getElementById('modalBorang').classList.remove('hidden');
+        }
+
+        function tutupModal() { document.getElementById('modalBorang').classList.add('hidden'); }
+
+        function hantarBorang(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSimpan');
+            btn.disabled = true; btn.innerText = "⏳ Menyimpan...";
+
+            const payload = {
+                action: "simpanJuri",
+                BIL: document.getElementById('editBil').value,
+                NAMA: document.getElementById('in_nama').value,
+                NO_IC: document.getElementById('in_ic').value,
+                INSTITUSI: document.getElementById('in_institusi').value,
+                NO_TELEFON: document.getElementById('in_telefon').value,
+                EMAIL: document.getElementById('in_email').value,
+                JABATAN: document.getElementById('in_jabatan').value,
+                TAHUN: document.getElementById('in_tahun').value,
+                STATUS: document.getElementById('in_status').value
+            };
+
+            fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+            .then(res => res.json()).then(data => {
+                paparToast(data.status === "BERJAYA" ? `✅ ${data.mesej}` : `❌ ${data.mesej}`, data.status === "BERJAYA" ? "green" : "red");
+                if(data.status === "BERJAYA") { tutupModal(); muatDataJuri(); }
+            }).finally(() => { btn.disabled = false; btn.innerText = "Simpan Rekod"; });
+        }
+
+        function padamRekod(bil) {
+            if(!confirm("Anda pasti mahu memadam juri ini?")) return;
+            fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "padamJuri", BIL: bil }) })
+            .then(res => res.json()).then(data => {
+                paparToast("✅ Rekod dipadam!", "green"); muatDataJuri();
+            });
+        }
+
+        // ================= IMPORT & EXPORT CSV =================
+        function downloadCSV() {
+            if (dataJuriGlobal.length === 0) { alert("Tiada data untuk dimuat turun."); return; }
+            
+            // Format Array ikut susunan lajur Excel
+            let csvContent = "NAMA,NO_IC,INSTITUSI,NO_TELEFON,EMAIL,JABATAN,STATUS,TAHUN\n";
+            
+            dataJuriGlobal.forEach(r => {
+                // Bersihkan koma dalam teks supaya CSV tak pecah
+                let nm = `"${r.nama.replace(/"/g, '""')}"`;
+                let inst = `"${r.institusi.replace(/"/g, '""')}"`;
+                csvContent += `${nm},${r.ic},${inst},${r.telefon},${r.email},${r.jabatan},${r.statusJuri},${r.tahun}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "Senarai_Juri.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            paparToast("⏳ Sedang membaca fail CSV...", "blue");
+
+            Papa.parse(file, {
+                header: true, // Pastikan baris pertama CSV guna nama Tajuk (NAMA, NO_IC, dll)
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if(results.data.length === 0) { paparToast("❌ Fail CSV kosong.", "red"); return; }
+                    
+                    paparToast(`⏳ Mengimport ${results.data.length} rekod ke pelayan...`, "blue");
+                    
+                    fetch(SCRIPT_URL, { 
+                        method: 'POST', 
+                        body: JSON.stringify({ action: "importJuriCSV", dataCSV: results.data }) 
+                    })
+                    .then(res => res.json()).then(data => {
+                        paparToast(`✅ ${data.mesej}`, "green");
+                        muatDataJuri();
+                    }).catch(err => paparToast("❌ Ralat import.", "red"));
+                }
+            });
+            event.target.value = ""; // Reset input file
+        }
+
+        function paparToast(teks, warna) {
+            const msgBox = document.getElementById('paparMesejUI');
+            msgBox.className = `mb-4 p-4 rounded-xl text-center text-sm font-bold shadow-sm border text-white ` + 
+                               (warna === 'green' ? 'bg-emerald-500' : (warna === 'blue' ? 'bg-blue-500' : 'bg-red-500'));
+            msgBox.innerText = teks;
+            msgBox.classList.remove('hidden');
+            setTimeout(() => msgBox.classList.add('hidden'), 5000);
+        }
+    </script>
+</body>
+</html>

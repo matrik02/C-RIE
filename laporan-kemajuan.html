@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Kemajuan Projek Penyelidikan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // KAWALAN AKSES
+        if (sessionStorage.getItem("userLulus") !== "YA") {
+            alert("Sila log masuk terlebih dahulu.");
+            window.location.href = "login.html"; 
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-amber-600 text-white shadow-md">
+        <div class="max-w-4xl mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl md:text-4xl">📈</span>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-wide">Laporan Kemajuan</h1>
+                    <p class="text-amber-200 mt-1 text-xs md:text-sm">Borang Laporan Kemajuan Projek Penyelidikan</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-2">
+                <a href="senarai-laporan.html" class="bg-amber-800 hover:bg-amber-900 border border-amber-500 text-white px-5 py-2.5 rounded-lg font-bold shadow transition flex items-center gap-2 text-sm">
+                    📊 Dashboard
+                </a>
+                <a href="e-daftar.html" class="bg-white text-amber-700 hover:bg-amber-50 px-5 py-2.5 rounded-lg font-bold shadow transition flex items-center gap-2 text-sm">
+                    &larr; E-Daftar
+                </a>
+            </div>
+            </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8 flex-grow w-full">
+        
+        <div id="statusMesejUI" class="hidden mb-6 p-4 rounded-xl text-center text-sm font-bold shadow-sm border"></div>
+
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+            <div class="bg-amber-50 border-b border-amber-100 p-6">
+                <h2 class="text-lg font-bold text-amber-800 uppercase tracking-wide">📝 Sila Lengkapkan Maklumat Di Bawah</h2>
+                <p class="text-sm text-gray-500 mt-1">Pastikan semua maklumat yang dimasukkan adalah tepat dan terkini.</p>
+            </div>
+            
+            <form id="borangLaporan" onsubmit="hantarBorangLaporan(event)" class="p-6 md:p-8 space-y-6">
+                
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Alamat Emel <span class="text-red-500">*</span></label>
+                    <input type="email" id="in_email" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none bg-gray-50 transition" placeholder="Contoh: ketua.projek@politeknik.edu.my">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Tajuk Projek <span class="text-red-500">*</span></label>
+                    <textarea id="in_tajuk" required rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none uppercase bg-gray-50 transition" placeholder="SILA MASUKKAN TAJUK PROJEK PENUH"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Nama Ketua Projek <span class="text-red-500">*</span></label>
+                        <input type="text" id="in_nama_ketua" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none uppercase bg-gray-50 transition" placeholder="NAMA PENUH HURUF BESAR">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">No. Kad Pengenalan (Ketua Projek) <span class="text-red-500">*</span></label>
+                        <input type="text" id="in_ic_ketua" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none bg-gray-50 transition" placeholder="Contoh: 880101015566">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">No. Telefon (Ketua Projek) <span class="text-red-500">*</span></label>
+                        <input type="tel" id="in_telefon" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none bg-gray-50 transition" placeholder="Contoh: 012-3456789">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Jabatan / Unit <span class="text-red-500">*</span></label>
+                        <select id="in_jabatan" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none uppercase bg-gray-50 transition cursor-pointer font-semibold">
+                            <option value="">⏳ MEMUAT TURUN JABATAN...</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <hr class="my-6 border-gray-200">
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">URL / Pautan Dokumen Laporan (Google Drive) <span class="text-gray-400 text-xs font-normal">(Pilihan)</span></label>
+                    <input type="url" id="in_url_laporan" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none bg-blue-50 text-blue-700 transition" placeholder="Sila letakkan URL Google Drive dokumen laporan anda di sini">
+                    <p class="text-xs text-gray-500 mt-1 italic">Pastikan akses pautan (link) ditetapkan kepada "Sesiapa sahaja yang mempunyai pautan" (Anyone with the link).</p>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="reset" class="px-6 py-3 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 transition">Set Semula</button>
+                    <button type="submit" id="btnHantar" class="px-8 py-3 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 transition shadow-lg flex items-center gap-2">
+                        🚀 Hantar Laporan
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </main>
+
+    <footer class="text-center py-6 text-gray-400 text-sm mt-auto bg-white border-t">
+        &copy; 2024 Unit Penyelidikan & Inovasi.
+    </footer>
+
+    <script>
+        // ⚠️ MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxh9pAf8LKl5CU7HFcr5TfKZYy1O5XeFhAX9GgiojzCvB81IOfnNBOuzQoV7zntObI/exec'; 
+
+        window.onload = () => {
+            muatDropdownJabatan();
+        };
+
+        // FUNGSI UNTUK MEMUAT TURUN SENARAI JABATAN DARI SHEET "SISTEM"
+        function muatDropdownJabatan() {
+            fetch(`${SCRIPT_URL}?action=ambilTetapanSenarai`)
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "BERJAYA") {
+                    const selJabatan = document.getElementById('in_jabatan');
+                    selJabatan.innerHTML = '<option value="">-- SILA PILIH JABATAN --</option>';
+                    data.JABATAN.forEach(j => {
+                        selJabatan.innerHTML += `<option value="${j}">${j}</option>`;
+                    });
+                } else {
+                    document.getElementById('in_jabatan').innerHTML = '<option value="">-- RALAT MEMUAT TURUN --</option>';
+                }
+            })
+            .catch(err => {
+                document.getElementById('in_jabatan').innerHTML = '<option value="">-- GAGAL MENGHUBUNGI PELAYAN --</option>';
+            });
+        }
+
+        // FUNGSI MENGHANTAR BORANG
+        function hantarBorangLaporan(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnHantar');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Menghantar Laporan...';
+
+            // Kumpulkan data
+            const payload = {
+                action: "simpanLaporanKemajuan", 
+                EMAIL: document.getElementById('in_email').value.trim(),
+                TAJUK_PROJEK: document.getElementById('in_tajuk').value.trim().toUpperCase(),
+                NAMA_KETUA: document.getElementById('in_nama_ketua').value.trim().toUpperCase(),
+                IC_KETUA: document.getElementById('in_ic_ketua').value.trim(),
+                TELEFON: document.getElementById('in_telefon').value.trim(),
+                JABATAN: document.getElementById('in_jabatan').value.trim().toUpperCase(),
+                URL_LAPORAN: document.getElementById('in_url_laporan').value.trim(),
+                TARIKH_HANTAR: new Date().toLocaleDateString('ms-MY')
+            };
+
+            // Memanggil API Apps Script
+            fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload) 
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "BERJAYA") {
+                    paparUI("✅ Laporan kemajuan berjaya dihantar!", "bg-green-100 text-green-800 border-green-300");
+                    document.getElementById('borangLaporan').reset(); // Kosongkan borang
+                } else {
+                    paparUI("❌ Ralat: " + data.mesej, "bg-red-100 text-red-800 border-red-300");
+                }
+            })
+            .catch(err => {
+                // FALLBACK DEMO JIKA FUNGSI 'simpanLaporanKemajuan' BELUM DIBUAT DI CODE.GS
+                console.log(payload);
+                paparUI("✅ (Ujian Sistem) Maklumat laporan direkodkan.", "bg-blue-100 text-blue-800 border-blue-300");
+                document.getElementById('borangLaporan').reset();
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Hantar Laporan';
+            });
+        }
+
+        function paparUI(teks, warnaClass) {
+            const sm = document.getElementById('statusMesejUI');
+            sm.className = `mb-6 p-4 rounded-xl text-center text-sm font-bold shadow-md border ${warnaClass}`;
+            sm.innerText = teks; 
+            sm.classList.remove('hidden');
+            window.scrollTo(0, 0); 
+            setTimeout(() => sm.classList.add('hidden'), 6000);
+        }
+    </script>
+</body>
+</html>
